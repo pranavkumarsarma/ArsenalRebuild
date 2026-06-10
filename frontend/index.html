@@ -112,7 +112,7 @@
     <div id="loadingState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;background:#0c1a2e;z-index:5;">
       <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
       <div id="loadingLabel" style="font-size:12px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading squad</div>
-      <div style="font-size:9px;color:#4b5563;">Fetching from Transfermarkt</div>
+      <div style="font-size:9px;color:#4b5563;">Fetching squad data…</div>
     </div>
     <div id="squadGrid" style="display:none;flex:1;min-height:0;grid-template-columns:repeat(4,1fr);overflow:hidden;"></div>
     <div id="signingsArea" style="display:none;border-top:2px solid #166534;background:#091a12;flex-shrink:0;padding:5px 12px 7px;">
@@ -202,7 +202,7 @@
         Run Simulation →
       </button>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #111827;text-align:center;">
-        <div style="font-size:7px;color:#1f2937;line-height:1.5;">Fan-made project. Not affiliated with Arsenal FC, Premier League, or Transfermarkt. Club names and trademarks belong to their respective owners. Player data sourced from Transfermarkt for educational use.</div>
+        <div style="font-size:7px;color:#1f2937;line-height:1.5;">Fan-made project. Not affiliated with Arsenal FC or the Premier League. Club names and trademarks belong to their respective owners. Player data sourced from public records for educational use.</div>
         <div style="font-size:7px;color:#374151;margin-top:2px;">Made by Pranav Kumar Sarma · <span style="color:#EF0107;">@wilsharma</span></div>
       </div>
     </div>
@@ -1068,7 +1068,7 @@ async function loadSeason(yr){
   loadEl.innerHTML=`
     <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
     <div style="font-size:13px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading ${seasonLabel}</div>
-    <div style="font-size:9px;color:#4b5563;">Fetching squad from Transfermarkt</div>`;
+    <div style="font-size:9px;color:#4b5563;">Fetching squad data…</div>`;
   document.getElementById('squadGrid').style.display='none';
   document.getElementById('signingsArea').style.display='none';
   document.getElementById('lineupModal').classList.remove('open');
