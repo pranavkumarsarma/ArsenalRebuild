@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arsenal Rebuild Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <style>
+    *,html,body{font-family:'Inter',sans-serif;margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100vh;overflow:hidden;background:#0c1a2e;color:#fff;}
+    .badge{border-radius:9999px;font-size:.5rem;font-weight:700;padding:1px 5px;display:inline-block;letter-spacing:.03em;flex-shrink:0;}
+    .pos-gk{background:#1e3a5f;color:#60a5fa;} .pos-def{background:#1a3a2a;color:#4ade80;}
+    .pos-mid{background:#3a2a1a;color:#fb923c;} .pos-att{background:#3a1a1a;color:#f87171;}
+    .crow{display:flex;align-items:flex-start;gap:5px;padding:4px 7px;border-radius:5px;transition:background .1s;cursor:default;}
+    .crow:hover{background:#1a2535;} .crow.sold{opacity:.3;}
+    .sell-btn{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #2d3748;color:#4b5563;cursor:pointer;font-size:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;line-height:1;}
+    .sell-btn:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
+    .add-btn{width:17px;height:17px;border-radius:50%;border:1px solid #374151;background:transparent;color:#6b7280;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;flex-shrink:0;}
+    .add-btn:hover{border-color:#EF0107;color:#EF0107;}
+    .col-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 6px;border-bottom:1px solid #1f2937;background:#0d1b2f;flex-shrink:0;}
+    .sim-btn{background:linear-gradient(135deg,#EF0107,#c0000a);border:none;cursor:pointer;transition:all .2s;color:#fff;}
+    .sim-btn:hover{box-shadow:0 0 20px rgba(239,1,7,.4);transform:scale(1.02);}
+    .slot-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+    .slot-used{background:#EF0107;} .slot-free{background:#374151;}
+    ::-webkit-scrollbar{width:2px;height:2px;} ::-webkit-scrollbar-thumb{background:#374151;border-radius:2px;}
+    .spin{animation:spin .8s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes badgeGlow{0%,100%{box-shadow:0 0 6px rgba(239,1,7,.35);}50%{box-shadow:0 0 14px rgba(239,1,7,.65),0 0 28px rgba(239,1,7,.2);}}
+    @keyframes simBtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,1,7,.5);}70%{box-shadow:0 0 0 8px rgba(239,1,7,0);}}
+    @keyframes countPop{0%{transform:scale(1);}50%{transform:scale(1.5);color:#ff4444;}100%{transform:scale(1);}}
+    @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    .afc-badge-anim{animation:badgeGlow 3s ease-in-out infinite;}
+    .sim-btn:not(:disabled){animation:simBtnPulse 2.5s ease-in-out infinite;}
+    .sim-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+    .count-pop{animation:countPop .4s ease-out;}
+    .modal-inner{animation:fadeUp .2s ease-out;}
+    .table-row.yours{background:linear-gradient(90deg,#1a0d0d,#200d0d);border:1px solid #7f1d1d;}
+    .share-card-glow{box-shadow:0 0 0 1px #1f2937,0 8px 32px rgba(239,1,7,.12);}
+    .result-pos-glow{text-shadow:0 0 20px rgba(239,1,7,.4),0 0 40px rgba(239,1,7,.2);}
+    .modal-bg{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);}
+    .modal-bg.open{display:flex;}
+    #toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#1f2937;border:1px solid #374151;border-radius:9px;padding:9px 16px;font-size:11px;font-weight:500;z-index:200;display:none;max-width:340px;text-align:center;line-height:1.4;}
+    .signing-card{background:#0f2a1a;border:1px solid #166534;border-radius:8px;padding:5px 8px;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+    .signing-card .unsign{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #166534;color:#4ade80;cursor:pointer;font-size:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+    .signing-card .unsign:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
+    .pslot{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+    .pslot>div:first-child{transition:opacity .15s;} .pslot:hover>div:first-child{opacity:.75;}
+    .sb-mini-card{background:#111827;border-radius:6px;padding:4px 8px;flex:1;}
+    .score-bar-track{height:4px;background:#1f2937;border-radius:4px;overflow:hidden;margin-top:3px;}
+    .score-bar-fill{height:100%;border-radius:4px;transition:width .4s;}
+    .modal-inner{background:#111827;border:1px solid #1f2937;border-radius:12px;width:100%;margin:16px;}
+    .ghost-btn{background:#1f2937;border:1px solid #374151;border-radius:6px;padding:3px 10px;font-size:8px;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .15s;}
+    .ghost-btn:hover{border-color:#6b7280;color:#fff;}
+    .table-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;}
+    .table-row.yours{background:linear-gradient(90deg,#1a0d0d,#200d0d);border:1px solid #7f1d1d;}
+    /* ── Mobile responsive ─────────────────────────────────── */
+    @media (max-width: 639px) {
+      html,body{overflow:auto;}
+      #mainContainer{flex-direction:column;height:auto;min-height:calc(100vh - 42px - 54px);overflow:visible;}
+      #squadCol{border-right:none;border-bottom:1px solid #1f2937;height:calc(100svh - 42px - 54px);min-height:0;}
+      #squadGrid{grid-template-columns:repeat(2,1fr)!important;}
+      #sidebarCol{display:none!important;}
+      #mobileBar{display:flex!important;}
+      .crow{padding:6px 8px!important;}
+      .crow span{font-size:11px!important;}
+      .col-hdr{padding:9px 8px 7px!important;}
+      #addModal .modal-inner,#lineupModal .modal-inner{max-height:95svh!important;margin:6px!important;}
+      #resultModal .modal-inner{max-height:98svh!important;margin:4px!important;padding:14px!important;}
+      #squadAnalysisModal .modal-inner{max-height:97svh!important;margin:6px!important;}
+      .modal-inner{border-radius:14px!important;}
+      #simCountDisplay{font-size:11px!important;}
+      header{padding:0 10px!important;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+<header style="height:42px;background:#0d1b2f;border-bottom:1px solid #1f2937;display:flex;align-items:center;padding:0 14px;justify-content:space-between;flex-shrink:0;">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#EF0107,#c0000a);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:7px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
+    <div>
+      <div style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;">Arsenal Rebuild</div>
+      <div style="font-size:8px;color:#4b5563;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="text-align:right;">
+      <div style="font-size:7px;color:#374151;line-height:1;margin-bottom:1px;">SIMULATIONS</div>
+      <div id="simCountDisplay" style="font-size:14px;font-weight:900;color:#EF0107;line-height:1;">0</div>
+    </div>
+    <div style="width:1px;height:20px;background:#1f2937;"></div>
+    <span style="font-size:10px;color:#6b7280;">Season</span>
+    <select id="seasonSelect" style="background:#111827;border:1px solid #374151;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;color:#fff;outline:none;cursor:pointer;">
+      <option value="2015">2015/16</option>
+      <option value="2014">2014/15</option>
+      <option value="2013">2013/14</option>
+      <option value="2012">2012/13</option>
+      <option value="2011">2011/12</option>
+      <option value="2010" selected>2010/11</option>
+      <option value="2009">2009/10</option>
+    </select>
+  </div>
+</header>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════════════ -->
+<div id="mainContainer" style="display:flex;height:calc(100vh - 42px);overflow:hidden;">
+
+  <!-- Left: Squad columns -->
+  <div id="squadCol" style="flex:1;min-width:0;border-right:1px solid #1f2937;display:flex;flex-direction:column;overflow:hidden;position:relative;">
+    <div id="loadingState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;background:#0c1a2e;z-index:5;">
+      <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
+      <div id="loadingLabel" style="font-size:12px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading squad</div>
+      <div style="font-size:9px;color:#4b5563;">Fetching from Transfermarkt</div>
+    </div>
+    <div id="squadGrid" style="display:none;flex:1;min-height:0;grid-template-columns:repeat(4,1fr);overflow:hidden;"></div>
+    <div id="signingsArea" style="display:none;border-top:2px solid #166534;background:#091a12;flex-shrink:0;padding:5px 12px 7px;">
+      <div style="font-size:7px;color:#4ade80;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">New Signings</div>
+      <div id="signingsStrip" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;"></div>
+    </div>
+  </div>
+
+  <!-- Right: Sidebar -->
+  <div id="sidebarCol" style="width:290px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;">
+
+    <!-- Budget -->
+    <div style="flex-shrink:0;padding:10px 12px 9px;background:#0d1b2f;border-bottom:1px solid #1f2937;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <span style="font-size:7px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;font-weight:700;">Budget&nbsp;</span>
+          <span style="font-size:22px;font-weight:900;color:#EF0107;letter-spacing:-.02em;" id="budgetAmt">—</span>
+        </div>
+        <span id="budgetIQ" style="font-size:8px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
+      </div>
+
+      <!-- Transfer Target -->
+      <div style="background:#111827;border-radius:8px;padding:10px 12px;margin-bottom:7px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+          <div style="font-size:7.5px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Wenger's Window</div>
+          <div style="font-size:7px;color:#374151;font-style:italic;">A. Wenger · 2009–16</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:9px;">
+          <div>
+            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Arsene spent</div>
+            <div style="font-size:20px;font-weight:900;line-height:1;color:#e5e7eb;" id="arsenalNetTarget">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">You spent</div>
+            <div style="font-size:20px;font-weight:900;line-height:1;" id="netSpend">€0</div>
+          </div>
+        </div>
+        <div id="targetDiff" style="text-align:center;padding:6px 10px;border-radius:6px;font-size:10px;font-weight:700;background:#1f2937;color:#6b7280;">—</div>
+      </div>
+
+      <div style="display:flex;gap:5px;">
+        <div class="sb-mini-card">
+          <div style="font-size:6px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Spent</div>
+          <div style="font-size:11px;font-weight:700;color:#f87171;margin-top:1px;" id="spentAmt">€0</div>
+        </div>
+        <div class="sb-mini-card">
+          <div style="font-size:6px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Sales</div>
+          <div style="font-size:11px;font-weight:700;color:#4ade80;margin-top:1px;" id="salesAmt">+€0</div>
+        </div>
+        <div id="squadValStr" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Signings row -->
+    <div style="flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid #1f2937;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:7px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">Signings</span>
+        <div id="slotDots" style="display:flex;gap:3px;"></div>
+      </div>
+      <span style="font-size:9px;font-weight:700;" id="slotsLabel">6 left</span>
+    </div>
+
+    <!-- View Lineup button -->
+    <div style="flex-shrink:0;padding:8px 12px;border-bottom:1px solid #1f2937;">
+      <button onclick="openLineupModal()"
+        style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s;"
+        onmouseover="this.style.borderColor='#4b5563';this.style.background='#1a2535'"
+        onmouseout="this.style.borderColor='#374151';this.style.background='#111827'">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-size:11px;font-weight:700;color:#e5e7eb;">Lineup</span>
+          <span class="lineup-count-badge" style="font-size:7px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:1px 6px;color:#6b7280;">0/11</span>
+        </div>
+        <span style="font-size:9px;color:#374151;">View →</span>
+      </button>
+    </div>
+
+    <!-- Spacer -->
+    <div style="flex:1;"></div>
+
+    <!-- Bottom -->
+    <div style="flex-shrink:0;padding:8px 12px 10px;border-top:1px solid #1f2937;background:#0d1b2f;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+        <div style="font-size:8px;color:#374151;" id="actualNote"></div>
+        <div style="font-size:8px;color:#374151;" id="actualResult"></div>
+      </div>
+      <button id="simBtn" onclick="runSimulation()" class="sim-btn" style="width:100%;padding:10px;border-radius:8px;font-weight:900;font-size:12px;letter-spacing:.02em;" disabled>
+        Run Simulation →
+      </button>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #111827;text-align:center;">
+        <div style="font-size:7px;color:#1f2937;line-height:1.5;">Fan-made project. Not affiliated with Arsenal FC, Premier League, or Transfermarkt. Club names and trademarks belong to their respective owners. Player data sourced from Transfermarkt for educational use.</div>
+        <div style="font-size:7px;color:#374151;margin-top:2px;">Made by Pranav Kumar Sarma · <span style="color:#EF0107;">@wilsharma</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MOBILE BOTTOM BAR ═══════════════════════════════════════════════ -->
+<div id="mobileBar" style="display:none;position:fixed;bottom:0;left:0;right:0;height:54px;background:#0d1b2f;border-top:1px solid #1f2937;padding:7px 12px;z-index:40;align-items:center;gap:8px;">
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:6px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">Budget</div>
+    <div id="mobileBudget" style="font-size:15px;font-weight:900;color:#EF0107;line-height:1;white-space:nowrap;">—</div>
+  </div>
+  <div id="mobileTargetDiff" style="font-size:8px;font-weight:700;padding:3px 8px;border-radius:9999px;background:#1f2937;color:#6b7280;white-space:nowrap;flex-shrink:0;">—</div>
+  <button onclick="openLineupModal()" style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
+    Lineup <span id="mobileLineupBadge" style="font-size:8px;color:#6b7280;">0/11</span>
+  </button>
+  <button id="mobileSimBtn" onclick="runSimulation()" class="sim-btn" style="border-radius:8px;padding:7px 14px;font-weight:900;font-size:11px;flex-shrink:0;white-space:nowrap;" disabled>Sim →</button>
+</div>
+
+<!-- ══ LINEUP MODAL ════════════════════════════════════════════════════ -->
+<div id="lineupModal" class="modal-bg" onclick="closeLineupModal(event)">
+  <div class="modal-inner" style="max-width:420px;padding:12px;height:calc(100vh - 80px);max-height:600px;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;font-size:13px;">Your Lineup</span>
+        <span class="lineup-count-badge" style="font-size:8px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 7px;color:#6b7280;">0/11</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <button class="ghost-btn" onclick="autoFillLineup()">AUTO XI</button>
+        <button class="ghost-btn" onclick="clearLineup()" style="color:#6b7280;"
+          onmouseover="this.style.color='#f87171';this.style.borderColor='#7f1d1d'"
+          onmouseout="this.style.color='#6b7280';this.style.borderColor='#374151'">CLEAR</button>
+        <button onclick="closeLineupModal()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;margin-left:3px;line-height:1;padding:0 2px;">✕</button>
+      </div>
+    </div>
+
+    <!-- Pitch -->
+    <div id="lmPitchField"
+      style="flex:1;min-height:0;background:linear-gradient(180deg,#144d14 0%,#1a6b1a 30%,#166016 55%,#1a6b1a 80%,#144d14 100%);
+        border-radius:9px;position:relative;display:flex;flex-direction:column;justify-content:space-evenly;padding:5px 6px;overflow:hidden;">
+    </div>
+
+    <!-- Bench -->
+    <div style="flex-shrink:0;padding:8px 2px 2px;">
+      <div style="font-size:7px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Bench</div>
+      <div id="lmBenchRow" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SIGN PLAYER MODAL ═══════════════════════════════════════════════ -->
+<div id="addModal" class="modal-bg" onclick="closeModal(event)">
+  <div class="modal-inner" style="max-width:430px;padding:15px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;font-size:12px;" id="modalTitle">Sign a Player</div>
+        <div style="font-size:9px;color:#6b7280;margin-top:1px;" id="modalSub"></div>
+      </div>
+      <button onclick="closeModal()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;line-height:1;">✕</button>
+    </div>
+    <input id="searchInput" type="text" placeholder="Search by name…"
+      style="width:100%;background:#0c1a2e;border:1px solid #374151;border-radius:7px;padding:7px 11px;font-size:11px;color:#fff;outline:none;margin-bottom:6px;"
+      oninput="debounce(this.value)" />
+    <div id="targetChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;"></div>
+    <div style="font-size:9px;color:#6b7280;margin-bottom:5px;" id="searchHint">Type to search players active in this era</div>
+    <div id="searchResults" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+  </div>
+</div>
+
+<!-- ══ SLOT PICKER MODAL ═══════════════════════════════════════════════ -->
+<div id="slotModal" class="modal-bg" style="z-index:60;" onclick="closeSlotModal(event)">
+  <div class="modal-inner" style="max-width:380px;padding:14px;max-height:80vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0;">
+      <div style="font-weight:700;font-size:12px;" id="slotModalTitle">Pick a Player</div>
+      <button onclick="document.getElementById('slotModal').classList.remove('open')" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div id="slotPlayerList" style="overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+  </div>
+</div>
+
+<!-- ══ SIMULATION RESULT MODAL ════════════════════════════════════════ -->
+<div id="resultModal" class="modal-bg">
+  <div class="modal-inner" style="max-width:400px;padding:18px;max-height:94vh;overflow-y:auto;">
+
+    <!-- Header row with close -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px;margin-top:-4px;">
+      <button onclick="closeResult()" style="background:none;border:none;color:#4b5563;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;" title="Close">✕</button>
+    </div>
+
+    <!-- Shareable card: hero + table -->
+    <div id="shareCard" class="share-card-glow" style="background:#0a1628;border-radius:10px;padding:14px;margin-bottom:10px;">
+      <!-- Position hero -->
+      <div id="resultHeroSection" style="text-align:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #1f2937;">
+        <div style="font-size:8px;color:#EF0107;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Arsenal Rebuild Simulator</div>
+        <div style="font-size:30px;margin-bottom:4px;" id="simEmoji">⚽</div>
+        <div class="result-pos-glow" style="font-size:42px;font-weight:900;line-height:1;letter-spacing:-.03em;" id="simPosition">—</div>
+        <div style="font-size:12px;font-weight:700;color:#e5e7eb;margin-top:3px;" id="simTitle">—</div>
+        <div style="font-size:9px;color:#6b7280;margin-top:2px;" id="simPts">—</div>
+      </div>
+      <!-- Top 4 Table -->
+      <div>
+        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Final Table · <span id="simSeasonLabel"></span></div>
+        <div id="simTable" style="display:flex;flex-direction:column;gap:3px;"></div>
+      </div>
+      <!-- Share attribution (always visible in screenshot) -->
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:8px;color:#4b5563;font-weight:600;">Arsenal Rebuild Simulator</span>
+        <span style="font-size:8px;font-weight:700;color:#EF0107;">@wilsharma</span>
+      </div>
+    </div>
+
+    <!-- Season Context -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Actually Happened</div>
+      <div id="simSeasonContext" style="font-size:9px;color:#6b7280;line-height:1.6;font-style:italic;">—</div>
+    </div>
+
+    <!-- W/D/L -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;">
+      <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#4ade80;line-height:1;" id="simW">—</div>
+        <div style="font-size:7px;color:#4b5563;margin-top:1px;">WINS</div>
+      </div>
+      <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#fbbf24;line-height:1;" id="simD">—</div>
+        <div style="font-size:7px;color:#4b5563;margin-top:1px;">DRAWS</div>
+      </div>
+      <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
+        <div style="font-size:24px;font-weight:900;color:#f87171;line-height:1;" id="simL">—</div>
+        <div style="font-size:7px;color:#4b5563;margin-top:1px;">LOSSES</div>
+      </div>
+    </div>
+
+    <!-- Top scorer / assister -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div style="background:#0c1a2e;border-radius:8px;padding:8px 10px;">
+        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Scorer</div>
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="simTopScorer">—</div>
+        <div style="font-size:13px;font-weight:900;color:#f87171;margin-top:2px;" id="simTopScorerGoals">—</div>
+      </div>
+      <div style="background:#0c1a2e;border-radius:8px;padding:8px 10px;">
+        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Assister</div>
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="simTopAssist">—</div>
+        <div style="font-size:13px;font-weight:900;color:#60a5fa;margin-top:2px;" id="simTopAssistNum">—</div>
+      </div>
+    </div>
+
+    <!-- Season Events -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Season Events</div>
+      <div id="simEvents" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+
+    <!-- Budget IQ row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#0c1a2e;border-radius:8px;padding:7px 10px;margin-bottom:10px;">
+      <span style="font-size:9px;color:#6b7280;">Transfer Discipline</span>
+      <span id="simBudgetIQ" style="font-size:10px;font-weight:700;">—</span>
+    </div>
+
+    <!-- Squad Analysis button -->
+    <button onclick="openSquadAnalysis()" style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;margin-bottom:8px;transition:all .15s;"
+      onmouseover="this.style.borderColor='#6b7280';this.style.color='#fff'"
+      onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">
+      📊 Detailed Squad Analysis
+    </button>
+
+    <!-- Hidden debug panel (secret: triple-tap AFC logo) -->
+    <div id="debugPanel" style="display:none;background:#0a1628;border:1px solid #2d3748;border-radius:8px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">🔒 Debug · Rebuild Score</div>
+      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px;">
+        <span style="font-size:36px;font-weight:900;line-height:1;" id="dbgScore">—</span>
+        <span style="font-size:14px;color:#4b5563;">/100</span>
+        <span style="font-size:10px;color:#6b7280;margin-left:4px;" id="dbgVerdict">—</span>
+      </div>
+      <div id="dbgBreakdown" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+
+    <!-- Attribution -->
+    <div style="text-align:center;padding-top:4px;margin-bottom:8px;">
+      <span style="font-size:8px;color:#374151;">Made by Pranav Kumar Sarma</span>
+      <span style="font-size:8px;color:#374151;"> · </span>
+      <span style="font-size:8px;color:#EF0107;">@wilsharma</span>
+    </div>
+
+    <div style="display:flex;gap:6px;">
+      <button onclick="closeResult()" style="flex:1;background:#1f2937;border:none;color:#fff;border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;">Try Again</button>
+      <button onclick="shareResult()" style="flex:1;background:linear-gradient(135deg,#EF0107,#b91c1c);border:none;color:#fff;border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;" id="shareBtn">
+        <span>📤</span><span>Share Result</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SQUAD ANALYSIS MODAL ═══════════════════════════════════════════ -->
+<div id="squadAnalysisModal" class="modal-bg" style="z-index:60;">
+  <div class="modal-inner" style="max-width:420px;padding:16px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:13px;">Squad Analysis</div>
+      <button onclick="closeSquadAnalysis()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;line-height:1;">✕</button>
+    </div>
+
+    <!-- Position ratings vs champion -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Position Ratings vs League Winner</div>
+      <div id="saRatingsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;"></div>
+    </div>
+
+    <!-- Season context / what went wrong -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Went Wrong</div>
+      <div style="font-size:10px;color:#9ca3af;line-height:1.6;" id="saWeaknessDesc">—</div>
+      <div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;" id="saGapChips"></div>
+    </div>
+
+    <!-- Signing assessment -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your Signings · Gap Analysis</div>
+      <div id="saSignings" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══ SCRIPT ══════════════════════════════════════════════════════════ -->
+<script>
+const API = 'http://127.0.0.1:8001';
+const MAX_SIGNINGS = 6;
+const CURRENT_YEAR = 2026;
+
+// ── Season data ────────────────────────────────────────────────────────
+const SEASONS = {
+  2009:{ budget:12000000, netSpend:6000000,   result:'3rd', pts:75, targets:['Karim Benzema','David Villa','Yoann Gourcuff','Franck Ribery','Samuel Eto\'o'] },
+  2010:{ budget:10000000, netSpend:-1000000,  result:'4th', pts:68, targets:['Wesley Sneijder','Gary Cahill',"Yann M'Vila",'Juan Mata','Ivan Perišić'] },
+  2011:{ budget:8000000,  netSpend:44000000,  result:'3rd', pts:70, targets:['Luis Suárez','Gary Cahill','Clint Dempsey','Juan Mata','Loic Remy'] },
+  2012:{ budget:8000000,  netSpend:-9000000,  result:'4th', pts:73, targets:['Gonzalo Higuaín','Juan Mata','Marouane Fellaini','Willian','Wayne Rooney'] },
+  2013:{ budget:42000000, netSpend:28000000,  result:'4th', pts:79, targets:['Luis Suárez','Karim Benzema','Gonzalo Higuaín','Cesc Fàbregas','Julian Draxler'] },
+  2014:{ budget:80000000, netSpend:52000000,  result:'3rd', pts:75, targets:['Karim Benzema','Jamie Vardy','Morgan Schneiderlin','Raheem Sterling','Kevin De Bruyne'] },
+  2015:{ budget:35000000, netSpend:11000000,  result:'2nd', pts:71, targets:['Gonzalo Higuaín','Alexandre Lacazette','Pepe Reina','Jamie Vardy','Riyad Mahrez'] },
+};
+
+// ── League benchmarks (proxy ratings) ─────────────────────────────────
+const LEAGUE_BENCHMARK = {
+  2009:{ champion:'Chelsea',  teams:[{club:'Chelsea',gk:84,def:86,mid:83,fwd:87},{club:'Man Utd',gk:84,def:83,mid:84,fwd:86}] },
+  2010:{ champion:'Man Utd',  teams:[{club:'Man Utd',gk:83,def:84,mid:83,fwd:87},{club:'Chelsea',gk:83,def:86,mid:83,fwd:86},{club:'Man City',gk:80,def:80,mid:79,fwd:83}] },
+  2011:{ champion:'Man City', teams:[{club:'Man City',gk:82,def:84,mid:82,fwd:86},{club:'Man Utd',gk:82,def:83,mid:83,fwd:86}] },
+  2012:{ champion:'Man Utd',  teams:[{club:'Man Utd',gk:83,def:83,mid:83,fwd:88},{club:'Man City',gk:82,def:84,mid:82,fwd:85},{club:'Chelsea',gk:83,def:84,mid:82,fwd:83}] },
+  2013:{ champion:'Man City', teams:[{club:'Man City',gk:84,def:85,mid:84,fwd:87},{club:'Liverpool',gk:82,def:79,mid:83,fwd:92},{club:'Chelsea',gk:83,def:85,mid:82,fwd:84}] },
+  2014:{ champion:'Chelsea',  teams:[{club:'Chelsea',gk:85,def:85,mid:84,fwd:86},{club:'Man City',gk:83,def:84,mid:84,fwd:87}] },
+  2015:{ champion:'Leicester',teams:[{club:'Leicester',gk:78,def:78,mid:79,fwd:83}] },
+};
+
+// ── Actual historical table (top 4+) ──────────────────────────────────
+const ACTUAL_TABLE = {
+  2009:[{club:'Chelsea',pts:86},{club:'Man Utd',pts:85},{club:'Arsenal',pts:75},{club:'Tottenham',pts:70}],
+  2010:[{club:'Man Utd',pts:80},{club:'Chelsea',pts:71},{club:'Man City',pts:71},{club:'Arsenal',pts:68}],
+  2011:[{club:'Man City',pts:89},{club:'Man Utd',pts:89},{club:'Arsenal',pts:70},{club:'Tottenham',pts:69}],
+  2012:[{club:'Man Utd',pts:89},{club:'Man City',pts:78},{club:'Chelsea',pts:75},{club:'Arsenal',pts:73}],
+  2013:[{club:'Man City',pts:86},{club:'Liverpool',pts:84},{club:'Chelsea',pts:82},{club:'Arsenal',pts:79}],
+  2014:[{club:'Chelsea',pts:87},{club:'Man City',pts:79},{club:'Arsenal',pts:75},{club:'Man Utd',pts:70}],
+  2015:[{club:'Leicester',pts:81},{club:'Arsenal',pts:71},{club:'Tottenham',pts:70},{club:'Man City',pts:66}],
+};
+
+// ── Rival line strengths per season (DEF/MID/ATT ratings, same scale as mvToRating) ──
+const RIVAL_STRENGTH = {
+  2009: {
+    'Chelsea':   {def:85,mid:81,att:84},
+    'Man Utd':   {def:86,mid:82,att:83},
+    'Tottenham': {def:74,mid:77,att:75},
+  },
+  2010: {
+    'Man Utd':   {def:85,mid:83,att:84},
+    'Chelsea':   {def:82,mid:80,att:82},
+    'Man City':  {def:78,mid:78,att:81},
+  },
+  2011: {
+    'Man City':  {def:83,mid:82,att:87},
+    'Man Utd':   {def:84,mid:82,att:84},
+    'Tottenham': {def:76,mid:79,att:77},
+  },
+  2012: {
+    'Man Utd':   {def:83,mid:82,att:85},
+    'Man City':  {def:82,mid:81,att:84},
+    'Chelsea':   {def:82,mid:79,att:80},
+  },
+  2013: {
+    'Man City':  {def:84,mid:85,att:85},
+    'Liverpool': {def:78,mid:80,att:88},
+    'Chelsea':   {def:84,mid:81,att:82},
+  },
+  2014: {
+    'Chelsea':   {def:85,mid:83,att:84},
+    'Man City':  {def:83,mid:82,att:83},
+    'Man Utd':   {def:79,mid:77,att:79},
+  },
+  2015: {
+    'Leicester': {def:78,mid:79,att:82},
+    'Tottenham': {def:79,mid:81,att:79},
+    'Man City':  {def:80,mid:80,att:81},
+  },
+};
+
+// ── Season weakness data ───────────────────────────────────────────────
+const SEASON_WEAKNESSES = {
+  2009:{ gaps:['GK','MID'], desc:"Almunia was Arsenal's biggest liability. They also had no specialist defensive midfielder to protect the back four, they were constantly exposed on the counter." },
+  2010:{ gaps:['ATT','GK'], desc:"RVP's season-ending injury left Arsenal without a striker for months. Chamakh faded fast. Almunia was still the No.1. A reliable striker and goalkeeper would've changed everything." },
+  2011:{ gaps:['MID','MID'], desc:"Arsenal sold Fabregas to Barcelona and Nasri to Man City in the same summer. The midfield engine was gutted overnight. No adequate replacements were signed. It was catastrophic." },
+  2012:{ gaps:['ATT','ATT'], desc:"Van Persie left for Man Utd and won the title. Arsenal signed Giroud and Podolski, not the elite striker they needed. A world-class number 9 was the only missing piece." },
+  2013:{ gaps:['ATT','MID'], desc:"Özil arrived but Wenger still needed a striker to lead the line. Giroud was good but not elite. A Higuaín or Benzema-level signing up front with a DM behind Özil would've been enough." },
+  2014:{ gaps:['ATT','DEF'], desc:"Giroud's injury exposed the lack of striker depth. Welbeck wasn't the answer. The left-back position was also a weakness, Gibbs and Monreal competing, neither dominant." },
+  2015:{ gaps:['DEF','MID'], desc:"Leicester's organisation exposed Arsenal's defensive fragility. The back four was soft under pressure. Coquelin was a band-aid, not a solution. A world-class CB or DM was needed." },
+};
+
+// ── Season narrative summaries ────────────────────────────────────────
+const SEASON_SUMMARY = {
+  2009: "Chelsea edged the title on goal difference. Arshavin's four goals at Anfield in April was the season in a moment, electric brilliance but not enough. Wenger's youngest ever squad, 10th FA Cup exit, and another summer of thin investment.",
+  2010: "Arsenal led at Christmas with the most attractive football in England. Then Fabianski's howler in the Carling Cup final, an 8-game winless run, and Man Utd ran away with the title. A collapsed title race, no trophies, just hope.",
+  2011: "Fabregas sold to Barcelona. Nasri to Man City. 8-2 at Old Trafford in August. That scoreline defined the season before it began. Van Persie carried the team alone while Wenger insisted the youth would step up. They didn't.",
+  2012: "Van Persie publicly demanded a transfer, was sold to Man Utd, and scored a hat-trick against Arsenal. Giroud and Podolski arrived, good signings, but nowhere near the level needed. Arsenal finished 3rd and entered a new era of cautious optimism.",
+  2013: "Özil arrived on deadline day for a club-record £42.5m and Arsenal went 7 clear at Christmas. Then January: Wilshere out, Ramsey injured, results dipped. City powered through in spring. A title that felt real until it suddenly wasn't.",
+  2014: "The FA Cup over Hull, 2-0 down at half time and came back to win 3-2 in extra time. Nine years of hurt over. The league was 3rd with 75 points. Good but not great, the rebuild was real but not complete.",
+  2015: "Leicester City won the Premier League from 5000-1. Arsenal were 2nd and felt like genuine title contenders until an inexplicable 10-game run without a win in March–April. Wenger called it Arsenal's best season in years. Fans weren't sure.",
+};
+
+// ── Legacy bonus by last name ──────────────────────────────────────────
+const LEGACY_SCORE = {
+  'Benzema':5,'Suárez':5,'Agüero':5,'Müller':5,'Lewandowski':5,'Hazard':5,'Ibrahimović':5,'Messi':5,'Ronaldo':5,
+  'Neymar':5,'Modric':4,'Iniesta':5,'Xavi':5,'Ribéry':4,'Robben':4,'Silva':4,'Touré':4,'Griezmann':4,
+  'Falcao':4,'Özil':3,'Sánchez':4,'Pogba':4,'Lukaku':3,'Sterling':3,'Mahrez':3,'Coutinho':3,
+  'Higuaín':3,'Rooney':3,'Torres':3,'Pirlo':4,'Vidić':4,'Terry':3,'Ferdinand':3,'Kompany':3,
+  'Vardy':3,'Kanté':4,'Firmino':2,"M'Vila":1,'Dempsey':2,'Fellaini':2,'Welbeck':1,
+};
+
+// ── Lineup config ──────────────────────────────────────────────────────
+const LINEUP_ROWS = [['gk'],['lb','cb1','cb2','rb'],['lm','cm','rm'],['lw','cf','rw']];
+const SLOT_CFG = {
+  gk:{grp:'GK',lbl:'GK'}, lb:{grp:'DEF',lbl:'LB'}, cb1:{grp:'DEF',lbl:'CB'},
+  cb2:{grp:'DEF',lbl:'CB'}, rb:{grp:'DEF',lbl:'RB'}, lm:{grp:'MID',lbl:'LM'},
+  cm:{grp:'MID',lbl:'CM'}, rm:{grp:'MID',lbl:'RM'}, lw:{grp:'ATT',lbl:'LW'},
+  cf:{grp:'ATT',lbl:'CF'}, rw:{grp:'ATT',lbl:'RW'},
+};
+const BENCH_IDS = ['b1','b2','b3','b4','b5','b6','b7'];
+
+// ── Position maps ──────────────────────────────────────────────────────
+const POS_MAP = {
+  'Goalkeeper':'GK','Centre-Back':'DEF','Left-Back':'DEF','Right-Back':'DEF','Defender':'DEF',
+  'Defensive Midfield':'MID','Central Midfield':'MID','Attacking Midfield':'MID',
+  'Right Midfield':'MID','Left Midfield':'MID','Midfielder':'MID',
+  'Right Winger':'ATT','Left Winger':'ATT','Centre-Forward':'ATT','Second Striker':'ATT','Forward':'ATT',
+};
+const GROUPS  = ['GK','DEF','MID','ATT'];
+const GRP_LBL = { GK:'Goalkeepers', DEF:'Defenders', MID:'Midfielders', ATT:'Forwards' };
+const GRP_CSS = { GK:'pos-gk', DEF:'pos-def', MID:'pos-mid', ATT:'pos-att' };
+const GRP_COL = { GK:'#60a5fa', DEF:'#4ade80', MID:'#fb923c', ATT:'#f87171' };
+const HARD_RIVALS = ['Manchester United','Chelsea','Tottenham'];
+const SOFT_RIVALS = ['Liverpool','Manchester City'];
+const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
+
+// ── State ──────────────────────────────────────────────────────────────
+const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0 };
+let _lastSimData = null;
+
+// ── Ratings ────────────────────────────────────────────────────────────
+function mvToRating(mv) {
+  if (!mv||mv<=0) return 62;
+  return Math.min(90, Math.round(60 + Math.log(mv/1_000_000+1)*7.5));
+}
+function ratingColor(r) {
+  if (r>=85) return '#fbbf24';
+  if (r>=78) return '#4ade80';
+  if (r>=70) return '#60a5fa';
+  return '#9ca3af';
+}
+function computeSquadRatings(players) {
+  const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 65;
+  const g = f => players.filter(p=>grp(p.position)===f).map(p=>mvToRating(p.marketValue));
+  const gkR=avg(g('GK')), defR=avg(g('DEF')), midR=avg(g('MID')), fwdR=avg(g('ATT'));
+  return { gk:gkR, def:defR, mid:midR, fwd:fwdR, overall:Math.round((gkR+defR*1.5+midR*1.5+fwdR)/5) };
+}
+
+// ── Auto XI (best 11 from available players) ───────────────────────────
+function getAutoXI(allPlayers) {
+  const used = new Set();
+  const pick = (g, n) => {
+    const avail = allPlayers.filter(p=>grp(p.position)===g&&!used.has(p.id))
+      .sort((a,b)=>(b.marketValue||0)-(a.marketValue||0)).slice(0,n);
+    avail.forEach(p=>used.add(p.id));
+    return avail;
+  };
+  return [...pick('GK',1),...pick('DEF',4),...pick('MID',3),...pick('ATT',3)];
+}
+
+// ── Proprietary Rebuild Score ──────────────────────────────────────────
+function scoreBalance(ar) {
+  const vals=[ar.gk,ar.def,ar.mid,ar.fwd], mn=Math.min(...vals), mx=Math.max(...vals);
+  let s=35;
+  s -= Math.max(0, (mx-mn-4)*1.2);
+  if (mn<70) s-=(70-mn)*1.5;
+  if (mn>=78) s+=4;
+  if (mn>=82) s+=3;
+  return Math.max(5, Math.min(35, Math.round(s)));
+}
+function scoreVsTop4(ar, season) {
+  const bench=LEAGUE_BENCHMARK[season]; if (!bench?.teams?.length) return 15;
+  const r=bench.teams[0];
+  const mine=(ar.gk+ar.def*1.5+ar.mid*1.5+ar.fwd)/5;
+  const rival=(r.gk+r.def*1.5+r.mid*1.5+r.fwd)/5;
+  return Math.max(0, Math.min(30, Math.round(15+(mine-rival)*2)));
+}
+function scoreTactical(ar, bought, season) {
+  const att=(ar.mid+ar.fwd)/2, def=(ar.gk+ar.def)/2;
+  const attS=Math.max(0,Math.min(9,(att-70)*0.55));
+  const defS=Math.max(0,Math.min(8,(def-68)*0.5));
+  const gaps=(SEASON_WEAKNESSES[season]?.gaps||[]);
+  let gapBonus=0;
+  for (const p of bought) {
+    for (const gap of gaps) { if(grp(p.position)===gap){gapBonus+=1.2;break;} }
+  }
+  return Math.max(0, Math.min(20, Math.round(attS+defS+gapBonus)));
+}
+function scoreLegacy(bought) {
+  let total=0;
+  for (const p of bought) {
+    const last=p.name.split(' ').pop();
+    for (const [key,val] of Object.entries(LEGACY_SCORE)) {
+      if (key.toLowerCase()===last.toLowerCase()){total+=val;break;}
+    }
+  }
+  return Math.max(0, Math.min(15, Math.round(total)));
+}
+function computeRebuildScore(xi, bought) {
+  const ar=computeSquadRatings(xi);
+  const f1=scoreBalance(ar), f2=scoreVsTop4(ar,S.season), f3=scoreTactical(ar,bought,S.season), f4=scoreLegacy(bought);
+  return { f1, f2, f3, f4, total:f1+f2+f3+f4, ar };
+}
+function computeLineRatings(players) {
+  const gks=players.filter(p=>grp(p.position)==='GK');
+  const defs=players.filter(p=>grp(p.position)==='DEF');
+  const mids=players.filter(p=>grp(p.position)==='MID');
+  const atts=players.filter(p=>grp(p.position)==='ATT');
+  function avg(arr){return arr.length?Math.round(arr.reduce((s,p)=>s+mvToRating(p.marketValue),0)/arr.length):70;}
+  return {
+    def:avg([...gks,...defs]),
+    mid:avg(mids),
+    att:avg(atts),
+  };
+}
+function rebuildVerdict(score) {
+  if (score>=85) return { label:'Title Contender', color:'#fbbf24' };
+  if (score>=74) return { label:'Top 4 Quality',   color:'#4ade80' };
+  if (score>=62) return { label:'Europa Lurker',    color:'#60a5fa' };
+  if (score>=50) return { label:'Banter Era Lives', color:'#fb923c' };
+  return             { label:'Wenger Out',          color:'#f87171' };
+}
+
+// ── Budget IQ ──────────────────────────────────────────────────────────
+function getBudgetIQ() {
+  const actual=SEASONS[S.season]?.netSpend||0, yours=S.spent-S.sales, diff=yours-actual;
+  if (diff<-5e6)  return {label:'True Wenger',    color:'#4ade80', bonus:0};
+  if (diff<10e6)  return {label:'Wenger Mode ✓',  color:'#4ade80', bonus:3};
+  if (diff<25e6)  return {label:'Wenger-ish',      color:'#60a5fa', bonus:1};
+  if (diff<50e6)  return {label:'Splashing Cash',  color:'#fbbf24', bonus:-1};
+  return               {label:'Abramovich Mode',  color:'#f87171', bonus:-3};
+}
+
+// ── Simulation table builder ───────────────────────────────────────────
+function buildSimTable(simPts, season) {
+  const actual = ACTUAL_TABLE[season]||[];
+  const table = actual.map(r => r.club==='Arsenal' ? {...r,pts:simPts,yours:true} : {...r});
+  if (!table.find(r=>r.yours)) table.push({club:'Arsenal',pts:simPts,yours:true});
+  table.sort((a,b)=>b.pts-a.pts);
+  return table.slice(0,5).map((r,i)=>({...r,pos:i+1}));
+}
+
+// ── W/D/L ──────────────────────────────────────────────────────────────
+function wdlFromPts(pts) {
+  const D=Math.max(2,Math.round(2+Math.random()*8)), W=Math.max(0,Math.floor((pts-D)/3));
+  return {W, D:pts-W*3, L:Math.max(0,38-W-(pts-W*3))};
+}
+
+// ── Top performer predictions ──────────────────────────────────────────
+function predictTopScorer(players) {
+  const fwds=players.filter(p=>grp(p.position)==='ATT').sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  const p=fwds[0]||[...players].sort((a,b)=>(b.marketValue||0)-(a.marketValue||0))[0];
+  if (!p) return null;
+  return {name:p.name.split(' ').pop(), goals:Math.max(8,Math.round((mvToRating(p.marketValue)-68)*0.75+9+(Math.random()-.5)*5))};
+}
+function predictTopAssister(players) {
+  const cands=players.filter(p=>grp(p.position)==='MID'||grp(p.position)==='ATT').sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  if (!cands.length) return null;
+  const p=cands[0];
+  return {name:p.name.split(' ').pop(), assists:Math.max(5,Math.round((mvToRating(p.marketValue)-70)*0.45+8+(Math.random()-.5)*4))};
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n===null||n===undefined) return '—';
+  const abs=Math.abs(n),sign=n<0?'-':'';
+  if (abs>=1e9) return sign+'€'+(abs/1e9).toFixed(1)+'bn';
+  if (abs>=1e6) return sign+'€'+(abs/1e6).toFixed(1)+'m';
+  if (abs>=1e3) return sign+'€'+(abs/1e3).toFixed(0)+'k';
+  return sign+'€0';
+}
+function grp(pos){
+  if(!pos) return 'ATT';
+  if(POS_MAP[pos]) return POS_MAP[pos];
+  const p=pos.toLowerCase();
+  if(p.includes('goalkeeper')||p.includes('keeper')) return 'GK';
+  if(p.includes('back')||p.includes('defend')||p.includes('stopper')||p.includes('centre-back')||p.includes('center-back')) return 'DEF';
+  if(p.includes('midfield')) return 'MID';
+  if(p.includes('winger')||p.includes('forward')||p.includes('striker')) return 'ATT';
+  return 'ATT';
+}
+function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+function ordinal(n){return n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th';}
+function showToast(msg,ms=3500){
+  const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',ms);
+}
+function eraCheck(currentAge){
+  if (!currentAge) return null;
+  const age=parseInt(currentAge); if (isNaN(age)) return null;
+  const ageInSeason=age-(CURRENT_YEAR-S.season);
+  if (ageInSeason<15) return 'bornTooLate';
+  if (ageInSeason>41) return 'retiredByThen';
+  return null;
+}
+function checkPositionDepth(posGroup){
+  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought].filter(p=>grp(p.position)===posGroup);
+  return {overloaded:all.filter(p=>mvToRating(p.marketValue)>=80).length>=3, count:all.length};
+}
+function checkSpecificPositionDepth(position){
+  if(!position) return {blocked:false};
+  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const same=all.filter(p=>p.position&&p.position.toLowerCase()===position.toLowerCase());
+  const qual=same.filter(p=>mvToRating(p.marketValue)>=80);
+  return {blocked:qual.length>=2, count:same.length, qualCount:qual.length};
+}
+function checkEliteSquadCap(){
+  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const elite=all.filter(p=>mvToRating(p.marketValue)>=85);
+  if(elite.length>=5){
+    const existingElite=S.players.filter(p=>!S.sold.has(p.id)&&mvToRating(p.marketValue)>=85)
+      .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0));
+    if(existingElite.length>0){
+      const v=existingElite[0];
+      S.sold.add(v.id);
+      for(const[s,lp]of Object.entries(S.lineup)){if(lp&&lp.id===v.id){delete S.lineup[s];break;}}
+      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many stars, not enough minutes.`,4500),400);
+    }
+  }
+}
+function updateLineupCountBadges(){
+  const startFilled=Object.keys(S.lineup).filter(k=>!k.startsWith('b')&&S.lineup[k]).length;
+  const txt=`${startFilled}/11`;
+  document.querySelectorAll('.lineup-count-badge').forEach(el=>el.textContent=txt);
+  const mob=document.getElementById('mobileLineupBadge');
+  if(mob)mob.textContent=txt;
+}
+
+// ── Lineup Modal ───────────────────────────────────────────────────────
+function openLineupModal(){
+  const filled=Object.keys(S.lineup).filter(k=>!k.startsWith('b')&&S.lineup[k]).length;
+  if(filled<3) autoFillLineup(true);
+  else renderLineup();
+  document.getElementById('lineupModal').classList.add('open');
+}
+function closeLineupModal(e){
+  if(e&&e.target!==document.getElementById('lineupModal'))return;
+  document.getElementById('lineupModal').classList.remove('open');
+}
+
+function renderLineup(){
+  const field=document.getElementById('lmPitchField'); if(!field)return;
+  const marks=`
+    <div style="position:absolute;left:8%;right:8%;top:50%;height:1px;background:rgba(255,255,255,.1);pointer-events:none;z-index:0;transform:translateY(-50%);"></div>
+    <div style="position:absolute;left:23%;right:23%;top:6%;height:26%;border:1px solid rgba(255,255,255,.08);border-top:none;pointer-events:none;z-index:0;border-radius:0 0 4px 4px;"></div>
+    <div style="position:absolute;inset:0;border:1px solid rgba(255,255,255,.05);pointer-events:none;z-index:0;border-radius:9px;"></div>`;
+  field.innerHTML=marks+LINEUP_ROWS.map(row=>`
+    <div style="display:flex;justify-content:space-around;align-items:center;flex:1;position:relative;z-index:1;">
+      ${row.map(id=>pitchSlotHTML(id)).join('')}
+    </div>`).join('');
+  const bench=document.getElementById('lmBenchRow');
+  if(bench) bench.innerHTML=BENCH_IDS.map(id=>benchSlotHTML(id)).join('');
+  updateLineupCountBadges();
+}
+
+function pitchSlotHTML(id){
+  const cfg=SLOT_CFG[id], p=S.lineup[id];
+  const dotClr=GRP_COL[cfg.grp]||'#6b7280';
+  if(!p) return `
+    <div class="pslot" onclick="openSlotPicker('${id}')">
+      <div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.35);border:1.5px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;"
+        onmouseover="this.style.borderColor='rgba(255,255,255,.55)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">
+        <span style="color:rgba(255,255,255,.22);font-size:10px;">+</span>
+      </div>
+      <span style="font-size:6px;color:rgba(255,255,255,.22);font-weight:700;margin-top:2px;">${cfg.lbl}</span>
+    </div>`;
+  const parts=p.name.trim().split(' ');
+  const last=parts[parts.length-1];
+  const first=parts.length>1?parts[0]:'';
+  const full=first?first+' '+last:last;
+  const initials=first?first[0].toUpperCase()+'. '+last:last;
+  const label=full.length<=14?full:initials.length<=14?initials:(last.length>12?last.slice(0,11)+'…':last);
+  return `
+    <div class="pslot" onclick="openSlotPicker('${id}')">
+      <div style="width:20px;height:20px;border-radius:50%;background:${dotClr};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+        <span style="font-size:5px;font-weight:800;color:rgba(0,0,0,.65);">${cfg.lbl}</span>
+      </div>
+      <span style="font-size:8px;color:#fff;font-weight:600;max-width:76px;text-align:center;margin-top:2px;line-height:1.25;word-break:break-word;">${label}</span>
+    </div>`;
+}
+
+function benchSlotHTML(id){
+  const p=S.lineup[id];
+  const dotClr=p?GRP_COL[grp(p.position)]||'#6b7280':'#374151';
+  if(!p) return `
+    <div class="pslot" onclick="openSlotPicker('${id}')">
+      <div style="width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.2);border:1px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <span style="color:rgba(255,255,255,.14);font-size:8px;">+</span>
+      </div>
+      <span style="font-size:5px;color:rgba(255,255,255,.17);">SUB</span>
+    </div>`;
+  const parts=p.name.trim().split(' ');
+  const last=parts[parts.length-1];
+  const first=parts.length>1?parts[0]:'';
+  const label=last.length<=9?last:(first?first[0].toUpperCase()+'.'+last.slice(0,5):last.slice(0,8)+'…');
+  return `
+    <div class="pslot" onclick="openSlotPicker('${id}')">
+      <div style="width:16px;height:16px;border-radius:50%;background:${dotClr};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;"></div>
+      <span style="font-size:6.5px;color:rgba(255,255,255,.82);font-weight:600;max-width:44px;text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</span>
+    </div>`;
+}
+
+// ── Auto XI / Clear ────────────────────────────────────────────────────
+function autoFillLineup(silent=false){
+  S.lineup={};
+  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const assigned=new Set();
+  const avail=g=>all.filter(p=>grp(p.position)===g&&!assigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  for(const{slot,grp:g}of[
+    {slot:'gk',grp:'GK'},{slot:'cb1',grp:'DEF'},{slot:'cb2',grp:'DEF'},
+    {slot:'lb',grp:'DEF'},{slot:'rb',grp:'DEF'},{slot:'cm',grp:'MID'},
+    {slot:'lm',grp:'MID'},{slot:'rm',grp:'MID'},{slot:'cf',grp:'ATT'},
+    {slot:'lw',grp:'ATT'},{slot:'rw',grp:'ATT'},
+  ]){
+    const a=avail(g); if(a.length){S.lineup[slot]=a[0];assigned.add(a[0].id);}
+  }
+  const allAssigned=new Set(Object.values(S.lineup).filter(Boolean).map(p=>p.id));
+  const rest=all.filter(p=>!allAssigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  BENCH_IDS.forEach((bid,i)=>{if(rest[i]){S.lineup[bid]=rest[i];}});
+  renderLineup();
+  if(!silent)showToast('Best available lineup set.',2200);
+}
+function clearLineup(){S.lineup={};renderLineup();}
+
+// ── Slot picker ────────────────────────────────────────────────────────
+let _activeSlotId=null;
+function openSlotPicker(slotId){
+  _activeSlotId=slotId;
+  const isBench=slotId.startsWith('b'), cfg=SLOT_CFG[slotId];
+  const posGrp=cfg?cfg.grp:'ANY', curr=S.lineup[slotId];
+  const allPlayers=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const inIds=new Set(Object.keys(S.lineup).filter(s=>s!==slotId&&S.lineup[s]).map(s=>S.lineup[s].id));
+  let avail=allPlayers.filter(p=>!inIds.has(p.id));
+  if(!isBench){const m=avail.filter(p=>grp(p.position)===posGrp);if(m.length)avail=m;}
+  avail.sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
+  const bIds=new Set(S.bought.map(b=>b.id));
+  document.getElementById('slotModalTitle').textContent=curr?`Replace ${curr.name.split(' ').pop()}`:isBench?'Add a substitute':`Pick a ${cfg?.lbl||'player'}`;
+  let html='';
+  if(curr) html+=`<div onclick="clearSlot()" style="background:#1a0a0a;border:1px solid #3a1a1a;border-radius:7px;padding:6px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px;"
+    onmouseover="this.style.background='#2a1010'" onmouseout="this.style.background='#1a0a0a'">
+    <span style="color:#f87171;font-size:14px;">✕</span><span style="font-size:11px;color:#f87171;">Remove from lineup</span>
+  </div>`;
+  html+=avail.map(p=>{
+    const r=mvToRating(p.marketValue), clr=ratingColor(r);
+    const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    const isNew=bIds.has(p.id);
+    return `<div onclick="assignSlot('${p.id}')" style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;${isNew?'border-left:2px solid #166534;':''}"
+      onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
+      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#9ca3af;flex-shrink:0;">${abbr}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${isNew?' <span style="font-size:7px;color:#4ade80;">★ new</span>':''}</div>
+        <div style="font-size:8px;color:#6b7280;">${p.position||''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:20px;font-weight:900;color:${clr};line-height:1;">${r}</div>
+        <div style="font-size:8px;color:#4b5563;">${fmt(p.marketValue)}</div>
+      </div>
+    </div>`;
+  }).join('')||'<div style="text-align:center;color:#6b7280;font-size:11px;padding:12px;">No available players</div>';
+  document.getElementById('slotPlayerList').innerHTML=html;
+  document.getElementById('slotModal').classList.add('open');
+}
+function assignSlot(pid){
+  const p=[...S.players,...S.bought].find(p=>p.id===pid);
+  if(p&&_activeSlotId){
+    for(const[sid,sp]of Object.entries(S.lineup)){if(sp&&sp.id===pid){delete S.lineup[sid];break;}}
+    S.lineup[_activeSlotId]=p;
+  }
+  document.getElementById('slotModal').classList.remove('open');
+  renderLineup();
+}
+function clearSlot(){
+  if(_activeSlotId)delete S.lineup[_activeSlotId];
+  document.getElementById('slotModal').classList.remove('open');
+  renderLineup();
+}
+function closeSlotModal(e){if(e&&e.target!==document.getElementById('slotModal'))return;document.getElementById('slotModal').classList.remove('open');}
+
+// ── Sell / Unsign ──────────────────────────────────────────────────────
+function sellPlayer(id,val){
+  S.sold.add(id);S.sales+=val;
+  for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===id){delete S.lineup[s];break;}}
+  render();updateSidebar();updateLineupCountBadges();
+}
+function unsignPlayer(id,val){
+  S.bought=S.bought.filter(p=>p.id!==id);S.spent-=val;
+  for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===id){delete S.lineup[s];break;}}
+  render();updateSidebar();updateLineupCountBadges();
+}
+
+// ── Sidebar update ─────────────────────────────────────────────────────
+function updateSidebar(){
+  const curVal=S.players.filter(p=>!S.sold.has(p.id)).reduce((a,p)=>a+(p.marketValue||0),0)
+              +S.bought.reduce((a,p)=>a+(p.marketValue||0),0);
+  document.getElementById('spentAmt').textContent=fmt(S.spent);
+  document.getElementById('salesAmt').textContent='+'+fmt(S.sales);
+  document.getElementById('squadValStr').textContent=fmt(curVal);
+
+  const net=S.spent-S.sales;
+  const netEl=document.getElementById('netSpend');
+  netEl.textContent=(net<0?'-':'')+fmt(Math.abs(net));
+  netEl.style.color=net<=0?'#4ade80':net<20e6?'#fbbf24':'#f87171';
+
+  const actual=SEASONS[S.season]?.netSpend||0, diff=net-actual;
+  const diffEl=document.getElementById('targetDiff');
+  if(diffEl){
+    if(Math.abs(diff)<1e6){
+      diffEl.textContent='On target';
+      diffEl.style.background='rgba(74,222,128,.15)';diffEl.style.color='#4ade80';
+    }else if(diff<0){
+      diffEl.textContent=fmt(Math.abs(diff))+' under — you\'re good';
+      diffEl.style.background='rgba(74,222,128,.1)';diffEl.style.color='#4ade80';
+    }else if(diff<=5e6){
+      diffEl.textContent=fmt(diff)+' over Wenger';
+      diffEl.style.background='rgba(251,191,36,.12)';diffEl.style.color='#fbbf24';
+    }else{
+      diffEl.textContent=fmt(diff)+' over — sell players first';
+      diffEl.style.background='rgba(248,113,113,.12)';diffEl.style.color='#f87171';
+    }
+  }
+
+  const iq=getBudgetIQ();
+  const iqEl=document.getElementById('budgetIQ');
+  iqEl.textContent=iq.label;iqEl.style.color=iq.color;
+
+  const used=S.bought.length, left=MAX_SIGNINGS-used;
+  document.getElementById('slotsLabel').textContent=`${left} left`;
+  document.getElementById('slotsLabel').style.color=left===0?'#f87171':'#e5e7eb';
+  document.getElementById('slotDots').innerHTML=
+    Array.from({length:MAX_SIGNINGS},(_,i)=>`<span class="slot-dot ${i<used?'slot-used':'slot-free'}"></span>`).join('');
+  // Simulate button — requires at least 1 signing AND net spend ≤ Wenger's + €5M
+  const btn=document.getElementById('simBtn');
+  if(btn){
+    const actual=SEASONS[S.season]?.netSpend||0;
+    const overBy=net-actual;
+    const tooOver=overBy>5e6;
+    const noSignings=used===0;
+    btn.disabled=noSignings||tooOver;
+    btn.style.opacity=(noSignings||tooOver)?'0.38':'1';
+    btn.style.cursor=(noSignings||tooOver)?'not-allowed':'pointer';
+    if(noSignings)btn.title='Make at least one signing to simulate';
+    else if(tooOver)btn.title=`€${(overBy/1e6).toFixed(1)}M over Wenger's actual net spend. Sell players or sign cheaper.`;
+    else btn.title='';
+  }
+  // Sync mobile bottom bar
+  const mob=document.getElementById('mobileBudget');
+  if(mob){
+    const m=SEASONS[S.season]||{};
+    mob.textContent=fmt(m.budget-net);
+    const mDiff=document.getElementById('mobileTargetDiff');
+    if(mDiff){
+      const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
+      if(Math.abs(diff2)<1e6){mDiff.textContent='On target';mDiff.style.color='#4ade80';}
+      else if(diff2<0){mDiff.textContent=fmt(Math.abs(diff2))+' under';mDiff.style.color='#4ade80';}
+      else if(diff2<=5e6){mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#fbbf24';}
+      else{mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#f87171';}
+    }
+    const mBtn=document.getElementById('mobileSimBtn');
+    if(mBtn){mBtn.disabled=(used===0)||((net-(SEASONS[S.season]?.netSpend||0))>5e6);}
+  }
+  updateLineupCountBadges();
+}
+
+// ── Squad render ───────────────────────────────────────────────────────
+function render(){
+  document.getElementById('loadingState').style.display='none';
+  const el=document.getElementById('squadGrid');
+  el.style.display='grid';
+  const groups={GK:[],DEF:[],MID:[],ATT:[]};
+  S.players.forEach(p=>groups[grp(p.position)].push(p));
+  el.innerHTML=GROUPS.map(g=>{
+    const ps=groups[g], active=ps.filter(p=>!S.sold.has(p.id)).length;
+    return `
+      <div style="display:flex;flex-direction:column;border-right:1px solid #1f2937;overflow:hidden;">
+        <div class="col-hdr">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="badge ${GRP_CSS[g]}">${g}</span>
+            <span style="font-size:9px;color:#6b7280;">${GRP_LBL[g]}</span>
+            <span style="font-size:8px;color:#374151;">${active}</span>
+          </div>
+          <button class="add-btn" onclick="openModal('${g}')" title="Sign a player">+</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:3px 4px 6px;">
+          ${ps.map(p=>playerCell(p)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  renderSignings();
+}
+function playerCell(p){
+  const sold=S.sold.has(p.id);
+  const c=GRP_COL[grp(p.position)]||'#6b7280';
+  return `
+    <div class="crow${sold?' sold':''}">
+      <div style="width:3px;align-self:stretch;min-height:14px;border-radius:1px;background:${c};flex-shrink:0;margin-top:1px;"></div>
+      <span style="flex:1;min-width:0;font-size:10px;font-weight:600;line-height:1.4;word-break:break-word;">${p.name}</span>
+      ${sold
+        ? '<span style="font-size:7px;color:#374151;flex-shrink:0;padding-top:2px;">sold</span>'
+        : `<button class="sell-btn" style="margin-top:1px;" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
+    </div>`;
+}
+function renderSignings(){
+  const area=document.getElementById('signingsArea'), strip=document.getElementById('signingsStrip');
+  if(!S.bought.length){area.style.display='none';return;}
+  area.style.display='block';
+  strip.innerHTML=S.bought.map(p=>`
+    <div class="signing-card">
+      <span class="badge ${GRP_CSS[grp(p.position)]}">${grp(p.position)}</span>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
+        <div style="font-size:8px;color:#4ade80;">${fmt(p.marketValue)}</div>
+      </div>
+      <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
+    </div>`).join('');
+}
+
+// ── Load season ────────────────────────────────────────────────────────
+async function loadSeason(yr){
+  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};
+  const m=SEASONS[yr]||{};
+  document.getElementById('budgetAmt').textContent=fmt(m.budget);
+  document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
+  const mob=document.getElementById('mobileBudget');if(mob)mob.textContent=fmt(m.budget);
+  document.getElementById('actualNote').textContent=m.note||'';
+  document.getElementById('actualResult').textContent='';
+  const seasonLabel=`${yr}/${String(yr+1).slice(-2)}`;
+  const loadEl=document.getElementById('loadingState');
+  const lblEl=document.getElementById('loadingLabel');
+  if(lblEl)lblEl.textContent=`Loading ${seasonLabel} squad`;
+  loadEl.style.display='flex';
+  loadEl.innerHTML=`
+    <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
+    <div style="font-size:13px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading ${seasonLabel}</div>
+    <div style="font-size:9px;color:#4b5563;">Fetching squad from Transfermarkt</div>`;
+  document.getElementById('squadGrid').style.display='none';
+  document.getElementById('signingsArea').style.display='none';
+  document.getElementById('lineupModal').classList.remove('open');
+  updateLineupCountBadges();
+  try {
+    const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    S.players=(d.players||[]).filter(p=>p.name);
+    render();updateSidebar();
+  } catch(e){
+    loadEl.innerHTML=`
+      <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Failed to load squad</div>
+      <div style="font-size:9px;color:#4b5563;">Is the API running on port 8001?</div>`;
+  }
+}
+
+// ── Sign modal ─────────────────────────────────────────────────────────
+let _grp=null,_timer=null;
+function openModal(g){
+  if(S.bought.length>=MAX_SIGNINGS){showToast(`Transfer window full. ${MAX_SIGNINGS} signings already made.`);return;}
+  _grp=g;
+  document.getElementById('modalTitle').textContent=`Sign a ${GRP_LBL[g].slice(0,-1)}`;
+  document.getElementById('modalSub').textContent=`${S.season}/${String(S.season+1).slice(-2)} · ${MAX_SIGNINGS-S.bought.length} slot${MAX_SIGNINGS-S.bought.length===1?'':'s'} left`;
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchResults').innerHTML='';
+  document.getElementById('searchHint').textContent=`Type to search. ${S.season}/${String(S.season+1).slice(-2)} era.`;
+  const targets=SEASONS[S.season]?.targets||[];
+  const chips=document.getElementById('targetChips');
+  if(targets.length){
+    chips.style.display='flex';
+    chips.innerHTML=`<span style="font-size:8px;color:#4b5563;font-weight:600;text-transform:uppercase;letter-spacing:.05em;align-self:center;white-space:nowrap;">Rumoured:</span>`
+      +targets.map(name=>`<button onclick="searchTarget('${esc(name)}')" style="background:#1a2535;border:1px solid #374151;border-radius:9999px;padding:3px 9px;font-size:9px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
+        onmouseover="this.style.borderColor='#EF0107';this.style.color='#EF0107'"
+        onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">${name}</button>`).join('');
+  } else {chips.style.display='none';chips.innerHTML='';}
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('searchInput').focus();
+}
+function searchTarget(n){const i=document.getElementById('searchInput');i.value=n;debounce(n);}
+function closeModal(e){if(e&&e.target!==document.getElementById('addModal'))return;document.getElementById('addModal').classList.remove('open');}
+function debounce(q){clearTimeout(_timer);if(q.length<2){document.getElementById('searchResults').innerHTML='';return;}_timer=setTimeout(()=>doSearch(q),380);}
+
+// ── Historical value fetch ─────────────────────────────────────────────
+async function fetchHistoricalValue(pid,yr){
+  try{
+    const r=await fetch(`${API}/players/${pid}/market_value`);
+    if(!r.ok)return null;
+    const d=await r.json();
+    const history=d.marketValueHistory||[];
+    if(!history.length)return null;
+    const target=new Date(yr,9,1).getTime();
+    let best=null,bestDiff=Infinity;
+    for(const e of history){
+      if(!e.date)continue;
+      const diff=Math.abs(new Date(e.date).getTime()-target);
+      if(diff<bestDiff){bestDiff=diff;best=e;}
+    }
+    return best?{value:best.marketValue||null,club:best.clubName||null}:null;
+  }catch(e){return null;}
+}
+
+// ── Search ─────────────────────────────────────────────────────────────
+async function doSearch(q){
+  const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
+  hint.textContent='Searching…';
+  // Skeleton cards while waiting for search results
+  box.innerHTML=Array.from({length:4},()=>`
+    <div style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;opacity:.4;">
+      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="background:#1f2937;height:9px;border-radius:3px;width:55%;margin-bottom:5px;"></div>
+        <div style="background:#1f2937;height:7px;border-radius:3px;width:35%;"></div>
+      </div>
+      <div style="background:#1f2937;height:9px;border-radius:3px;width:28px;"></div>
+    </div>`).join('');
+  try{
+    const r=await fetch(`${API}/players/search/${encodeURIComponent(q)}`);
+    const d=await r.json();
+    const allResults=(d.results||[]).slice(0,14);
+    const squadIds=new Set(S.players.map(p=>p.id)), boughtIds=new Set(S.bought.map(p=>p.id));
+    const budget=SEASONS[S.season]?.budget||0, remaining=budget-S.spent+S.sales;
+    const eraFiltered=allResults.filter(p=>!eraCheck(p.age));
+    // Filter by position group when modal was opened from a position column
+    const posFiltered=_grp?eraFiltered.filter(p=>!p.position||grp(p.position)===_grp):eraFiltered;
+    const results=posFiltered.length>0?posFiltered:eraFiltered; // fall back to all if pos filter kills everything
+    const posFiltering=_grp&&posFiltered.length>0&&posFiltered.length<eraFiltered.length;
+    const hiddenByAge=allResults.length-eraFiltered.length;
+    if(!results.length){
+      hint.textContent=hiddenByAge?`${hiddenByAge} found but none active in ${S.season}/${String(S.season+1).slice(-2)}`:'No results';
+      box.innerHTML='<div style="text-align:center;color:#6b7280;font-size:11px;padding:12px;">No players from this era matched</div>';
+      return;
+    }
+    const posLabel=posFiltering?` · ${GRP_LBL[_grp]?.toLowerCase()||_grp} only`:'';
+    hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · loading ${S.season} data…`;
+    box.innerHTML=results.map(p=>{
+      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
+      const currClub=p.club?.name||'', isRetired=!currClub.trim()||/retired/i.test(currClub);
+      const isHardRival=!isRetired&&HARD_RIVALS.some(rv=>currClub.includes(rv));
+      const isSoftRival=!isRetired&&!isHardRival&&SOFT_RIVALS.some(rv=>currClub.includes(rv));
+      const isAnyRival=isHardRival||isSoftRival;
+      const tooExp=!isRetired&&!isAnyRival&&p.marketValue&&p.marketValue>remaining;
+      const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      let badgeTxt,badgeClr,initBlocked;
+      if(inSquad){badgeTxt='In squad';badgeClr='#6b7280';initBlocked=true;}
+      else if(isHardRival){badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
+      else if(isSoftRival){badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
+      else if(isRetired){badgeTxt='Loading era…';badgeClr='#4b5563';initBlocked=false;}
+      else if(tooExp){badgeTxt='Over budget';badgeClr='#fbbf24';initBlocked=false;}
+      else{badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
+      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${p.marketValue||0}" data-blocked="${initBlocked}"
+          data-soft-rival="${isSoftRival}" data-era-club=""
+          onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(currClub)}')"
+          data-hard-rival="${isHardRival}"
+          style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${initBlocked?'.38':'1'};"
+          onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
+          <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+            <div data-sub style="font-size:8px;color:#6b7280;">${p.position||''}<span data-club-loading style="color:#2d3748;"> · ···</span></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-bottom:2px;">
+              <div class="spin" data-loading style="width:8px;height:8px;border:1.5px solid #2d3748;border-top-color:#60a5fa;border-radius:50%;flex-shrink:0;${isRetired||isAnyRival?'':''}"></div>
+              <div data-mv style="font-size:10px;font-weight:700;color:#6b7280;">—</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;justify-content:flex-end;">
+              <span data-badge style="font-size:9px;color:${badgeClr};">${badgeTxt}</span>
+              <span data-mv-note style="font-size:7px;color:#374151;"></span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
+    let done=0;
+    results.forEach(p=>{
+      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
+      const currClub=p.club?.name||'', isRetired=!currClub.trim()||/retired/i.test(currClub);
+      fetchHistoricalValue(p.id,yr).then(hist=>{
+        done++;
+        if(done===results.length)hint.textContent=`${results.length} result${results.length===1?'':'s'} · ${yrLabel} values loaded`;
+        const card=document.getElementById(`pcard-${p.id}`);
+        if(!card)return;
+        const mvEl=card.querySelector('[data-mv]'),noteEl=card.querySelector('[data-mv-note]');
+        const bdgEl=card.querySelector('[data-badge]'),subEl=card.querySelector('[data-sub]');
+        const loadEl=card.querySelector('[data-loading]');
+        const clubLoadingEl=card.querySelector('[data-club-loading]');
+        if(loadEl)loadEl.style.display='none';
+        if(clubLoadingEl)clubLoadingEl.remove();
+        if(!hist){
+          if(isRetired){
+            if(bdgEl){bdgEl.textContent='Retired by then';bdgEl.style.color='#374151';}
+            card.style.opacity='0.2';card.dataset.blocked='true';
+          }
+          if(mvEl){mvEl.textContent='—';mvEl.style.color='#374151';}
+          return;
+        }
+        if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
+        if(hist.value)card.dataset.value=hist.value;
+        if(noteEl)noteEl.textContent=yrLabel;
+        if(subEl){
+          const clubPart=hist.club?' · '+hist.club:'';
+          subEl.textContent=(p.position||'')+clubPart;
+        }
+        card.dataset.eraClub=hist.club||'';
+        if(inSquad)return;
+        const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
+        const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
+        if(eraHardRival){
+          card.dataset.blocked='false';card.dataset.softRival='false';card.dataset.hardRival='true';card.style.opacity='1';
+          const remaining2=budget-S.spent+S.sales;
+          const t2=hist.value&&hist.value>remaining2;
+          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
+        }else if(eraSoftRival){
+          card.dataset.blocked='false';card.dataset.softRival='true';card.style.opacity='1';
+          const remaining2=budget-S.spent+S.sales;
+          const t2=hist.value&&hist.value>remaining2;
+          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
+        }else{
+          card.dataset.blocked='false';card.dataset.softRival='false';card.style.opacity='1';
+          const remaining2=budget-S.spent+S.sales;
+          const t2=hist.value&&hist.value>remaining2;
+          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
+        }
+      });
+    });
+  }catch(e){hint.textContent='Search failed. Is the API running?';box.innerHTML='';}
+}
+
+function handleCardClick(card,name,position,currClub){
+  const ec=card.dataset.eraClub||currClub;
+  const lastName=name.split(' ').pop();
+
+  // Hard rival — clickable but always refuses
+  if(card.dataset.hardRival==='true'&&HARD_RIVALS.some(r=>ec.includes(r))){
+    showToast(`${lastName} does not want to join Arsenal.`);
+    return;
+  }
+  // Blocked (in squad, retired-by-era, etc.)
+  if(card.dataset.blocked==='true'){
+    showToast(`${lastName} refused to negotiate, unwilling to move to Arsenal.`);
+    return;
+  }
+
+  const budget=SEASONS[S.season]?.budget||0;
+  const remaining=budget-S.spent+S.sales;
+  let value=parseInt(card.dataset.value)||0;
+
+  // Soft rival — 50% refuse, 50% accept (sometimes with premium)
+  if(card.dataset.softRival==='true'&&SOFT_RIVALS.some(r=>ec.includes(r))){
+    if(Math.random()<0.5){
+      showToast(`${lastName} doesn't want to leave for Arsenal. Try again.`);
+      return;
+    }
+    // Accepted — 50% chance of premium
+    if(Math.random()<0.5){
+      const premium=Math.round((5+Math.random()*5)*1e6);
+      value+=premium;
+      showToast(`${lastName} agrees to join, but ${ec.split(' ').slice(-1)[0]} demands a ${fmt(premium)} premium.`,3500);
+    }else{
+      showToast(`${lastName} has agreed to join. A lucky break!`);
+    }
+  }
+
+  // Over budget check
+  if(value>remaining){
+    showToast(`Cannot sign ${lastName}, exceeds your remaining budget of ${fmt(Math.max(0,remaining))}.`);
+    return;
+  }
+
+  if(S.bought.length>=MAX_SIGNINGS){showToast('Transfer window full.');return;}
+
+  // Specific position stacking check
+  if(position){
+    const sd=checkSpecificPositionDepth(position);
+    if(sd.blocked){
+      showToast(`The club said no. ${sd.qualCount} quality ${position}s already in the squad, this spot is stacked.`);
+      document.getElementById('addModal').classList.remove('open');
+      return;
+    }
+  }
+
+  S.bought.push({id:card.dataset.id,name,position,marketValue:value});S.spent+=value;
+  checkEliteSquadCap();
+  document.getElementById('addModal').classList.remove('open');
+  render();updateSidebar();updateLineupCountBadges();
+}
+
+// ── Chaos Engine ───────────────────────────────────────────────────────
+function weightedPick(pool, n) {
+  const result=[], remaining=[...pool];
+  for(let i=0;i<n&&remaining.length>0;i++){
+    const total=remaining.reduce((s,e)=>s+e.w,0);
+    let rnd=Math.random()*total;
+    const idx=remaining.findIndex(e=>{rnd-=e.w;return rnd<=0;});
+    const pick=idx>=0?idx:0;
+    result.push(remaining[pick]);
+    remaining.splice(pick,1);
+  }
+  return result;
+}
+
+function drawSeasonEvents(xi, bought) {
+  const pool=[];
+  const star=[...xi].sort((a,b)=>mvToRating(b.marketValue)-mvToRating(a.marketValue))[0];
+  const starRating=star?mvToRating(star.marketValue):0;
+  const starName=star?star.name.split(' ').pop():'key player';
+  const qualSigning=bought.find(p=>mvToRating(p.marketValue)>=82);
+  const goodSigning=bought.find(p=>mvToRating(p.marketValue)>=79);
+
+  // Build candidate pool with weights (higher w = more likely to be picked)
+  // Injuries/red cards are low-weight — they happen, just not every season
+  if(starRating>=83){
+    pool.push({icon:'🤕',text:`${starName} picked up a knee injury and missed six weeks.`,mod:-2,w:8});
+  }
+  if(starRating>=81){
+    pool.push({icon:'🤕',text:`${starName} managed a niggling hamstring issue through most of the campaign.`,mod:-1,w:6});
+  }
+  if(qualSigning){
+    const nm=qualSigning.name.split(' ').pop();
+    pool.push({icon:'😤',text:`${nm} agitated for a move in January. Wenger persuaded him to stay.`,mod:-1,w:9});
+  }
+  // Ref events — low frequency
+  pool.push({icon:'🟥',text:'Two controversial red cards in key games cost Arsenal crucial points.',mod:-2,w:8});
+  pool.push({icon:'🟡',text:'A penalty decision at the Emirates in November went against Arsenal.',mod:-1,w:10});
+  pool.push({icon:'🟢',text:'Wenger had the officials to thank in a crucial away win in February.',mod:+1,w:9});
+  // Form events — these are the meat
+  pool.push({icon:'📉',text:`Arsenal won just one in six during a difficult ${Math.random()<0.5?'winter':'autumn'} run.`,mod:-3,w:20});
+  pool.push({icon:'💪',text:'An 8-game unbeaten run in October put Arsenal in the driving seat.',mod:+4,w:18});
+  pool.push({icon:'😰',text:'Arsenal blew a 4-point lead with 8 games to go.',mod:-3,w:16});
+  pool.push({icon:'🏃',text:'A relentless fixture pile-up in December took its toll on the squad.',mod:-2,w:14});
+  if(goodSigning){
+    const nm=goodSigning.name.split(' ').pop();
+    pool.push({icon:'⭐',text:`${nm} settled instantly and produced the best spell of his Arsenal career.`,mod:+3,w:20});
+  }
+  pool.push({icon:'💪',text:'The team spirit was exceptional. Very few internal issues all season.',mod:+2,w:18});
+  pool.push({icon:'📣',text:"'Wenger Out' banners in the North Bank by March. The atmosphere was toxic.",mod:-2,w:10});
+  pool.push({icon:'🎯',text:'Set-piece coaching finally clicked. 7 goals from corners in the second half.',mod:+2,w:14});
+  pool.push({icon:'🏟️',text:'No major injury concerns all season. Full squad available for run-in.',mod:+2,w:16});
+
+  // 25% chance of a quiet season with just 1 event; otherwise 2
+  const count=Math.random()<0.25?1:2;
+  const picked=weightedPick(pool, count);
+  const rawMod=picked.reduce((a,e)=>a+e.mod,0);
+  const ptsMod=Math.max(-6,Math.min(5,rawMod));
+  return {events:picked, ptsMod};
+}
+
+// ── Simulation ─────────────────────────────────────────────────────────
+function runSimulation(){
+  if(!S.bought.length){showToast('Make at least one signing first.');return;}
+  const netCheck=(S.spent-S.sales)-(SEASONS[S.season]?.netSpend||0);
+  if(netCheck>5e6){showToast(`You have gone ${(netCheck/1e6).toFixed(1)}M over Wenger's real net spend. Sell some players first.`,4000);return;}
+  const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  if(!allActive.length){showToast('Load a season first.');return;}
+
+  S.simCount++;
+  const cntEl=document.getElementById('simCountDisplay');
+  if(cntEl){
+    cntEl.textContent=S.simCount;
+    cntEl.classList.remove('count-pop');
+    void cntEl.offsetWidth; // reflow to restart animation
+    cntEl.classList.add('count-pop');
+  }
+
+  // Always use best auto-XI for scoring (regardless of manual lineup)
+  const scoringXI=getAutoXI(allActive);
+  const {f1,f2,f3,f4,total,ar}=computeRebuildScore(scoringXI,S.bought);
+  const iq=getBudgetIQ();
+
+  // Draw chaos events before computing points
+  const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
+
+  // Points estimate — FM-style line-by-line comparison vs rivals
+  const historicalRow=ACTUAL_TABLE[S.season]?.find(r=>r.club==='Arsenal');
+  const historicalPts=historicalRow?.pts||68;
+
+  // Arsenal's three line ratings from auto-XI
+  const lines=computeLineRatings(scoringXI);
+
+  // vs Top 4 rivals (8 games): compare each line, get pts delta
+  const rivals=RIVAL_STRENGTH[S.season]||{};
+  let vsTop4Delta=0;
+  for(const rStr of Object.values(rivals)){
+    const gameEdge=(lines.att-rStr.def)*0.35+(lines.def-rStr.att)*0.35+(lines.mid-rStr.mid)*0.3;
+    vsTop4Delta+=Math.round(gameEdge*0.2*2); // 2 games per rival
+  }
+  vsTop4Delta=Math.max(-9,Math.min(9,vsTop4Delta));
+
+  // vs Rest of table (30 games): squad overall vs league average
+  const LEAGUE_AVG=73;
+  const arsenalOverall=Math.round(lines.def*0.35+lines.mid*0.3+lines.att*0.35);
+  const vsRestDelta=Math.max(-6,Math.min(8,Math.round((arsenalOverall-LEAGUE_AVG)*0.5)));
+
+  const totalDelta=vsTop4Delta+vsRestDelta+Math.round(iq.bonus*0.3)+Math.round((Math.random()-.5)*4)+ptsMod;
+  let simPts=Math.max(30,Math.min(99,historicalPts+totalDelta));
+
+  // Build table, find Arsenal position
+  let table=buildSimTable(simPts,S.season);
+  let arsenalPos=table.findIndex(r=>r.yours)+1;
+
+  // 50% cap on 1st place — Arsenal don't always win even with a better squad
+  if(arsenalPos===1&&Math.random()<0.5){
+    const rivals=ACTUAL_TABLE[S.season]?.filter(r=>r.club!=='Arsenal')||[];
+    const topRival=rivals.sort((a,b)=>b.pts-a.pts)[0];
+    if(topRival){
+      simPts=Math.max(topRival.pts-1,simPts-3);
+      table=buildSimTable(simPts,S.season);
+      arsenalPos=table.findIndex(r=>r.yours)+1;
+    }
+  }
+
+  const wdl=wdlFromPts(simPts);
+  const scorer=predictTopScorer(scoringXI);
+  const assister=predictTopAssister(scoringXI);
+  const verdict=rebuildVerdict(total);
+  const topRival=LEAGUE_BENCHMARK[S.season]?.teams[0];
+
+  _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season};
+
+  // ── Position display ───────────────────────────────────────────────
+  let emoji,title,posColor;
+  if(arsenalPos===1){emoji='🏆';title='Premier League Champions';posColor='#fbbf24';}
+  else if(arsenalPos===2){emoji='🥈';title='Runners-Up';posColor='#d1d5db';}
+  else if(arsenalPos<=4){emoji='⚽';title='Champions League spot';posColor='#60a5fa';}
+  else if(arsenalPos<=6){emoji='😔';title='Europa League place';posColor='#fb923c';}
+  else{emoji='😤';title='Wenger Out territory';posColor='#f87171';}
+  document.getElementById('simEmoji').textContent=emoji;
+  document.getElementById('simPosition').textContent=ordinal(arsenalPos);
+  document.getElementById('simPosition').style.color=posColor;
+  document.getElementById('simTitle').textContent=title;
+  document.getElementById('simPts').textContent=`~${simPts} pts · ${S.season}/${String(S.season+1).slice(-2)}`;
+  document.getElementById('simSeasonLabel').textContent=`${S.season}/${String(S.season+1).slice(-2)} rebuild`;
+  const ctxEl=document.getElementById('simSeasonContext');
+  if(ctxEl)ctxEl.textContent=SEASON_SUMMARY[S.season]||'No historical context available for this season.';
+
+  // Top 4 table
+  document.getElementById('simTable').innerHTML=table.map(row=>{
+    const isArsenal=row.yours;
+    const pC=row.pos===1?'#fbbf24':row.pos<=4?'#6b7280':'#374151';
+    const maxPts=table[0].pts||89;
+    const barW=Math.round(row.pts/maxPts*100);
+    return `<div class="table-row${isArsenal?' yours':''}">
+      <span style="font-size:10px;font-weight:900;color:${pC};width:14px;flex-shrink:0;">${row.pos}</span>
+      <span style="flex:1;font-size:10.5px;font-weight:${isArsenal?'800':'600'};color:${isArsenal?'#fff':'#9ca3af'};">
+        ${isArsenal?'Arsenal ★':row.club}
+      </span>
+      <div style="width:60px;height:3px;background:#1f2937;border-radius:2px;overflow:hidden;flex-shrink:0;">
+        <div style="height:100%;width:${barW}%;background:${isArsenal?'#EF0107':pC};border-radius:2px;"></div>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:${isArsenal?'#EF0107':pC};flex-shrink:0;min-width:26px;text-align:right;">${row.pts}</span>
+    </div>`;
+  }).join('');
+
+  // W/D/L
+  document.getElementById('simW').textContent=wdl.W;
+  document.getElementById('simD').textContent=wdl.D;
+  document.getElementById('simL').textContent=wdl.L;
+
+  // Performers
+  if(scorer){document.getElementById('simTopScorer').textContent=scorer.name;document.getElementById('simTopScorerGoals').textContent=`${scorer.goals} goals`;}
+  if(assister){document.getElementById('simTopAssist').textContent=assister.name;document.getElementById('simTopAssistNum').textContent=`${assister.assists} assists`;}
+
+  // Season events
+  const eventsEl=document.getElementById('simEvents');
+  eventsEl.innerHTML=events.length
+    ?events.map(e=>{
+      const modClr=e.mod>0?'#4ade80':e.mod<0?'#f87171':'#6b7280';
+      const modTxt=e.mod>0?`+${e.mod} pts`:`${e.mod} pts`;
+      return `<div style="display:flex;align-items:flex-start;gap:7px;padding:5px 7px;background:#111827;border-radius:6px;">
+        <span style="font-size:13px;flex-shrink:0;line-height:1.3;">${e.icon}</span>
+        <span style="flex:1;font-size:9px;color:#9ca3af;line-height:1.5;">${e.text}</span>
+        <span style="font-size:8px;font-weight:700;color:${modClr};flex-shrink:0;white-space:nowrap;">${modTxt}</span>
+      </div>`;
+    }).join('')
+    :'<div style="font-size:9px;color:#374151;padding:4px 7px;">A clean, uneventful season. Somehow.</div>';
+
+  // Budget IQ
+  const biqEl=document.getElementById('simBudgetIQ');
+  biqEl.textContent=iq.label;biqEl.style.color=iq.color;
+
+  // Debug panel (hidden — revealed by secret trigger)
+  document.getElementById('dbgScore').textContent=total;
+  document.getElementById('dbgScore').style.color=verdict.color;
+  document.getElementById('dbgVerdict').textContent=verdict.label;
+  const bars=[
+    {label:'Squad Balance',  score:f1, max:35},
+    {label:'vs Top 4',       score:f2, max:30},
+    {label:'Attack/Defense', score:f3, max:20},
+    {label:'Player Legacy',  score:f4, max:15},
+  ];
+  document.getElementById('dbgBreakdown').innerHTML=bars.map(b=>{
+    const pct=Math.round(b.score/b.max*100);
+    const c=pct>=70?'#4ade80':pct>=45?'#60a5fa':'#9ca3af';
+    return `<div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+      <span style="font-size:8px;color:#4b5563;">${b.label}</span>
+      <span style="font-size:8px;font-weight:700;color:${c};">${b.score}/${b.max}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('resultModal').classList.add('open');
+}
+function closeResult(){document.getElementById('resultModal').classList.remove('open');}
+
+// ── Share result ───────────────────────────────────────────────────────
+function generateShareText(){
+  const pos=document.getElementById('simPosition').textContent;
+  const title=document.getElementById('simTitle').textContent;
+  const pts=document.getElementById('simPts').textContent;
+  const season=document.getElementById('simSeasonLabel').textContent;
+  const scorer=document.getElementById('simTopScorer').textContent;
+  const goals=document.getElementById('simTopScorerGoals').textContent;
+  const signings=S.bought.map(p=>p.name).join(', ')||'none';
+  return `Arsenal Rebuild Simulator\n${season}: ${pos} Place, ${title}\n${pts}\n\nTop scorer: ${scorer} (${goals})\nSignings: ${signings}`;
+}
+
+async function shareResult(){
+  const btn=document.getElementById('shareBtn');
+  const origHTML=btn.innerHTML;
+  btn.innerHTML='<span>⏳</span><span>Capturing…</span>';
+  btn.disabled=true;
+  try{
+    const section=document.getElementById('shareCard');
+    if(typeof html2canvas!=='undefined'&&section){
+      const canvas=await html2canvas(section,{
+        backgroundColor:'#0a1628',scale:2,useCORS:true,logging:false,
+      });
+      canvas.toBlob(async blob=>{
+        if(!blob){throw new Error('Canvas failed');}
+        const file=new File([blob],'arsenal-rebuild.png',{type:'image/png'});
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'Arsenal Rebuild Simulator',text:generateShareText()});
+          btn.innerHTML='<span>✓</span><span>Shared!</span>';
+        }else{
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');a.href=url;a.download='arsenal-rebuild.png';a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),3000);
+          btn.innerHTML='<span>⬇️</span><span>Saved!</span>';
+          showToast('Screenshot saved. Share it anywhere!',3000);
+        }
+        setTimeout(()=>{btn.innerHTML=origHTML;btn.disabled=false;},2200);
+      },'image/png');
+    }else throw new Error('html2canvas not ready');
+  }catch(err){
+    const text=generateShareText();
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(()=>showToast('Result copied to clipboard!',3000));
+    }else{
+      const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+      showToast('Result copied!',3000);
+    }
+    btn.innerHTML='<span>📋</span><span>Copied!</span>';
+    setTimeout(()=>{btn.innerHTML=origHTML;btn.disabled=false;},2200);
+  }
+}
+
+// ── Squad Analysis Modal ───────────────────────────────────────────────
+function openSquadAnalysis(){
+  if(!_lastSimData){return;}
+  const{ar,topRival,f1,f2,f3,f4,season}=_lastSimData;
+
+  // Position ratings grid
+  document.getElementById('saRatingsGrid').innerHTML=
+    [['GK',ar.gk,topRival?.gk],['DEF',ar.def,topRival?.def],['MID',ar.mid,topRival?.mid],['FWD',ar.fwd,topRival?.fwd]].map(([lbl,r,rival])=>{
+      const diff=rival!=null?r-rival:null;
+      const dt=diff===null?'':(diff>=0?`+${diff}`:String(diff));
+      const dc=diff===null?'':(diff>=0?'#4ade80':'#f87171');
+      return `<div style="background:#111827;border-radius:7px;padding:8px 5px;text-align:center;">
+        <div style="font-size:22px;font-weight:900;color:${ratingColor(r)};line-height:1;">${r}</div>
+        <div style="font-size:6.5px;color:#4b5563;margin:2px 0 3px;font-weight:700;">${lbl}</div>
+        ${rival!=null?`<div style="font-size:8px;font-weight:700;color:${dc};">${dt} vs ${(topRival.club||'').split(' ').pop()}</div>`:''}
+      </div>`;
+    }).join('');
+
+  // Weakness
+  const w=SEASON_WEAKNESSES[season]||{};
+  document.getElementById('saWeaknessDesc').textContent=w.desc||'No data for this season.';
+  document.getElementById('saGapChips').innerHTML=(w.gaps||[]).map(g=>`
+    <span style="background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 9px;font-size:8px;font-weight:700;color:${GRP_COL[g]||'#9ca3af'};">
+      ${GRP_LBL[g]||g} needed
+    </span>`).join('');
+
+  // Signing assessment
+  const gaps=w.gaps||[];
+  document.getElementById('saSignings').innerHTML=S.bought.length
+    ?S.bought.map(p=>{
+      const pGrp=grp(p.position);
+      const addressed=gaps.some(g=>g===pGrp);
+      const r=mvToRating(p.marketValue), clr=ratingColor(r);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;background:#111827;">
+        <div style="width:3px;height:22px;border-radius:1px;background:${GRP_COL[pGrp]||'#6b7280'};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+          <div style="font-size:7.5px;color:#6b7280;">${p.position||''} · ${fmt(p.marketValue)}</div>
+        </div>
+        <div style="font-size:18px;font-weight:900;color:${clr};flex-shrink:0;min-width:24px;text-align:center;">${r}</div>
+        <span style="font-size:8px;font-weight:700;flex-shrink:0;${addressed?'color:#4ade80':'color:#374151'};">${addressed?'✓ Gap filled':'–'}</span>
+      </div>`;
+    }).join('')
+    :'<div style="text-align:center;color:#374151;font-size:10px;padding:10px;">No signings made</div>';
+
+  document.getElementById('squadAnalysisModal').classList.add('open');
+}
+function closeSquadAnalysis(){document.getElementById('squadAnalysisModal').classList.remove('open');}
+
+// ── Secret debug trigger (triple-tap AFC logo) ─────────────────────────
+let _secretTaps=0, _secretTimer;
+function secretTap(){
+  _secretTaps++;
+  clearTimeout(_secretTimer);
+  _secretTimer=setTimeout(()=>_secretTaps=0,900);
+  if(_secretTaps>=3){
+    _secretTaps=0;
+    const panel=document.getElementById('debugPanel');
+    if(panel){panel.style.display=panel.style.display==='none'?'block':'none';}
+  }
+}
+
+document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));
+loadSeason(2010);
+</script>
+</body>
+</html>
