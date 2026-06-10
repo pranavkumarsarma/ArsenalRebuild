@@ -1402,26 +1402,34 @@ function runSimulation(){
   // Draw chaos events before computing points
   const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
 
-  // Points estimate — FM-style line-by-line comparison vs rivals
+  // Points estimate — improvement over Arsenal's own historical baseline
   const historicalRow=ACTUAL_TABLE[S.season]?.find(r=>r.club==='Arsenal');
   const historicalPts=historicalRow?.pts||68;
 
-  // Arsenal's three line ratings from auto-XI
-  const lines=computeLineRatings(scoringXI);
+  // Baseline: Arsenal's historical squad WITHOUT new signings (sold players already removed)
+  const baseXI=getAutoXI(S.players.filter(p=>!S.sold.has(p.id)));
+  const baseLines=computeLineRatings(baseXI);
+  // New: Arsenal's XI WITH signings
+  const newLines=computeLineRatings(scoringXI);
 
-  // vs Top 4 rivals (8 games): compare each line, get pts delta
+  // How much did each line actually improve (or drop) from signings?
+  const defDelta=newLines.def-baseLines.def;
+  const midDelta=newLines.mid-baseLines.mid;
+  const attDelta=newLines.att-baseLines.att;
+
+  // vs Top 4 rivals: how much does the line improvement help in those 8 games?
   const rivals=RIVAL_STRENGTH[S.season]||{};
   let vsTop4Delta=0;
   for(const rStr of Object.values(rivals)){
-    const gameEdge=(lines.att-rStr.def)*0.35+(lines.def-rStr.att)*0.35+(lines.mid-rStr.mid)*0.3;
-    vsTop4Delta+=Math.round(gameEdge*0.2*2); // 2 games per rival
+    // Weighted improvement across all lines for this matchup
+    const edgeDelta=attDelta*0.35+defDelta*0.35+midDelta*0.3;
+    vsTop4Delta+=edgeDelta*0.25*2; // 2 games per rival, accumulate as float
   }
-  vsTop4Delta=Math.max(-9,Math.min(9,vsTop4Delta));
+  vsTop4Delta=Math.round(Math.max(-8,Math.min(10,vsTop4Delta)));
 
-  // vs Rest of table (30 games): squad overall vs league average
-  const LEAGUE_AVG=73;
-  const arsenalOverall=Math.round(lines.def*0.35+lines.mid*0.3+lines.att*0.35);
-  const vsRestDelta=Math.max(-6,Math.min(8,Math.round((arsenalOverall-LEAGUE_AVG)*0.5)));
+  // vs Rest of table (30 games): overall line improvement vs league average
+  const overallDelta=defDelta*0.35+midDelta*0.3+attDelta*0.35;
+  const vsRestDelta=Math.round(Math.max(-5,Math.min(7,overallDelta*0.5)));
 
   const totalDelta=vsTop4Delta+vsRestDelta+Math.round(iq.bonus*0.3)+Math.round((Math.random()-.5)*4)+ptsMod;
   let simPts=Math.max(30,Math.min(99,historicalPts+totalDelta));
