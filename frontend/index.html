@@ -574,42 +574,64 @@ const ACTUAL_TABLE = {
   2015:[{club:'Leicester',pts:81},{club:'Arsenal',pts:71},{club:'Tottenham',pts:70},{club:'Man City',pts:66}],
 };
 
-// ── Rival line strengths per season (DEF/MID/ATT ratings, same scale as mvToRating) ──
+// ── Rival line strengths per season (DEF/MID/ATT + granular positional ratings) ──
+// lb/rb/cb/lw/rw/cm/st used for duel matchup simulation
 const RIVAL_STRENGTH = {
   2009: {
-    'Chelsea':   {def:85,mid:81,att:84},
-    'Man Utd':   {def:86,mid:82,att:83},
-    'Tottenham': {def:74,mid:77,att:75},
+    // Chelsea 09/10: Cole (LB), Bosingwa (RB), Terry/Carvalho (CB), Malouda (LW), Anelka (RW), Lampard/Ballack/Essien (CM), Drogba (ST)
+    'Chelsea':   {def:85,mid:81,att:84, lb:88,rb:81,cb:87,lw:80,rw:82,cm:85,st:89},
+    // Man Utd 09/10: Evra (LB), O'Shea (RB), Ferdinand/Vidic (CB), Park/Giggs (LW), Valencia/Nani (RW), Carrick/Scholes (CM), Rooney/Berbatov (ST)
+    'Man Utd':   {def:86,mid:82,att:83, lb:84,rb:78,cb:87,lw:79,rw:80,cm:83,st:87},
+    // Tottenham 09/10: Assou-Ekotto (LB), Hutton (RB), Dawson/Bassong (CB), Bale (LW), Lennon (RW), Modric/Huddlestone (CM), Defoe/Crouch (ST)
+    'Tottenham': {def:74,mid:77,att:75, lb:75,rb:73,cb:74,lw:79,rw:79,cm:79,st:77},
   },
   2010: {
-    'Man Utd':   {def:85,mid:83,att:84},
-    'Chelsea':   {def:82,mid:80,att:82},
-    'Man City':  {def:78,mid:78,att:81},
+    // Man Utd 10/11: Evra (LB), Rafael (RB), Ferdinand/Vidic (CB), Park/Giggs (LW), Nani/Valencia (RW), Carrick/Scholes (CM), Rooney/Hernandez (ST)
+    'Man Utd':   {def:85,mid:83,att:84, lb:84,rb:80,cb:86,lw:80,rw:84,cm:83,st:87},
+    // Chelsea 10/11: A.Cole (LB), Ivanovic (RB), Terry/David Luiz (CB), Malouda (LW), Anelka/Sturridge (RW), Lampard/Essien (CM), Drogba (ST)
+    'Chelsea':   {def:82,mid:80,att:82, lb:87,rb:83,cb:84,lw:81,rw:80,cm:83,st:86},
+    // Man City 10/11: Clichy (LB), Richards/Zabaleta (RB), Kompany/Lescott (CB), Milner/Silva (LW), Johnson/Navas (RW), de Jong/Barry (CM), Tevez/Dzeko (ST)
+    'Man City':  {def:78,mid:78,att:81, lb:80,rb:80,cb:82,lw:79,rw:80,cm:79,st:84},
   },
   2011: {
-    'Man City':  {def:83,mid:82,att:87},
-    'Man Utd':   {def:84,mid:82,att:84},
-    'Tottenham': {def:76,mid:79,att:77},
+    // Man City 11/12: Clichy (LB), Zabaleta (RB), Kompany/Lescott (CB), Nasri/Silva (LW), Silva/Milner (RW), Toure/Barry/De Jong (CM), Aguero/Dzeko (ST)
+    'Man City':  {def:83,mid:82,att:87, lb:82,rb:83,cb:85,lw:85,rw:81,cm:83,st:88},
+    // Man Utd 11/12: Evra (LB), Rafael (RB), Ferdinand/Evans/Smalling (CB), Giggs/Park (LW), Young/Nani/Valencia (RW), Carrick/Scholes (CM), Rooney/Hernandez (ST)
+    'Man Utd':   {def:84,mid:82,att:84, lb:83,rb:81,cb:83,lw:79,rw:82,cm:83,st:85},
+    // Tottenham 11/12: Assou-Ekotto (LB), Walker (RB), Vertonghen/Caulker (CB), Bale (LW), Lennon (RW), Modric/Parker (CM), Defoe/Van der Vaart (ST)
+    'Tottenham': {def:76,mid:79,att:77, lb:77,rb:79,cb:78,lw:85,rw:80,cm:80,st:79},
   },
   2012: {
-    'Man Utd':   {def:83,mid:82,att:85},
-    'Man City':  {def:82,mid:81,att:84},
-    'Chelsea':   {def:82,mid:79,att:80},
+    // Man Utd 12/13: Evra (LB), Rafael (RB), Ferdinand/Vidic (CB), Young/Giggs (LW), Nani/Valencia (RW), Carrick/Scholes (CM), RvP/Rooney (ST)
+    'Man Utd':   {def:83,mid:82,att:85, lb:83,rb:80,cb:84,lw:80,rw:82,cm:83,st:89},
+    // Man City 12/13: Clichy (LB), Zabaleta (RB), Kompany/Lescott (CB), Silva (LW), Nasri/Milner (RW), Y.Toure/Barry (CM), Aguero/Dzeko (ST)
+    'Man City':  {def:82,mid:81,att:84, lb:82,rb:83,cb:85,lw:86,rw:80,cm:82,st:86},
+    // Chelsea 12/13: Azpilicueta/Cole (LB), Ivanovic (RB), Terry/David Luiz (CB), Hazard (LW), Oscar/Ramires (RW), Lampard/Mikel (CM), Torres/Ba (ST)
+    'Chelsea':   {def:82,mid:79,att:80, lb:83,rb:83,cb:84,lw:85,rw:80,cm:81,st:80},
   },
   2013: {
-    'Man City':  {def:84,mid:85,att:85},
-    'Liverpool': {def:78,mid:80,att:88},
-    'Chelsea':   {def:84,mid:81,att:82},
+    // Man City 13/14: Clichy/Kolarov (LB), Zabaleta (RB), Kompany/Demichelis (CB), Silva/Nasri (LW), Navas (RW), Y.Toure/Fernando (CM), Aguero/Dzeko (ST)
+    'Man City':  {def:84,mid:85,att:85, lb:82,rb:83,cb:84,lw:86,rw:83,cm:85,st:88},
+    // Liverpool 13/14: Flanagan (LB), Johnson (RB), Skrtel/Agger (CB), Sterling/Coutinho (LW), Sterling (RW), Gerrard/Henderson (CM), Suarez/Sturridge (ST)
+    'Liverpool': {def:78,mid:80,att:88, lb:77,rb:80,cb:82,lw:84,rw:81,cm:83,st:93},
+    // Chelsea 13/14: Azpilicueta (LB), Ivanovic (RB), Cahill/Terry (CB), Hazard (LW), Willian/Schurrle (RW), Lampard/Matic/Mikel (CM), Torres/Eto'o (ST)
+    'Chelsea':   {def:84,mid:81,att:82, lb:83,rb:83,cb:85,lw:88,rw:79,cm:81,st:82},
   },
   2014: {
-    'Chelsea':   {def:85,mid:83,att:84},
-    'Man City':  {def:83,mid:82,att:83},
-    'Man Utd':   {def:79,mid:77,att:79},
+    // Chelsea 14/15: Filipe Luis/Azpilicueta (LB), Ivanovic (RB), Cahill/Terry (CB), Hazard (LW), Cuadrado/Ramires (RW), Fabregas/Matic (CM), Costa/Drogba (ST)
+    'Chelsea':   {def:85,mid:83,att:84, lb:83,rb:83,cb:85,lw:89,rw:79,cm:85,st:88},
+    // Man City 14/15: Clichy/Kolarov (LB), Zabaleta/Sagna (RB), Kompany/Demichelis (CB), Silva/Navas (LW), Navas/Milner (RW), Toure/Fernandinho (CM), Aguero/Dzeko (ST)
+    'Man City':  {def:83,mid:82,att:83, lb:81,rb:82,cb:84,lw:85,rw:81,cm:84,st:89},
+    // Man Utd 14/15: Shaw (LB), Valencia (RB), Smalling/Evans (CB), Young/Di Maria (LW), Valencia/Januzaj (RW), Carrick/Herrera (CM), RvP/Falcao/Rooney (ST)
+    'Man Utd':   {def:79,mid:77,att:79, lb:80,rb:80,cb:81,lw:81,rw:78,cm:79,st:83},
   },
   2015: {
-    'Leicester': {def:78,mid:79,att:82},
-    'Tottenham': {def:79,mid:81,att:79},
-    'Man City':  {def:80,mid:80,att:81},
+    // Leicester 15/16: Fuchs (LB), Simpson (RB), Huth/Morgan (CB), Albrighton (LW), Mahrez (RW), Drinkwater/Kante (CM), Vardy (ST)
+    'Leicester': {def:78,mid:79,att:82, lb:78,rb:77,cb:79,lw:78,rw:84,cm:81,st:84},
+    // Tottenham 15/16: Rose (LB), Walker (RB), Vertonghen/Alderweireld (CB), Eriksen/Dele (LW), Son/Chadli (RW), Dembele/Dier (CM), Kane (ST)
+    'Tottenham': {def:79,mid:81,att:79, lb:80,rb:82,cb:83,lw:84,rw:77,cm:80,st:84},
+    // Man City 15/16: Kolarov (LB), Zabaleta/Sagna (RB), Kompany/Otamendi (CB), Silva (LW), Sterling/Navas (RW), Toure/Fernandinho (CM), Aguero (ST)
+    'Man City':  {def:80,mid:80,att:81, lb:80,rb:80,cb:81,lw:85,rw:82,cm:81,st:87},
   },
 };
 
@@ -749,12 +771,28 @@ function scoreBalance(ar) {
   if (mn>=82) s+=3;
   return Math.max(5, Math.min(35, Math.round(s)));
 }
-function scoreVsTop4(ar, season) {
+function scoreVsTop4(ar, xi, season) {
   const bench=LEAGUE_BENCHMARK[season]; if (!bench?.teams?.length) return 15;
+  // Overall line comparison vs top rival
   const r=bench.teams[0];
   const mine=(ar.gk+ar.def*1.5+ar.mid*1.5+ar.fwd)/5;
   const rival=(r.gk+r.def*1.5+r.mid*1.5+r.fwd)/5;
-  return Math.max(0, Math.min(30, Math.round(15+(mine-rival)*2)));
+  const overallScore=15+(mine-rival)*2;
+  // Positional duel edge vs all benchmarked rivals (7 specific matchups per team)
+  const arD=arDuelRatings(xi);
+  let totalDuelEdge=0;
+  for(const t of bench.teams){
+    totalDuelEdge+=computeDuelEdge(arD,{
+      lb:t.lb||t.def,rb:t.rb||t.def,cb:t.cb||t.def,
+      lw:t.lw||t.fwd,rw:t.rw||t.fwd,cm:t.cm||t.mid,st:t.st||t.fwd,
+    });
+  }
+  const avgDuelEdge=totalDuelEdge/bench.teams.length;
+  // Scale: 7 duels, avg ±10 per duel → avgDuelEdge ±70; map to ±12 score offset
+  const duelScore=15+avgDuelEdge*0.17;
+  // 50% overall squad shape, 50% specific positional matchup quality
+  const blended=(overallScore+duelScore)/2;
+  return Math.max(0, Math.min(30, Math.round(blended)));
 }
 function scoreTactical(ar, bought, season) {
   const att=(ar.mid+ar.fwd)/2, def=(ar.gk+ar.def)/2;
@@ -779,7 +817,7 @@ function scoreLegacy(bought) {
 }
 function computeRebuildScore(xi, bought) {
   const ar=computeSquadRatings(xi);
-  const f1=scoreBalance(ar), f2=scoreVsTop4(ar,S.season), f3=scoreTactical(ar,bought,S.season), f4=scoreLegacy(bought);
+  const f1=scoreBalance(ar), f2=scoreVsTop4(ar,xi,S.season), f3=scoreTactical(ar,bought,S.season), f4=scoreLegacy(bought);
   return { f1, f2, f3, f4, total:f1+f2+f3+f4, ar };
 }
 function computeLineRatings(players) {
@@ -793,6 +831,36 @@ function computeLineRatings(players) {
     mid:avg(mids),
     att:avg(atts),
   };
+}
+// Extract specific positional ratings from an XI for duel matchups
+function arDuelRatings(xi){
+  function best(sposes,fallbackGrp){
+    const m=xi.filter(p=>sposes.includes(specificPos(p.position)));
+    if(m.length) return Math.round(m.reduce((s,p)=>s+mvToRating(p.marketValue),0)/m.length);
+    const fb=xi.filter(p=>grp(p.position)===fallbackGrp);
+    return fb.length?Math.round(fb.reduce((s,p)=>s+mvToRating(p.marketValue),0)/fb.length):70;
+  }
+  return {
+    lw:best(['LW','LM'],'ATT'),
+    rw:best(['RW','RM'],'ATT'),
+    lb:best(['LB'],'DEF'),
+    rb:best(['RB'],'DEF'),
+    cb:best(['CB'],'DEF'),
+    cm:best(['CM','DM','CAM'],'MID'),
+    st:best(['ST'],'ATT'),
+  };
+}
+// Run positional duel matchups: our LW vs their RB, our RW vs their LB,
+// their LW vs our RB, their RW vs our LB, mid vs mid, our ST vs their CB, our CB vs their ST
+function computeDuelEdge(ar,rival){
+  const lwVsRB  = ar.lw - (rival.rb  || rival.def);
+  const rwVsLB  = ar.rw - (rival.lb  || rival.def);
+  const stVsCB  = ar.st - (rival.cb  || rival.def);
+  const rbVsLW  = ar.rb - (rival.lw  || rival.att); // we defend their LW
+  const lbVsRW  = ar.lb - (rival.rw  || rival.att); // we defend their RW
+  const cbVsST  = ar.cb - (rival.st  || rival.att); // we defend their ST
+  const midDuel = ar.cm - (rival.cm  || rival.mid);
+  return lwVsRB + rwVsLB + stVsCB + rbVsLW + lbVsRW + cbVsST + midDuel;
 }
 function rebuildVerdict(score) {
   if (score>=85) return { label:'Title Contender', color:'#fbbf24' };
@@ -1856,13 +1924,17 @@ function runSimulation(){
   const midDelta=newLines.mid-baseLines.mid;
   const attDelta=newLines.att-baseLines.att;
 
-  // vs Top 4 rivals: how much does the line improvement help in those 8 games?
+  // vs Top 4 rivals: positional duel improvement vs each rival (2 games each)
   const rivals=RIVAL_STRENGTH[S.season]||{};
+  const newArDuels=arDuelRatings(scoringXI);
+  const baseArDuels=arDuelRatings(baseXI);
   let vsTop4Delta=0;
   for(const rStr of Object.values(rivals)){
-    // Weighted improvement across all lines for this matchup
-    const edgeDelta=attDelta*0.35+defDelta*0.35+midDelta*0.3;
-    vsTop4Delta+=edgeDelta*0.25*2; // 2 games per rival, accumulate as float
+    const newEdge=computeDuelEdge(newArDuels,rStr);
+    const baseEdge=computeDuelEdge(baseArDuels,rStr);
+    const edgeImprovement=newEdge-baseEdge; // 7 duels, each ~±10 → total ~±70
+    // Scale: 7-duel improvement of 7 pts (avg 1pt/duel) ≈ 0.35 extra pts per game × 2 games
+    vsTop4Delta+=(edgeImprovement/7)*0.35*2;
   }
   vsTop4Delta=Math.round(Math.max(-8,Math.min(10,vsTop4Delta)));
 
