@@ -1213,10 +1213,10 @@ function sellPlayer(id,val){
   // Position group sale cap
   const posGrp=grp(player.position);
   const capMsg={
-    GK:`Can't lose another keeper. You'd have no cover in goal.`,
+    GK:`The board won't sanction another keeper leaving. You'd have no cover in goal.`,
     DEF:`The board won't sanction another defender leaving. The backline is already thin.`,
-    MID:`Wenger won't clear more bodies from midfield. He needs the depth.`,
-    ATT:`The board won't allow another forward to leave. Goals are already hard to come by.`,
+    MID:`The board won't sanction another midfielder leaving. The squad needs the depth.`,
+    ATT:`The board won't sanction another forward leaving. Goals are already hard to come by.`,
   };
   if((S.salesByGrp[posGrp]||0)>=(MAX_SALES_BY_GRP[posGrp]||99)){
     showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
