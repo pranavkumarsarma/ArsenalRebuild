@@ -1021,7 +1021,7 @@ function sellPlayer(id,val){
   // Youth protection: max 2 young players sold per season
   const ageInSeason=parseInt(player.age||99)-(CURRENT_YEAR-S.season);
   if(ageInSeason<22&&S.youthSold>=MAX_YOUTH_SALES){
-    showToast(`The board won't release more young players — Wenger wants to develop them.`,3500);
+    showToast(`The board won't release more young players, you need to develop them.`,3500);
     return;
   }
   const isYouth=ageInSeason<22;
