@@ -278,9 +278,14 @@
     <input id="searchInput" type="text" placeholder="Search by name…"
       style="width:100%;background:#0c1a2e;border:1px solid #374151;border-radius:7px;padding:7px 11px;font-size:11px;color:#fff;outline:none;margin-bottom:6px;"
       oninput="debounce(this.value)" />
-    <div id="targetChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;"></div>
+    <div id="targetChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;"></div>
+    <button id="browseToggle" onclick="toggleBrowse()" style="background:none;border:none;color:#4b5563;font-size:8px;font-weight:700;cursor:pointer;padding:0 0 6px;letter-spacing:.05em;text-transform:uppercase;display:block;">Browse by club +</button>
+    <div id="browsePanel" style="display:none;margin-bottom:8px;">
+      <div id="browseLeagues" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;"></div>
+      <div id="browseClubs" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+    </div>
     <div style="font-size:9px;color:#6b7280;margin-bottom:5px;" id="searchHint">Type to search players active in this era</div>
-    <div id="searchResults" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+    <div id="searchResults" style="max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
   </div>
 </div>
 
@@ -503,6 +508,37 @@ const SEASONS = {
       ATT:['Gonzalo Higuaín','Alexandre Lacazette','Jamie Vardy','Riyad Mahrez','Harry Kane'],
     }},
 };
+
+// ── Browse-by-club data (Transfermarkt club IDs) ──────────────────────
+const LEAGUE_CLUBS = {
+  PL:{label:'Premier League',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',clubs:[
+    {id:'281',n:'Man City'},{id:'31',n:'Liverpool'},{id:'985',n:'Man Utd'},
+    {id:'631',n:'Chelsea'},{id:'148',n:'Tottenham'},{id:'29',n:'Everton'},
+    {id:'405',n:'Aston Villa'},{id:'379',n:'West Ham'},{id:'762',n:'Newcastle'},
+    {id:'1237',n:'Leicester'},{id:'289',n:'Sunderland'},{id:'931',n:'Fulham'},
+  ]},
+  LL:{label:'La Liga',flag:'🇪🇸',clubs:[
+    {id:'418',n:'Real Madrid'},{id:'131',n:'Barcelona'},{id:'13',n:'Atlético'},
+    {id:'368',n:'Sevilla'},{id:'1049',n:'Valencia'},{id:'1050',n:'Villarreal'},
+    {id:'621',n:'Athletic'},{id:'2197',n:'Real Sociedad'},
+  ]},
+  BL:{label:'Bundesliga',flag:'🇩🇪',clubs:[
+    {id:'27',n:'Bayern'},{id:'16',n:'Dortmund'},{id:'15',n:'Leverkusen'},
+    {id:'33',n:'Schalke'},{id:'18',n:"M'gladbach"},{id:'86',n:'Werder'},
+    {id:'41',n:'Hamburg'},{id:'26',n:'Stuttgart'},
+  ]},
+  SA:{label:'Serie A',flag:'🇮🇹',clubs:[
+    {id:'506',n:'Juventus'},{id:'46',n:'Inter'},{id:'5',n:'AC Milan'},
+    {id:'6195',n:'Napoli'},{id:'12',n:'Roma'},{id:'398',n:'Lazio'},
+    {id:'430',n:'Fiorentina'},
+  ]},
+  L1:{label:'Ligue 1',flag:'🇫🇷',clubs:[
+    {id:'583',n:'PSG'},{id:'1041',n:'Lyon'},{id:'244',n:'Marseille'},
+    {id:'162',n:'Monaco'},{id:'1082',n:'Lille'},{id:'417',n:'Nice'},
+    {id:'3911',n:'Bordeaux'},
+  ]},
+};
+let _browseOpen=false,_browseLeague=null;
 
 // ── League benchmarks (proxy ratings) ─────────────────────────────────
 const LEAGUE_BENCHMARK = {
@@ -1248,6 +1284,11 @@ function openModal(g){
   document.getElementById('searchInput').value='';
   document.getElementById('searchResults').innerHTML='';
   document.getElementById('searchHint').textContent=`Type to search. ${S.season}/${String(S.season+1).slice(-2)} era.`;
+  // Reset browse state
+  _browseOpen=false;_browseLeague=null;
+  const _bp=document.getElementById('browsePanel');if(_bp)_bp.style.display='none';
+  const _bt=document.getElementById('browseToggle');if(_bt){_bt.textContent='Browse by club +';_bt.style.color='#4b5563';}
+  const _bc=document.getElementById('browseClubs');if(_bc)_bc.innerHTML='';
   // Show position-filtered targets; GK shows 2, others show 4-5
   const maxByGrp={GK:2,DEF:4,MID:5,ATT:5};
   const allTargets=SEASONS[S.season]?.targets||{};
@@ -1266,6 +1307,106 @@ function openModal(g){
 function searchTarget(n){const i=document.getElementById('searchInput');i.value=n;debounce(n);}
 function closeModal(e){if(e&&e.target!==document.getElementById('addModal'))return;document.getElementById('addModal').classList.remove('open');}
 function debounce(q){clearTimeout(_timer);if(q.length<2){document.getElementById('searchResults').innerHTML='';return;}_timer=setTimeout(()=>doSearch(q),380);}
+
+// ── Browse by club ──────────────────────────────────────────────────────
+function toggleBrowse(){
+  _browseOpen=!_browseOpen;
+  const panel=document.getElementById('browsePanel');
+  const btn=document.getElementById('browseToggle');
+  if(_browseOpen){
+    panel.style.display='block';btn.textContent='Browse by club ×';btn.style.color='#EF0107';
+    renderBrowseLeagues();
+  }else{
+    panel.style.display='none';btn.textContent='Browse by club +';btn.style.color='#4b5563';
+    _browseLeague=null;document.getElementById('browseClubs').innerHTML='';
+  }
+}
+function renderBrowseLeagues(){
+  document.getElementById('browseLeagues').innerHTML=Object.entries(LEAGUE_CLUBS).map(([k,lg])=>
+    `<button onclick="selectLeague('${k}')"
+      style="background:${_browseLeague===k?'#EF0107':'#1a2535'};border:1px solid ${_browseLeague===k?'#EF0107':'#374151'};
+      border-radius:9999px;padding:3px 9px;font-size:9px;font-weight:600;white-space:nowrap;
+      color:${_browseLeague===k?'#fff':'#9ca3af'};cursor:pointer;">${lg.flag} ${lg.label}</button>`
+  ).join('');
+  renderBrowseClubs();
+}
+function selectLeague(k){_browseLeague=k;renderBrowseLeagues();}
+function renderBrowseClubs(){
+  const el=document.getElementById('browseClubs');
+  if(!_browseLeague){el.innerHTML='';return;}
+  el.innerHTML=LEAGUE_CLUBS[_browseLeague].clubs.map(c=>
+    `<button onclick="selectClub('${c.id}','${esc(c.n)}')"
+      style="background:#1a2535;border:1px solid #374151;border-radius:9999px;padding:3px 9px;
+      font-size:9px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
+      onmouseover="this.style.borderColor='#EF0107';this.style.color='#EF0107'"
+      onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">${c.n}</button>`
+  ).join('');
+}
+async function selectClub(clubId,clubName){
+  const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
+  hint.textContent=`Loading ${clubName} ${S.season}/${String(S.season+1).slice(-2)} squad…`;
+  box.innerHTML=Array.from({length:4},()=>`
+    <div style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;opacity:.4;">
+      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="background:#1f2937;height:9px;border-radius:3px;width:55%;margin-bottom:5px;"></div>
+        <div style="background:#1f2937;height:7px;border-radius:3px;width:35%;"></div>
+      </div>
+      <div style="background:#1f2937;height:9px;border-radius:3px;width:28px;"></div>
+    </div>`).join('');
+  try{
+    const r=await fetch(`${API}/clubs/${clubId}/players?season_id=${S.season}`);
+    const d=await r.json();
+    // Club roster ages are already era-accurate (season_id filter) — skip eraCheck
+    const all=(d.players||[]).map(p=>({
+      id:p.id,name:p.name,position:p.position,
+      marketValue:p.market_value||0,
+    }));
+    const squadIds=new Set(S.players.map(p=>p.id)),boughtIds=new Set(S.bought.map(p=>p.id));
+    const posFiltered=_grp?all.filter(p=>!p.position||grp(p.position)===_grp):all;
+    const results=posFiltered.length>0?posFiltered:all;
+    if(!results.length){
+      hint.textContent=`No players found for ${clubName} in ${S.season}/${String(S.season+1).slice(-2)}`;
+      box.innerHTML='<div style="text-align:center;color:#6b7280;font-size:11px;padding:12px;">Try a different club</div>';
+      return;
+    }
+    const posLabel=_grp&&posFiltered.length>0?` · ${(GRP_LBL[_grp]||'').toLowerCase()} only`:'';
+    hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel}`;
+    const budget=SEASONS[S.season]?.budget||0,remaining=budget-S.spent+S.sales;
+    const isHardRivalClub=HARD_RIVALS.some(r=>clubName.includes(r));
+    const isSoftRivalClub=!isHardRivalClub&&SOFT_RIVALS.some(r=>clubName.includes(r));
+    box.innerHTML=results.map(p=>{
+      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
+      const tooExp=!isHardRivalClub&&!isSoftRivalClub&&p.marketValue&&p.marketValue>remaining;
+      const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      let badgeTxt,badgeClr,blocked;
+      if(inSquad){badgeTxt='In squad';badgeClr='#6b7280';blocked=true;}
+      else if(isHardRivalClub){badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
+      else if(isSoftRivalClub){badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
+      else if(tooExp){badgeTxt='Over budget';badgeClr='#fbbf24';blocked=false;}
+      else{badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
+      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${p.marketValue}"
+          data-blocked="${blocked}" data-soft-rival="${isSoftRivalClub}"
+          data-era-club="${esc(clubName)}" data-hard-rival="${isHardRivalClub}"
+          onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(clubName)}')"
+          style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${blocked?'.38':'1'};"
+          onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
+          <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+            <div style="font-size:8px;color:#6b7280;">${p.position||''} · ${clubName}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:2px;">${p.marketValue?fmt(p.marketValue):'—'}</div>
+            <div style="font-size:9px;color:${badgeClr};">${badgeTxt}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }catch(e){
+    hint.textContent='Failed to load squad. Try searching by name.';
+    box.innerHTML='<div style="text-align:center;color:#f87171;font-size:11px;padding:12px;">Could not load squad</div>';
+  }
+}
 
 // ── Historical value fetch ─────────────────────────────────────────────
 async function fetchHistoricalValue(pid,yr){
