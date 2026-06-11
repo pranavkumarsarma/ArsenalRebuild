@@ -31,8 +31,8 @@
     @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     .afc-badge-anim{animation:badgeGlow 3s ease-in-out infinite;}
-    .sim-btn:not(:disabled){animation:simBtnPulse 2.5s ease-in-out infinite;}
-    .sim-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+    .sim-btn:not([data-blocked="1"]){animation:simBtnPulse 2.5s ease-in-out infinite;}
+    .sim-btn[data-blocked="1"]{animation:none;}
     .count-pop{animation:countPop .4s ease-out;}
     .modal-inner{animation:fadeUp .2s ease-out;}
     .table-row.yours{background:linear-gradient(90deg,#1a0d0d,#200d0d);border:1px solid #7f1d1d;}
@@ -455,14 +455,14 @@ const CURRENT_YEAR = 2026;
 const SEASONS = {
   2009:{ budget:12000000, netSpend:6000000,   result:'3rd', pts:75,
     targets:{
-      GK:['Joe Hart','Heurelho Gomes'],
+      GK:['Heurelho Gomes','Shay Given'],
       DEF:['Gary Cahill','Joleon Lescott'],
-      MID:['Yoann Gourcuff','Franck Ribery','Luka Modrić','Gareth Barry',"Yann M'Vila"],
+      MID:['Yoann Gourcuff','Luka Modrić','Gareth Barry',"Yann M'Vila",'Franck Ribery'],
       ATT:['Karim Benzema','David Villa','Samuel Eto\'o','Dimitar Berbatov','Robinho'],
     }},
   2010:{ budget:10000000, netSpend:-1000000,  result:'4th', pts:68,
     targets:{
-      GK:['Joe Hart','Pepe Reina'],
+      GK:['Heurelho Gomes','Shay Given'],
       DEF:['Gary Cahill','Branislav Ivanović'],
       MID:['Wesley Sneijder','Juan Mata','Ivan Perišić',"Yann M'Vila",'Luka Modrić'],
       ATT:['David Villa','Fernando Torres','Didier Drogba','Wayne Rooney','Carlos Tevez'],
@@ -498,9 +498,9 @@ const SEASONS = {
   2015:{ budget:35000000, netSpend:11000000,  result:'2nd', pts:71,
     targets:{
       GK:['Pepe Reina','Kasper Schmeichel'],
-      DEF:['Jamaal Lascelles','Laurent Koscielny'],
-      MID:['N\'Golo Kanté','Danny Drinkwater','Jamie Vardy','Riyad Mahrez','Demarai Gray'],
-      ATT:['Gonzalo Higuaín','Alexandre Lacazette','Jamie Vardy','Harry Kane','Marcus Rashford'],
+      DEF:['Shkodran Mustafi','Kostas Manolas'],
+      MID:['Granit Xhaka','Thiago Alcântara','Jordan Henderson','Ilkay Gündogan','N\'Golo Kanté'],
+      ATT:['Gonzalo Higuaín','Alexandre Lacazette','Jamie Vardy','Harry Kane','Riyad Mahrez'],
     }},
 };
 
@@ -623,11 +623,11 @@ const BENCH_IDS = ['b1','b2','b3','b4','b5','b6','b7'];
 const UNSELLABLE = {
   2009:['Bendtner','Almunia','Denilson'],
   2010:['Bendtner','Denilson','Diaby'],
-  2011:['Bendtner','Diaby','Park Chu-Young'],
+  2011:['Bendtner','Diaby','Chu-Young'],    // Chu-Young Park or Park Chu-Young
   2012:['Bendtner','Diaby','Fabianski'],
   2013:['Bendtner','Sanogo','Miyaichi'],
-  2014:['Sanogo','Wellington Silva','Miyaichi'],
-  2015:['Sanogo','Zelalem','Reine-Adelaide'],
+  2014:['Sanogo','Wellington','Miyaichi'],  // Wellington or Wellington Silva
+  2015:['Sanogo','Zelalem','Reine'],        // Jeff Reine-Adelaide
 };
 const MAX_YOUTH_SALES = 2;
 
@@ -1117,19 +1117,19 @@ function updateSidebar(){
   document.getElementById('slotDots').innerHTML=
     Array.from({length:MAX_SIGNINGS},(_,i)=>`<span class="slot-dot ${i<used?'slot-used':'slot-free'}"></span>`).join('');
   // Simulate button — requires at least 1 signing AND net spend ≤ Wenger's + €5M
+  const _simActual=SEASONS[S.season]?.netSpend||0;
+  const _overBy=net-_simActual;
+  const _tooOver=_overBy>5e6;
+  const _noSignings=used===0;
+  const blocked=_noSignings||_tooOver;
   const btn=document.getElementById('simBtn');
   if(btn){
-    const actual=SEASONS[S.season]?.netSpend||0;
-    const overBy=net-actual;
-    const tooOver=overBy>5e6;
-    const noSignings=used===0;
-    const blocked=noSignings||tooOver;
     btn.disabled=false;
     btn.style.opacity=blocked?'0.38':'1';
     btn.style.cursor=blocked?'not-allowed':'pointer';
     btn.dataset.blocked=blocked?'1':'0';
-    if(noSignings)btn.title='Sign at least one player to run the simulation';
-    else if(tooOver)btn.title=`${fmt(overBy)} over Wenger's limit — sell a player to unlock`;
+    if(_noSignings)btn.title='Sign at least one player to run the simulation';
+    else if(_tooOver)btn.title=`${fmt(_overBy)} over Wenger\'s limit — sell a player to unlock`;
     else btn.title='';
   }
   // Sync mobile bottom bar
