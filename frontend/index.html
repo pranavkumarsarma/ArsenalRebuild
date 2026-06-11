@@ -888,17 +888,25 @@ function checkSpecificPositionDepth(position){
   const qual=same.filter(p=>mvToRating(p.marketValue)>=80);
   return {blocked:qual.length>=2, count:same.length, qualCount:qual.length};
 }
-function checkEliteSquadCap(){
-  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
-  const elite=all.filter(p=>mvToRating(p.marketValue)>=85);
-  if(elite.length>=5){
-    const existingElite=S.players.filter(p=>!S.sold.has(p.id)&&mvToRating(p.marketValue)>=85)
+function checkEliteSquadCap(signedPosition){
+  const posGrp=grp(signedPosition);
+  if(!posGrp)return;
+  // Count quality players (rating >= 82) in this position group across squad + new signings
+  const posAll=[...S.players.filter(p=>!S.sold.has(p.id)&&grp(p.position)===posGrp),
+                ...S.bought.filter(p=>grp(p.position)===posGrp)];
+  const qualityCount=posAll.filter(p=>mvToRating(p.marketValue||0)>=82).length;
+  if(qualityCount>=4){
+    // Weakest existing squad player in this position wants out
+    const candidates=S.players
+      .filter(p=>!S.sold.has(p.id)&&grp(p.position)===posGrp&&mvToRating(p.marketValue||0)>=78)
       .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0));
-    if(existingElite.length>0){
-      const v=existingElite[0];
+    if(candidates.length>0){
+      const v=candidates[0];
+      const posLabel=(GRP_LBL[posGrp]||'player').slice(0,-1).toLowerCase();
       S.sold.add(v.id);
+      if(S.salesByGrp[posGrp]!==undefined)S.salesByGrp[posGrp]++;
       for(const[s,lp]of Object.entries(S.lineup)){if(lp&&lp.id===v.id){delete S.lineup[s];break;}}
-      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many stars, not enough minutes.`,4500),400);
+      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}s, not enough minutes.`,4500),400);
     }
   }
 }
@@ -1725,7 +1733,7 @@ function handleCardClick(card,name,position,currClub){
   }
 
   S.bought.push({id:card.dataset.id,name,position,marketValue:value});S.spent+=value;
-  checkEliteSquadCap();
+  checkEliteSquadCap(position);
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
 }
