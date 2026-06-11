@@ -924,17 +924,35 @@ function benchSlotHTML(id){
     </div>`;
 }
 
+// ── Position-to-slot matching ──────────────────────────────────────────
+function posMatchesSlot(pos,lbl){
+  if(!pos)return false;
+  const p=pos.toLowerCase(), l=lbl.toUpperCase();
+  if(l==='LB'||l==='LWB') return p.includes('left-back')||p.includes('left back');
+  if(l==='RB'||l==='RWB') return p.includes('right-back')||p.includes('right back');
+  if(l==='CB')  return p.includes('centre-back')||p.includes('center-back');
+  if(l==='DM')  return p.includes('defensive midfield');
+  if(l==='AM'||l==='CAM') return p.includes('attacking midfield');
+  if(l==='LM'||l==='LW'||l==='LAM') return p.includes('left')&&(p.includes('midfield')||p.includes('wing'));
+  if(l==='RM'||l==='RW'||l==='RAM') return p.includes('right')&&(p.includes('midfield')||p.includes('wing'));
+  if(l==='CM')  return p.includes('central midfield');
+  if(l==='ST'||l==='CF') return p.includes('forward')||p.includes('striker');
+  return false;
+}
+
 // ── Auto XI / Clear ────────────────────────────────────────────────────
 function autoFillLineup(silent=false){
   S.lineup={};
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const assigned=new Set();
   const avail=g=>all.filter(p=>grp(p.position)===g&&!assigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
-  // Fill in order: GK first, then DEF, MID, ATT — using current formation's slots
+  // Fill in order: GK first, then DEF, MID, ATT — prefer position-specific match per slot
   const order=['GK','DEF','MID','ATT'];
-  const slotsByGroup=order.flatMap(g=>Object.entries(SLOT_CFG).filter(([,c])=>c.grp===g).map(([id])=>({slot:id,grp:g})));
-  for(const{slot,grp:g}of slotsByGroup){
-    const a=avail(g); if(a.length){S.lineup[slot]=a[0];assigned.add(a[0].id);}
+  const slotsByGroup=order.flatMap(g=>Object.entries(SLOT_CFG).filter(([,c])=>c.grp===g).map(([id,c])=>({slot:id,grp:g,lbl:c.lbl})));
+  for(const{slot,grp:g,lbl}of slotsByGroup){
+    const pool=avail(g);
+    const candidate=pool.find(p=>posMatchesSlot(p.position,lbl))||pool[0];
+    if(candidate){S.lineup[slot]=candidate;assigned.add(candidate.id);}
   }
   const allAssigned=new Set(Object.values(S.lineup).filter(Boolean).map(p=>p.id));
   const rest=all.filter(p=>!allAssigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
@@ -1105,11 +1123,13 @@ function updateSidebar(){
     const overBy=net-actual;
     const tooOver=overBy>5e6;
     const noSignings=used===0;
-    btn.disabled=noSignings||tooOver;
-    btn.style.opacity=(noSignings||tooOver)?'0.38':'1';
-    btn.style.cursor=(noSignings||tooOver)?'not-allowed':'pointer';
-    if(noSignings)btn.title='Make at least one signing to simulate';
-    else if(tooOver)btn.title=`€${(overBy/1e6).toFixed(1)}M over Wenger's actual net spend. Sell players or sign cheaper.`;
+    const blocked=noSignings||tooOver;
+    btn.disabled=false;
+    btn.style.opacity=blocked?'0.38':'1';
+    btn.style.cursor=blocked?'not-allowed':'pointer';
+    btn.dataset.blocked=blocked?'1':'0';
+    if(noSignings)btn.title='Sign at least one player to run the simulation';
+    else if(tooOver)btn.title=`${fmt(overBy)} over Wenger's limit — sell a player to unlock`;
     else btn.title='';
   }
   // Sync mobile bottom bar
@@ -1125,7 +1145,7 @@ function updateSidebar(){
       else{mDiff.textContent='Sell to unlock';mDiff.style.color='#f87171';}
     }
     const mBtn=document.getElementById('mobileSimBtn');
-    if(mBtn){mBtn.disabled=(used===0)||((net-(SEASONS[S.season]?.netSpend||0))>5e6);}
+    if(mBtn){mBtn.disabled=false;mBtn.style.opacity=blocked?'0.38':'1';}
   }
   updateLineupCountBadges();
 }
