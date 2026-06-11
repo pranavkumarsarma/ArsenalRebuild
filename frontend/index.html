@@ -1169,11 +1169,8 @@ function updateSidebar(){
       const room=Math.abs(diff);
       diffEl.textContent=room<1e6?'✓ On budget, ready to simulate':`✓ ${fmt(room)} room to buy more`;
       diffEl.style.background='rgba(74,222,128,.1)';diffEl.style.color='#4ade80';
-    }else if(diff<=5e6){
-      diffEl.textContent=`${fmt(diff)} over Wenger, borderline, can still simulate`;
-      diffEl.style.background='rgba(251,191,36,.12)';diffEl.style.color='#fbbf24';
     }else{
-      diffEl.textContent=`${fmt(diff)} over limit. Sell a player to unlock`;
+      diffEl.textContent=`${fmt(diff)} over Wenger's net spend. Sell a player to unlock`;
       diffEl.style.background='rgba(248,113,113,.12)';diffEl.style.color='#f87171';
     }
   }
@@ -1187,10 +1184,10 @@ function updateSidebar(){
   document.getElementById('slotsLabel').style.color=left===0?'#f87171':'#e5e7eb';
   document.getElementById('slotDots').innerHTML=
     Array.from({length:MAX_SIGNINGS},(_,i)=>`<span class="slot-dot ${i<used?'slot-used':'slot-free'}"></span>`).join('');
-  // Simulate button — requires at least 1 signing AND net spend ≤ Wenger's + €5M
+  // Simulate button — requires at least 1 signing AND net spend ≤ Wenger's (no grace)
   const _simActual=SEASONS[S.season]?.netSpend||0;
   const _overBy=net-_simActual;
-  const _tooOver=_overBy>5e6;
+  const _tooOver=_overBy>0;
   const _noSignings=used===0;
   const blocked=_noSignings||_tooOver;
   const btn=document.getElementById('simBtn');
@@ -1212,7 +1209,7 @@ function updateSidebar(){
     if(mDiff){
       const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
       if(diff2<=0){mDiff.textContent=Math.abs(diff2)<1e6?'On budget':fmt(Math.abs(diff2))+' to spend';mDiff.style.color='#4ade80';}
-      else if(diff2<=5e6){mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#fbbf24';}
+      else if(diff2>0){mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#f87171';}
       else{mDiff.textContent='Sell to unlock';mDiff.style.color='#f87171';}
     }
     const mBtn=document.getElementById('mobileSimBtn');
@@ -1712,7 +1709,7 @@ function drawSeasonEvents(xi, bought) {
 function runSimulation(){
   if(!S.bought.length){showToast('Make at least one signing first.');return;}
   const netCheck=(S.spent-S.sales)-(SEASONS[S.season]?.netSpend||0);
-  if(netCheck>5e6){showToast(`You have gone ${(netCheck/1e6).toFixed(1)}M over Wenger's real net spend. Sell some players first.`,4000);return;}
+  if(netCheck>0){showToast(`Your net spend exceeds Wenger's. Sell a player to unlock the simulation.`,4000);return;}
   const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   if(!allActive.length){showToast('Load a season first.');return;}
 
