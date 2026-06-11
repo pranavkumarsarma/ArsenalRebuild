@@ -657,15 +657,26 @@ const BENCH_IDS = ['b1','b2','b3','b4','b5','b6','b7'];
 
 // ── Unsellable / youth protection ──────────────────────────────────────
 const UNSELLABLE = {
-  2009:['Bendtner','Almunia','Denilson'],
-  2010:['Bendtner','Denilson','Diaby'],
-  2011:['Bendtner','Diaby','Chu-Young'],    // Chu-Young Park or Park Chu-Young
-  2012:['Bendtner','Diaby','Fabianski'],
-  2013:['Bendtner','Sanogo','Miyaichi'],
-  2014:['Sanogo','Wellington','Miyaichi'],  // Wellington or Wellington Silva
-  2015:['Sanogo','Zelalem','Reine'],        // Jeff Reine-Adelaide
+  2009:['Bendtner','Denilson','Diaby','Wilshere','Rosicky'],
+  2010:['Bendtner','Denilson','Diaby','Wilshere','Rosicky'],
+  2011:['Bendtner','Diaby','Wilshere','Rosicky','Chu-Young'],
+  2012:['Bendtner','Diaby','Wilshere','Rosicky','Fabianski'],
+  2013:['Bendtner','Diaby','Wilshere','Rosicky','Sanogo','Miyaichi'],
+  2014:['Diaby','Wilshere','Rosicky','Sanogo','Wellington','Miyaichi'],
+  2015:['Wilshere','Rosicky','Sanogo','Zelalem','Reine'],
+};
+// Players Wenger actually signed that summer — can't be immediately sold
+const LOCKED_SIGNINGS = {
+  2009:['Vermaelen'],
+  2010:['Koscielny','Squillaci','Chamakh'],
+  2011:['Arteta','Mertesacker','Gervinho','Jenkinson'],
+  2012:['Cazorla','Giroud','Podolski'],
+  2013:['Özil','Flamini'],
+  2014:['Sánchez','Welbeck','Debuchy','Chambers','Ospina'],
+  2015:['Cech'],
 };
 const MAX_YOUTH_SALES = 2;
+const MAX_SALES_BY_GRP = {GK:1, DEF:2, MID:2, ATT:2};
 
 // ── Position maps ──────────────────────────────────────────────────────
 const POS_MAP = {
@@ -683,7 +694,7 @@ const SOFT_RIVALS = ['Liverpool','Manchester City'];
 const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
 // ── State ──────────────────────────────────────────────────────────────
-const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0 };
+const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0} };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -1065,24 +1076,46 @@ function sellPlayer(id,val){
   if(!player)return;
   const lastName=player.name.split(' ').pop();
 
-  // Board veto: unsellable players
-  const blocked=UNSELLABLE[S.season]||[];
-  if(blocked.some(n=>player.name.includes(n))){
-    showToast(`The board refuses to sell ${lastName}. He stays, whether you like it or not.`,3500);
-    return;
+  // Board veto: unsellable personalities
+  const vetoed=UNSELLABLE[S.season]||[];
+  if(vetoed.some(n=>player.name.includes(n))){
+    let msg;
+    if(player.name.includes('Bendtner'))msg=`Bendtner refuses to leave. He doesn't want to go.`;
+    else if(player.name.includes('Diaby')||player.name.includes('Wilshere'))msg=`${lastName} won't leave. He wants to prove himself at Arsenal.`;
+    else if(player.name.includes('Rosicky'))msg=`Rosicky won't leave. The loyal soldier stays.`;
+    else msg=`The board refuses to sell ${lastName}.`;
+    showToast(msg,3500);return;
   }
 
-  // Youth protection: max 2 young players (age <21 in that season) sold per window
+  // Board veto: players Wenger just signed this summer
+  const locked=LOCKED_SIGNINGS[S.season]||[];
+  if(locked.some(n=>player.name.includes(n))){
+    showToast(`Wenger just signed ${lastName} this window. He's not going anywhere.`,3500);return;
+  }
+
+  // Position group sale cap
+  const posGrp=grp(player.position);
+  const capMsg={
+    GK:`Can't lose another keeper. You'd have no cover in goal.`,
+    DEF:`The board won't sanction another defender leaving. The backline is already thin.`,
+    MID:`Wenger won't clear more bodies from midfield. He needs the depth.`,
+    ATT:`The board won't allow another forward to leave. Goals are already hard to come by.`,
+  };
+  if((S.salesByGrp[posGrp]||0)>=(MAX_SALES_BY_GRP[posGrp]||99)){
+    showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
+  }
+
+  // Youth protection
   const ageInSeason=parseInt(player.age||99);
   if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
-    showToast(`The board won't release more young players, you need to develop them.`,3500);
-    return;
+    showToast(`The board won't release more young players, you need to develop them.`,3500);return;
   }
   const isYouth=ageInSeason<21;
   if(isYouth)S.youthSold++;
 
+  S.salesByGrp[posGrp]=(S.salesByGrp[posGrp]||0)+1;
   S.sold.add(id);S.sales+=val;
-  S.sellHistory.push({id,val,name:player.name,isYouth});
+  S.sellHistory.push({id,val,name:player.name,isYouth,posGrp});
   for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===id){delete S.lineup[s];break;}}
   render();updateSidebar();updateLineupCountBadges();
 
@@ -1098,13 +1131,14 @@ function undoSell(){
   if(!last)return;
   S.sold.delete(last.id);S.sales-=last.val;
   if(last.isYouth&&S.youthSold>0)S.youthSold--;
+  if(last.posGrp&&S.salesByGrp[last.posGrp]>0)S.salesByGrp[last.posGrp]--;
   document.getElementById('toast').style.display='none';
   render();updateSidebar();updateLineupCountBadges();
   showToast(`${last.name.split(' ').pop()} sale cancelled.`,2500);
 }
 function resetAll(){
   S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;
-  S.lineup={};S.sellHistory=[];S.youthSold=0;
+  S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   render();updateSidebar();updateLineupCountBadges();
   showToast('All transfers reset.',2500);
 }
@@ -1241,7 +1275,7 @@ function renderSignings(){
 
 // ── Load season ────────────────────────────────────────────────────────
 async function loadSeason(yr){
-  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;
+  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   const m=SEASONS[yr]||{};
   document.getElementById('budgetAmt').textContent=fmt(m.budget);
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
