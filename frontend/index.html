@@ -1381,10 +1381,9 @@ function renderSignings(){
   if(!S.bought.length){area.style.display='none';return;}
   area.style.display='block';
   strip.innerHTML=S.bought.map(p=>{
-    const pg=grp(p.position);
-    // Show specific position if available (e.g. "CF" not just "ATT"), fallback to group
+    const pg=p._group||grp(p.position);
     const sp=specificPos(p.position);
-    const lbl=sp||(p.position&&!/^\d+$/.test(p.position.trim())?pg:'?');
+    const lbl=sp||pg||'?';
     return `
     <div class="signing-card">
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
@@ -1833,8 +1832,14 @@ function handleCardClick(card,name,position,currClub){
     }
   }
 
-  S.bought.push({id:card.dataset.id,name,position,marketValue:value});S.spent+=value;
-  checkEliteSquadCap(position);
+  // Sanitize position: API may return empty or shirt number (numeric) before XPath fix deploys
+  const cleanPos=(position&&!/^\d+$/.test(position.trim()))?position:'';
+  // If position is missing, synthesise a group-level fallback so scoring functions still work
+  const posGroup=_grp||grp(cleanPos);
+  const fallbackPos={'GK':'Goalkeeper','DEF':'Centre-Back','MID':'Central Midfield','ATT':'Centre-Forward'};
+  const finalPos=cleanPos||(fallbackPos[posGroup]||'');
+  S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value});S.spent+=value;
+  checkEliteSquadCap(finalPos);
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
 }
