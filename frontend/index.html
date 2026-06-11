@@ -217,10 +217,9 @@
 <!-- ══ MOBILE BOTTOM BAR ═══════════════════════════════════════════════ -->
 <div id="mobileBar" style="display:none;position:fixed;bottom:0;left:0;right:0;height:54px;background:#0d1b2f;border-top:1px solid #1f2937;padding:7px 12px;z-index:40;align-items:center;gap:8px;">
   <div style="flex:1;min-width:0;">
-    <div style="font-size:6px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">Budget</div>
-    <div id="mobileBudget" style="font-size:15px;font-weight:900;color:#EF0107;line-height:1;white-space:nowrap;">—</div>
+    <div style="font-size:6px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">To spend</div>
+    <div id="mobileSpend" style="font-size:15px;font-weight:900;color:#4ade80;line-height:1;white-space:nowrap;">—</div>
   </div>
-  <div id="mobileTargetDiff" style="font-size:8px;font-weight:700;padding:3px 8px;border-radius:9999px;background:#1f2937;color:#6b7280;white-space:nowrap;flex-shrink:0;">—</div>
   <button onclick="openLineupModal()" style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
     Lineup <span id="mobileLineupBadge" style="font-size:8px;color:#6b7280;">0/11</span>
   </button>
@@ -1213,16 +1212,16 @@ function updateSidebar(){
     else btn.title='';
   }
   // Sync mobile bottom bar
-  const mob=document.getElementById('mobileBudget');
-  if(mob){
-    const m=SEASONS[S.season]||{};
-    mob.textContent=fmt(m.budget-net);
-    const mDiff=document.getElementById('mobileTargetDiff');
-    if(mDiff){
-      const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
-      if(diff2<=0){mDiff.textContent=Math.abs(diff2)<1e6?'On budget':fmt(Math.abs(diff2))+' to spend';mDiff.style.color='#4ade80';}
-      else if(diff2>0){mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#f87171';}
-      else{mDiff.textContent='Sell to unlock';mDiff.style.color='#f87171';}
+  const mSpend=document.getElementById('mobileSpend');
+  if(mSpend){
+    const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
+    if(diff2<=0){
+      const room=Math.abs(diff2);
+      mSpend.textContent=room<1e6?'On budget':fmt(room);
+      mSpend.style.color='#4ade80';
+    }else{
+      mSpend.textContent=fmt(diff2)+' over';
+      mSpend.style.color='#f87171';
     }
     const mBtn=document.getElementById('mobileSimBtn');
     if(mBtn){mBtn.disabled=false;mBtn.style.opacity=blocked?'0.38':'1';}
@@ -1289,7 +1288,7 @@ async function loadSeason(yr){
   const m=SEASONS[yr]||{};
   document.getElementById('budgetAmt').textContent=fmt(m.budget);
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
-  const mob=document.getElementById('mobileBudget');if(mob)mob.textContent=fmt(m.budget);
+  const mSpend2=document.getElementById('mobileSpend');if(mSpend2){mSpend2.textContent=fmt(m.netSpend||0);mSpend2.style.color='#4ade80';}
   document.getElementById('actualNote').textContent=m.note||'';
   document.getElementById('actualResult').textContent='';
   const seasonLabel=`${yr}/${String(yr+1).slice(-2)}`;
