@@ -1409,15 +1409,11 @@ async function selectClub(clubId,clubName){
     const isSoftRivalClub=!isHardRivalClub&&SOFT_RIVALS.some(r=>clubName.includes(r));
     box.innerHTML=results.map(p=>{
       const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
-      const tooExp=!isHardRivalClub&&!isSoftRivalClub&&p.marketValue&&p.marketValue>remaining;
       const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
       let badgeTxt,badgeClr,blocked;
       if(inSquad){badgeTxt='In squad';badgeClr='#6b7280';blocked=true;}
-      else if(isHardRivalClub){badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
-      else if(isSoftRivalClub){badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
-      else if(tooExp){badgeTxt='Over budget';badgeClr='#fbbf24';blocked=false;}
-      else{badgeTxt='Available';badgeClr='#4ade80';blocked=false;}
-      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${p.marketValue}"
+      else{badgeTxt='Loading era…';badgeClr='#4b5563';blocked=false;}
+      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="0"
           data-blocked="${blocked}" data-soft-rival="${isSoftRivalClub}"
           data-era-club="${esc(clubName)}" data-hard-rival="${isHardRivalClub}"
           onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(clubName)}')"
@@ -1426,14 +1422,57 @@ async function selectClub(clubId,clubName){
           <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-            <div style="font-size:8px;color:#6b7280;">${p.position||''} · ${clubName}</div>
+            <div data-sub style="font-size:8px;color:#6b7280;">${p.position||''}<span data-club-loading style="color:#2d3748;"> · ···</span></div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:2px;">${p.marketValue?fmt(p.marketValue):'—'}</div>
-            <div style="font-size:9px;color:${badgeClr};">${badgeTxt}</div>
+            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-bottom:2px;">
+              <div class="spin" data-loading style="width:8px;height:8px;border:1.5px solid #2d3748;border-top-color:#60a5fa;border-radius:50%;flex-shrink:0;"></div>
+              <div data-mv style="font-size:10px;font-weight:700;color:#6b7280;">—</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;justify-content:flex-end;">
+              <span data-badge style="font-size:9px;color:${badgeClr};">${badgeTxt}</span>
+              <span data-mv-note style="font-size:7px;color:#374151;"></span>
+            </div>
           </div>
         </div>`;
     }).join('');
+    // Async historical value loading — same as doSearch
+    const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
+    let done=0;
+    const budget2=SEASONS[S.season]?.budget||0;
+    results.forEach(p=>{
+      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
+      fetchHistoricalValue(p.id,yr).then(hist=>{
+        done++;
+        if(done===results.length)hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel} · ${yrLabel} values loaded`;
+        const card=document.getElementById(`pcard-${p.id}`);
+        if(!card)return;
+        const mvEl=card.querySelector('[data-mv]'),noteEl=card.querySelector('[data-mv-note]');
+        const bdgEl=card.querySelector('[data-badge]'),subEl=card.querySelector('[data-sub]');
+        const loadEl=card.querySelector('[data-loading]'),clubLoadEl=card.querySelector('[data-club-loading]');
+        if(loadEl)loadEl.style.display='none';
+        if(clubLoadEl)clubLoadEl.remove();
+        if(!hist){
+          if(mvEl){mvEl.textContent='—';mvEl.style.color='#374151';}
+          if(bdgEl&&!inSquad){bdgEl.textContent='No era data';bdgEl.style.color='#374151';}
+          return;
+        }
+        if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
+        if(hist.value)card.dataset.value=hist.value;
+        if(noteEl)noteEl.textContent=yrLabel;
+        if(subEl){subEl.textContent=(p.position||'')+(hist.club?' · '+hist.club:'');}
+        card.dataset.eraClub=hist.club||clubName;
+        if(inSquad)return;
+        const remaining2=budget2-S.spent+S.sales;
+        const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
+        const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
+        card.dataset.hardRival=String(eraHardRival);
+        card.dataset.softRival=String(eraSoftRival);
+        card.style.opacity='1';
+        const t2=hist.value&&hist.value>remaining2;
+        if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
+      });
+    });
   }catch(e){
     hint.textContent='Failed to load squad. Try searching by name.';
     box.innerHTML='<div style="text-align:center;color:#f87171;font-size:11px;padding:12px;">Could not load squad</div>';
