@@ -453,6 +453,18 @@
 <!-- ══ SCRIPT ══════════════════════════════════════════════════════════ -->
 <script>
 const API = 'https://arsenalrebuild.onrender.com';
+
+// ── Player cache (pre-fetched static data, avoids runtime API calls) ───────
+let PLAYER_CACHE = {squads:{}, history:{}};
+(async()=>{
+  try{
+    const r=await fetch('./player_cache.json');
+    if(r.ok){
+      const d=await r.json();
+      PLAYER_CACHE={squads:d.squads||{},history:d.history||{}};
+    }
+  }catch(e){}
+})();
 const MAX_SIGNINGS = 6;
 const CURRENT_YEAR = 2026;
 
@@ -1294,11 +1306,18 @@ async function loadSeason(yr){
   document.getElementById('lineupModal').classList.remove('open');
   updateLineupCountBadges();
   try {
-    const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
-    if(!r.ok)throw new Error();
-    const d=await r.json();
-    S.players=(d.players||[]).filter(p=>p.name);
-    render();updateSidebar();
+    // Cache-first: use pre-fetched squad if available
+    const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
+    if(cachedSquad?.length){
+      S.players=cachedSquad.filter(p=>p.name);
+      render();updateSidebar();
+    } else {
+      const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
+      if(!r.ok)throw new Error();
+      const d=await r.json();
+      S.players=(d.players||[]).filter(p=>p.name);
+      render();updateSidebar();
+    }
   } catch(e){
     loadEl.innerHTML=`
       <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Failed to load squad</div>
@@ -1387,10 +1406,18 @@ async function selectClub(clubId,clubName){
       <div style="background:#1f2937;height:9px;border-radius:3px;width:28px;"></div>
     </div>`).join('');
   try{
-    const r=await fetch(`${API}/clubs/${clubId}/players?season_id=${S.season}`);
-    const d=await r.json();
-    // Club roster ages are already era-accurate (season_id filter) — skip eraCheck
-    const all=(d.players||[]).map(p=>({
+    // Cache-first: use pre-fetched roster if available
+    let rawPlayers;
+    const cacheKey=`${clubId}-${S.season}`;
+    const cachedRoster=PLAYER_CACHE.squads?.[cacheKey];
+    if(cachedRoster?.length){
+      rawPlayers=cachedRoster;
+    }else{
+      const r=await fetch(`${API}/clubs/${clubId}/players?season_id=${S.season}`);
+      const d=await r.json();
+      rawPlayers=d.players||[];
+    }
+    const all=rawPlayers.map(p=>({
       id:p.id,name:p.name,position:p.position,
       marketValue:p.market_value||0,
     }));
@@ -1479,22 +1506,34 @@ async function selectClub(clubId,clubName){
   }
 }
 
-// ── Historical value fetch ─────────────────────────────────────────────
+// ── Historical value fetch (cache-first, API fallback) ────────────────
+function _closestEntry(entries, yr){
+  const target=new Date(yr,9,1).getTime();
+  let best=null,bestDiff=Infinity;
+  for(const e of entries){
+    if(!e.date)continue;
+    const diff=Math.abs(new Date(e.date).getTime()-target);
+    if(diff<bestDiff){bestDiff=diff;best=e;}
+  }
+  return best;
+}
 async function fetchHistoricalValue(pid,yr){
+  // 1. Check static cache
+  const cached=PLAYER_CACHE.history?.[String(pid)];
+  if(cached){
+    if(!cached.length)return null;
+    const best=_closestEntry(cached,yr);
+    return best?{value:best.value??null,club:best.club??null}:null;
+  }
+  // 2. Fall back to live API
   try{
     const r=await fetch(`${API}/players/${pid}/market_value`);
     if(!r.ok)return null;
     const d=await r.json();
     const history=d.marketValueHistory||[];
     if(!history.length)return null;
-    const target=new Date(yr,9,1).getTime();
-    let best=null,bestDiff=Infinity;
-    for(const e of history){
-      if(!e.date)continue;
-      const diff=Math.abs(new Date(e.date).getTime()-target);
-      if(diff<bestDiff){bestDiff=diff;best=e;}
-    }
-    return best?{value:best.marketValue||null,club:best.clubName||null}:null;
+    const best=_closestEntry(history.map(e=>({date:e.date,value:e.marketValue,club:e.clubName})),yr);
+    return best?{value:best.value??null,club:best.club??null}:null;
   }catch(e){return null;}
 }
 
