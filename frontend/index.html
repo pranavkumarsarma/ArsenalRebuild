@@ -1204,10 +1204,10 @@ function sellPlayer(id,val){
     showToast(msg,3500);return;
   }
 
-  // Board veto: players Wenger just signed this summer
+  // Board veto: players signed this summer — can't immediately flip them
   const locked=LOCKED_SIGNINGS[S.season]||[];
   if(locked.some(n=>player.name.includes(n))){
-    showToast(`Wenger just signed ${lastName} this window. He's not going anywhere.`,3500);return;
+    showToast(`The board won't sanction selling ${lastName}. He only just arrived this window.`,3500);return;
   }
 
   // Position group sale cap
@@ -1222,8 +1222,9 @@ function sellPlayer(id,val){
     showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
   }
 
-  // Youth protection — era-adjust to the active season (player.age is current 2026 age)
-  const ageInSeason=(parseInt(player.age)||99)-(CURRENT_YEAR-S.season);
+  // Youth protection — player.age is already the season-time age from the historical squad page
+  // Use parseInt(x||0)||99 so null/undefined/"0" all fall back to 99 (not youth)
+  const ageInSeason=parseInt(player.age||0)||99;
   if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
     showToast(`The board won't release more young players, you need to develop them.`,3500);return;
   }
