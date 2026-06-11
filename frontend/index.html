@@ -659,11 +659,11 @@ const BENCH_IDS = ['b1','b2','b3','b4','b5','b6','b7'];
 const UNSELLABLE = {
   2009:['Bendtner','Denilson','Diaby','Wilshere','Rosicky'],
   2010:['Bendtner','Denilson','Diaby','Wilshere','Rosicky'],
-  2011:['Bendtner','Diaby','Wilshere','Rosicky','Chu-Young'],
-  2012:['Bendtner','Diaby','Wilshere','Rosicky','Fabianski'],
-  2013:['Bendtner','Diaby','Wilshere','Rosicky','Sanogo','Miyaichi'],
-  2014:['Diaby','Wilshere','Rosicky','Sanogo','Wellington','Miyaichi','Welbeck','Debuchy'],
-  2015:['Wilshere','Rosicky','Sanogo','Zelalem','Reine','Welbeck','Debuchy'],
+  2011:['Bendtner','Diaby','Wilshere','Rosicky','Chu-Young','Jenkinson'],
+  2012:['Bendtner','Diaby','Wilshere','Rosicky','Fabianski','Jenkinson'],
+  2013:['Bendtner','Diaby','Wilshere','Rosicky','Sanogo','Miyaichi','Jenkinson'],
+  2014:['Diaby','Wilshere','Rosicky','Sanogo','Wellington','Miyaichi','Welbeck','Debuchy','Jenkinson'],
+  2015:['Wilshere','Rosicky','Sanogo','Zelalem','Reine','Welbeck','Debuchy','Jenkinson','Elneny'],
 };
 // Players Wenger actually signed that summer — can't be immediately sold
 const LOCKED_SIGNINGS = {
@@ -1082,7 +1082,7 @@ function sellPlayer(id,val){
     let msg;
     if(player.name.includes('Welbeck')||player.name.includes('Debuchy'))msg=`Transfer blocked. ${lastName} failed the medical at the buying club.`;
     else if(player.name.includes('Bendtner'))msg=`Bendtner refuses to leave. He doesn't want to go.`;
-    else if(player.name.includes('Diaby')||player.name.includes('Wilshere'))msg=`${lastName} won't leave. He wants to prove himself at Arsenal.`;
+    else if(player.name.includes('Diaby')||player.name.includes('Wilshere')||player.name.includes('Jenkinson')||player.name.includes('Elneny'))msg=`${lastName} won't leave. He wants to prove himself at Arsenal.`;
     else if(player.name.includes('Rosicky'))msg=`Rosicky won't leave. The loyal soldier stays.`;
     else msg=`The board refuses to sell ${lastName}.`;
     showToast(msg,3500);return;
