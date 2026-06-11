@@ -699,6 +699,13 @@ const UNSELLABLE = {
   2014:['Diaby','Wilshere','Rosicky','Sanogo','Wellington','Miyaichi','Welbeck','Debuchy','Jenkinson'],
   2015:['Wilshere','Rosicky','Sanogo','Zelalem','Reine','Welbeck','Debuchy','Jenkinson','Elneny'],
 };
+// Players the API may wrongly include due to Transfermarkt historical data quirks
+const SQUAD_EXCLUSIONS = {
+  2012:['van Persie','Fabregas','Nasri'],
+  2013:['van Persie','Fabregas','Nasri'],
+  2014:['van Persie','Fabregas','Nasri'],
+  2015:['van Persie','Fabregas','Nasri'],
+};
 // Players Wenger actually signed that summer — can't be immediately sold
 const LOCKED_SIGNINGS = {
   2009:['Vermaelen'],
@@ -923,9 +930,10 @@ function grp(pos){
   const p=pos.toLowerCase().trim();
   if(p==='gk'||p.includes('goalkeeper')||p.includes('keeper')) return 'GK';
   if(POS_MAP[pos]) return POS_MAP[pos];
-  if(p.includes('back')||p.includes('defend')||p.includes('stopper')||p.includes('centre-back')||p.includes('center-back')) return 'DEF';
-  if(p.includes('midfield')) return 'MID';
-  if(p.includes('winger')||p.includes('forward')||p.includes('striker')) return 'ATT';
+  // Short-code abbreviations (CB, CF, ST, LW, RW, LB, RB, DM, CAM etc.)
+  if(p==='cb'||p==='lb'||p==='rb'||p.includes('back')||p.includes('defend')||p.includes('stopper')) return 'DEF';
+  if(p==='lw'||p==='rw'||p==='cf'||p==='st'||p==='ss'||p.includes('winger')||p.includes('forward')||p.includes('striker')) return 'ATT';
+  if(p==='dm'||p==='cam'||p==='cm'||p==='rm'||p==='lm'||p.includes('midfield')) return 'MID';
   return 'MID';
 }
 function specificPos(pos){
@@ -980,19 +988,14 @@ function checkEliteSquadCap(signedPosition){
   if(!sPos)return;
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const same=all.filter(p=>specificPos(p.position)===sPos);
-  const qualCount=same.filter(p=>mvToRating(p.marketValue||0)>=80).length;
-  if(qualCount>=3){
-    const candidates=S.players
-      .filter(p=>!S.sold.has(p.id)&&specificPos(p.position)===sPos&&mvToRating(p.marketValue||0)>=78)
-      .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0));
-    if(candidates.length>0){
-      const v=candidates[0];
+  // Only fires when 3+ elite (85+) players at the exact same position — just a narrative warning, no forced sale
+  const eliteCount=same.filter(p=>mvToRating(p.marketValue||0)>=85).length;
+  if(eliteCount>=3){
+    const weakest=same.filter(p=>mvToRating(p.marketValue||0)>=82)
+      .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0))[0];
+    if(weakest){
       const posLabel=SPOS_LBL[sPos]||sPos;
-      const posGrp=grp(v.position);
-      S.sold.add(v.id);
-      if(S.salesByGrp[posGrp]!==undefined)S.salesByGrp[posGrp]++;
-      for(const[s,lp]of Object.entries(S.lineup)){if(lp&&lp.id===v.id){delete S.lineup[s];break;}}
-      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}, not enough minutes.`,4500),400);
+      setTimeout(()=>showToast(`${weakest.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}, not enough minutes.`,4500),400);
     }
   }
 }
@@ -1408,15 +1411,17 @@ async function loadSeason(yr){
   updateLineupCountBadges();
   try {
     // Cache-first: use pre-fetched squad if available
+    const _excl=SQUAD_EXCLUSIONS[yr]||[];
+    const _filterSquad=ps=>ps.filter(p=>p.name&&!_excl.some(n=>p.name.includes(n)));
     const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
     if(cachedSquad?.length){
-      S.players=cachedSquad.filter(p=>p.name);
+      S.players=_filterSquad(cachedSquad);
       render();updateSidebar();
     } else {
       const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
       if(!r.ok)throw new Error();
       const d=await r.json();
-      S.players=(d.players||[]).filter(p=>p.name);
+      S.players=_filterSquad(d.players||[]);
       render();updateSidebar();
     }
   } catch(e){
