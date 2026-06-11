@@ -893,7 +893,11 @@ function buildSimTable(simPts, season) {
   const table = actual.map(r => r.club==='Arsenal' ? {...r,pts:simPts,yours:true} : {...r});
   if (!table.find(r=>r.yours)) table.push({club:'Arsenal',pts:simPts,yours:true});
   table.sort((a,b)=>b.pts-a.pts);
-  return table.slice(0,5).map((r,i)=>({...r,pos:i+1}));
+  const ranked=table.map((r,i)=>({...r,pos:i+1}));
+  const top5=ranked.slice(0,5);
+  // Always include Arsenal row even when outside top 5
+  if(!top5.find(r=>r.yours)){const ar=ranked.find(r=>r.yours);if(ar)top5.push(ar);}
+  return top5;
 }
 
 // ── W/D/L ──────────────────────────────────────────────────────────────
@@ -1218,8 +1222,8 @@ function sellPlayer(id,val){
     showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
   }
 
-  // Youth protection
-  const ageInSeason=parseInt(player.age||99);
+  // Youth protection — era-adjust to the active season (player.age is current 2026 age)
+  const ageInSeason=(parseInt(player.age)||99)-(CURRENT_YEAR-S.season);
   if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
     showToast(`The board won't release more young players, you need to develop them.`,3500);return;
   }
@@ -1965,7 +1969,7 @@ function runSimulation(){
     const rivals=ACTUAL_TABLE[S.season]?.filter(r=>r.club!=='Arsenal')||[];
     const topRival=rivals.sort((a,b)=>b.pts-a.pts)[0];
     if(topRival){
-      simPts=Math.max(topRival.pts-1,simPts-3);
+      simPts=Math.min(topRival.pts-1,simPts-3);
       table=buildSimTable(simPts,S.season);
       arsenalPos=table.findIndex(r=>r.yours)+1;
     }
