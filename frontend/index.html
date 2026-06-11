@@ -144,11 +144,11 @@
         </div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:9px;">
           <div>
-            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Arsene spent</div>
+            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Wenger's net spend</div>
             <div style="font-size:20px;font-weight:900;line-height:1;color:#e5e7eb;" id="arsenalNetTarget">—</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">You spent</div>
+            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Your net spend</div>
             <div style="font-size:20px;font-weight:900;line-height:1;" id="netSpend">€0</div>
           </div>
         </div>
@@ -452,56 +452,55 @@ const MAX_SIGNINGS = 6;
 const CURRENT_YEAR = 2026;
 
 // ── Season data ────────────────────────────────────────────────────────
-// targets: {name, club} — club used to filter rivals at chip render time
 const SEASONS = {
   2009:{ budget:12000000, netSpend:6000000,   result:'3rd', pts:75,
     targets:{
-      GK:[{name:'Júlio César',club:'Inter'},{name:'Rob Green',club:'West Ham'},{name:'Mark Schwarzer',club:'Fulham'},{name:'Brad Friedel',club:'Aston Villa'}],
-      DEF:[{name:'Gary Cahill',club:'Bolton'},{name:'Joleon Lescott',club:'Everton'},{name:'Vedran Ćorluka',club:'Man City'},{name:'Sylvain Distin',club:'Portsmouth'}],
-      MID:[{name:'Yoann Gourcuff',club:'Bordeaux'},{name:'Gareth Barry',club:'Aston Villa'},{name:"Yann M'Vila",club:'Rennes'},{name:'Luka Modrić',club:'Tottenham'},{name:'Franck Ribery',club:'Bayern'},{name:'Nigel de Jong',club:'Hamburg'}],
-      ATT:[{name:'Karim Benzema',club:'Lyon'},{name:'David Villa',club:'Valencia'},{name:"Samuel Eto'o",club:'Barcelona'},{name:'Dimitar Berbatov',club:'Man Utd'},{name:'Robinho',club:'Man City'},{name:'Nicolas Anelka',club:'Chelsea'},{name:'Diego Forlán',club:'Atlético'}],
+      GK:['Heurelho Gomes','Shay Given'],
+      DEF:['Joleon Lescott','Gary Cahill'],
+      MID:['Gareth Barry','Luka Modrić','Franck Ribery','Yoann Gourcuff',"Yann M'Vila"],
+      ATT:['Karim Benzema','David Villa','Dimitar Berbatov',"Samuel Eto'o",'Robinho'],
     }},
   2010:{ budget:10000000, netSpend:-1000000,  result:'4th', pts:68,
     targets:{
-      GK:[{name:'Júlio César',club:'Inter'},{name:'Mark Schwarzer',club:'Fulham'},{name:'David de Gea',club:'Atlético'},{name:'Pepe Reina',club:'Liverpool'},{name:'Bernd Leno',club:'Leverkusen'}],
-      DEF:[{name:'Gary Cahill',club:'Bolton'},{name:'Jan Vertonghen',club:'Ajax'},{name:'Branislav Ivanović',club:'Chelsea'},{name:'Joleon Lescott',club:'Man City'},{name:'Mats Hummels',club:'Dortmund'}],
-      MID:[{name:'Wesley Sneijder',club:'Inter'},{name:'Juan Mata',club:'Valencia'},{name:"Yann M'Vila",club:'Rennes'},{name:'Ivan Perišić',club:'Dortmund'},{name:'Luka Modrić',club:'Tottenham'},{name:'Mikel Arteta',club:'Everton'}],
-      ATT:[{name:'David Villa',club:'Barcelona'},{name:'Edin Džeko',club:'Wolfsburg'},{name:'Didier Drogba',club:'Chelsea'},{name:'Carlos Tevez',club:'Man City'},{name:'Fernando Torres',club:'Liverpool'},{name:'Falcao',club:'Porto'},{name:'Diego Forlán',club:'Atlético'}],
+      GK:['Shay Given','Pepe Reina'],
+      DEF:['Gary Cahill','Branislav Ivanović'],
+      MID:['Luka Modrić','Wesley Sneijder','Juan Mata','Mikel Arteta',"Yann M'Vila"],
+      ATT:['David Villa','Fernando Torres','Gonzalo Higuaín','Edin Džeko','Falcao'],
     }},
   2011:{ budget:8000000,  netSpend:44000000,  result:'3rd', pts:70,
     targets:{
-      GK:[{name:'Manuel Neuer',club:'Schalke'},{name:'David de Gea',club:'Man Utd'},{name:'Júlio César',club:'Inter'},{name:'Mark Schwarzer',club:'Fulham'}],
-      DEF:[{name:'Gary Cahill',club:'Bolton'},{name:'Jan Vertonghen',club:'Ajax'},{name:'Mats Hummels',club:'Dortmund'},{name:'Sebastián Coates',club:'Nacional'}],
-      MID:[{name:'Juan Mata',club:'Valencia'},{name:'Clint Dempsey',club:'Fulham'},{name:'David Silva',club:'Man City'},{name:'Mikel Arteta',club:'Everton'},{name:"Yann M'Vila",club:'Rennes'},{name:'Yoann Gourcuff',club:'Lyon'}],
-      ATT:[{name:'Luis Suárez',club:'Liverpool'},{name:'Loic Remy',club:'Nice'},{name:'Edin Džeko',club:'Man City'},{name:'Javier Hernández',club:'Man Utd'},{name:'Demba Ba',club:'Hoffenheim'},{name:'Falcao',club:'Porto'},{name:'Papiss Cissé',club:'Freiburg'}],
+      GK:['Manuel Neuer','Joe Hart'],
+      DEF:['Gary Cahill','Jan Vertonghen'],
+      MID:['Juan Mata','Luka Modrić','Mikel Arteta','Clint Dempsey',"Yann M'Vila"],
+      ATT:['Luis Suárez','Robin van Persie','Demba Ba','Loic Remy','Falcao'],
     }},
   2012:{ budget:8000000,  netSpend:-9000000,  result:'4th', pts:73,
     targets:{
-      GK:[{name:'Júlio César',club:'Inter'},{name:'Stéphane Ruffier',club:'Monaco'},{name:'Michel Vorm',club:'Swansea'},{name:'David de Gea',club:'Man Utd'}],
-      DEF:[{name:'Mats Hummels',club:'Dortmund'},{name:'Thiago Silva',club:'AC Milan'},{name:'Jan Vertonghen',club:'Tottenham'},{name:'Joleon Lescott',club:'Man City'},{name:'Kostas Manolas',club:'Olympiacos'}],
-      MID:[{name:'Santi Cazorla',club:'Málaga'},{name:'Marouane Fellaini',club:'Everton'},{name:'Willian',club:'Shakhtar'},{name:'Juan Mata',club:'Chelsea'},{name:'Kevin De Bruyne',club:'Chelsea'},{name:'Luka Modrić',club:'Tottenham'},{name:'Ilkay Gündogan',club:'Dortmund'}],
-      ATT:[{name:'Gonzalo Higuaín',club:'Real Madrid'},{name:'Wayne Rooney',club:'Man Utd'},{name:'Falcao',club:'Atlético'},{name:'Edinson Cavani',club:'Napoli'},{name:'Fernando Torres',club:'Chelsea'},{name:'Michu',club:'Swansea'},{name:'Papiss Cissé',club:'Newcastle'}],
+      GK:['Júlio César','Manuel Neuer'],
+      DEF:['Mats Hummels','Thiago Silva'],
+      MID:['Santi Cazorla','Luka Modrić','Marouane Fellaini','Willian','Ilkay Gündogan'],
+      ATT:['Gonzalo Higuaín','Wayne Rooney','Falcao','Edinson Cavani','Luis Suárez'],
     }},
   2013:{ budget:42000000, netSpend:28000000,  result:'4th', pts:79,
     targets:{
-      GK:[{name:'Manuel Neuer',club:'Bayern'},{name:'David de Gea',club:'Man Utd'},{name:'Pepe Reina',club:'Liverpool'},{name:'Bernd Leno',club:'Leverkusen'},{name:'Thibaut Courtois',club:'Chelsea'}],
-      DEF:[{name:'Thiago Silva',club:'PSG'},{name:'Branislav Ivanović',club:'Chelsea'},{name:'Mats Hummels',club:'Dortmund'},{name:'Marquinhos',club:'Roma'},{name:'Kostas Manolas',club:'Olympiacos'}],
-      MID:[{name:'Cesc Fàbregas',club:'Barcelona'},{name:'Julian Draxler',club:'Schalke'},{name:'Marco Verratti',club:'PSG'},{name:'Isco',club:'Real Madrid'},{name:'Ilkay Gündogan',club:'Dortmund'},{name:'Yoann Gourcuff',club:'Rennes'}],
-      ATT:[{name:'Luis Suárez',club:'Liverpool'},{name:'Karim Benzema',club:'Real Madrid'},{name:'Gonzalo Higuaín',club:'Real Madrid'},{name:'Edinson Cavani',club:'PSG'},{name:'Falcao',club:'Monaco'},{name:'Diego Costa',club:'Atlético'},{name:'Demba Ba',club:'Newcastle'}],
+      GK:['Manuel Neuer','David de Gea'],
+      DEF:['Mats Hummels','Thiago Silva'],
+      MID:['Cesc Fàbregas','Isco','Marco Verratti','Julian Draxler','Ilkay Gündogan'],
+      ATT:['Luis Suárez','Gonzalo Higuaín','Karim Benzema','Falcao','Edinson Cavani'],
     }},
   2014:{ budget:80000000, netSpend:52000000,  result:'3rd', pts:75,
     targets:{
-      GK:[{name:'Bernd Leno',club:'Leverkusen'},{name:'Thibaut Courtois',club:'Chelsea'},{name:'David de Gea',club:'Man Utd'},{name:'Michel Vorm',club:'Swansea'},{name:'Kasper Schmeichel',club:'Leicester'}],
-      DEF:[{name:'Mats Hummels',club:'Dortmund'},{name:'Marquinhos',club:'PSG'},{name:'Shkodran Mustafi',club:'Valencia'},{name:'Kostas Manolas',club:'Roma'},{name:'Branislav Ivanović',club:'Chelsea'}],
-      MID:[{name:'Morgan Schneiderlin',club:'Southampton'},{name:'Kevin De Bruyne',club:'Wolfsburg'},{name:'Ilkay Gündogan',club:'Dortmund'},{name:'Thiago Alcântara',club:'Bayern'},{name:'Isco',club:'Real Madrid'},{name:'Granit Xhaka',club:'Mönchengladbach'}],
-      ATT:[{name:'Karim Benzema',club:'Real Madrid'},{name:'Alexis Sánchez',club:'Barcelona'},{name:'Riyad Mahrez',club:'Leicester'},{name:'Jamie Vardy',club:'Leicester'},{name:'Raheem Sterling',club:'Liverpool'},{name:'Diego Costa',club:'Atlético'},{name:'Edinson Cavani',club:'PSG'}],
+      GK:['Bernd Leno','Thibaut Courtois'],
+      DEF:['Mats Hummels','Marquinhos'],
+      MID:['Morgan Schneiderlin','Kevin De Bruyne','Ilkay Gündogan','Thiago Alcântara','Isco'],
+      ATT:['Karim Benzema','Alexis Sánchez','Raheem Sterling','Edinson Cavani','Riyad Mahrez'],
     }},
   2015:{ budget:35000000, netSpend:11000000,  result:'2nd', pts:71,
     targets:{
-      GK:[{name:'Bernd Leno',club:'Leverkusen'},{name:'Kasper Schmeichel',club:'Leicester'},{name:'Pepe Reina',club:'Napoli'},{name:'Michel Vorm',club:'Tottenham'}],
-      DEF:[{name:'Shkodran Mustafi',club:'Valencia'},{name:'Kostas Manolas',club:'Roma'},{name:'Jonny Evans',club:'WBA'},{name:'Héctor Moreno',club:'Espanyol'},{name:'Jan Vertonghen',club:'Tottenham'}],
-      MID:[{name:'Granit Xhaka',club:'Mönchengladbach'},{name:'Thiago Alcântara',club:'Bayern'},{name:'Jordan Henderson',club:'Liverpool'},{name:'Ilkay Gündogan',club:'Dortmund'},{name:"N'Golo Kanté",club:'Leicester'},{name:'Danny Drinkwater',club:'Leicester'}],
-      ATT:[{name:'Gonzalo Higuaín',club:'Napoli'},{name:'Alexandre Lacazette',club:'Lyon'},{name:'Jamie Vardy',club:'Leicester'},{name:'Harry Kane',club:'Tottenham'},{name:'Riyad Mahrez',club:'Leicester'},{name:'Marcus Rashford',club:'Man Utd'}],
+      GK:['Bernd Leno','Kasper Schmeichel'],
+      DEF:['Shkodran Mustafi','Kostas Manolas'],
+      MID:['Granit Xhaka','Ilkay Gündogan','Thiago Alcântara',"N'Golo Kanté",'Morgan Schneiderlin'],
+      ATT:['Gonzalo Higuaín','Alexandre Lacazette','Jamie Vardy','Riyad Mahrez','Harry Kane'],
     }},
 };
 
@@ -1097,13 +1096,13 @@ function updateSidebar(){
   if(diffEl){
     if(diff<=0){
       const room=Math.abs(diff);
-      diffEl.textContent=room<1e6?'✓ On budget — ready to simulate':`✓ ${fmt(room)} room to buy more`;
+      diffEl.textContent=room<1e6?'✓ On budget, ready to simulate':`✓ ${fmt(room)} room to buy more`;
       diffEl.style.background='rgba(74,222,128,.1)';diffEl.style.color='#4ade80';
     }else if(diff<=5e6){
-      diffEl.textContent=`${fmt(diff)} over Wenger — borderline, can still simulate`;
+      diffEl.textContent=`${fmt(diff)} over Wenger, borderline, can still simulate`;
       diffEl.style.background='rgba(251,191,36,.12)';diffEl.style.color='#fbbf24';
     }else{
-      diffEl.textContent=`${fmt(diff)} over limit — sell a player to unlock`;
+      diffEl.textContent=`${fmt(diff)} over limit. Sell a player to unlock`;
       diffEl.style.background='rgba(248,113,113,.12)';diffEl.style.color='#f87171';
     }
   }
@@ -1130,7 +1129,7 @@ function updateSidebar(){
     btn.style.cursor=blocked?'not-allowed':'pointer';
     btn.dataset.blocked=blocked?'1':'0';
     if(_noSignings)btn.title='Sign at least one player to run the simulation';
-    else if(_tooOver)btn.title=`${fmt(_overBy)} over Wenger\'s limit — sell a player to unlock`;
+    else if(_tooOver)btn.title=`${fmt(_overBy)} over Wenger's limit. Sell a player to unlock`;
     else btn.title='';
   }
   // Sync mobile bottom bar
@@ -1249,15 +1248,10 @@ function openModal(g){
   document.getElementById('searchInput').value='';
   document.getElementById('searchResults').innerHTML='';
   document.getElementById('searchHint').textContent=`Type to search. ${S.season}/${String(S.season+1).slice(-2)} era.`;
-  // Show position-filtered targets; GK shows 2, others show 4-5. Filter hard rivals.
+  // Show position-filtered targets; GK shows 2, others show 4-5
   const maxByGrp={GK:2,DEF:4,MID:5,ATT:5};
   const allTargets=SEASONS[S.season]?.targets||{};
-  const rawTargets=allTargets[g]||[];
-  const filteredTargets=rawTargets.filter(t=>{
-    const club=((t.club)||'').toLowerCase();
-    return !HARD_RIVALS.some(r=>club.includes(r.toLowerCase()));
-  });
-  const targets=filteredTargets.slice(0,maxByGrp[g]||5).map(t=>t.name||t);
+  const targets=(allTargets[g]||[]).slice(0,maxByGrp[g]||5).map(t=>t.name||t);
   const chips=document.getElementById('targetChips');
   if(targets.length){
     chips.style.display='flex';
