@@ -220,6 +220,10 @@
     <div style="font-size:6px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">To spend</div>
     <div id="mobileSpend" style="font-size:15px;font-weight:900;color:#4ade80;line-height:1;white-space:nowrap;">—</div>
   </div>
+  <div style="flex-shrink:0;display:flex;flex-direction:column;gap:1px;padding:0 4px;">
+    <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Buy <span id="mobileBuy" style="color:#f87171;font-weight:700;">€0</span></div>
+    <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Sell <span id="mobileSell" style="color:#4ade80;font-weight:700;">€0</span></div>
+  </div>
   <button onclick="openLineupModal()" style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
     Lineup <span id="mobileLineupBadge" style="font-size:8px;color:#6b7280;">0/11</span>
   </button>
@@ -1223,6 +1227,10 @@ function updateSidebar(){
       mSpend.textContent=fmt(diff2)+' over';
       mSpend.style.color='#f87171';
     }
+    const mBuy=document.getElementById('mobileBuy');
+    const mSell=document.getElementById('mobileSell');
+    if(mBuy)mBuy.textContent=S.spent?fmt(S.spent):'€0';
+    if(mSell)mSell.textContent=S.sales?fmt(S.sales):'€0';
     const mBtn=document.getElementById('mobileSimBtn');
     if(mBtn){mBtn.disabled=false;mBtn.style.opacity=blocked?'0.38':'1';}
   }
