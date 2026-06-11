@@ -200,6 +200,9 @@
         <div style="font-size:8px;color:#374151;" id="actualNote"></div>
         <div style="font-size:8px;color:#374151;" id="actualResult"></div>
       </div>
+      <button onclick="resetAll()" style="width:100%;background:none;border:1px solid #1f2937;border-radius:8px;padding:6px;font-size:9px;font-weight:700;color:#374151;cursor:pointer;margin-bottom:6px;transition:all .15s;"
+        onmouseover="this.style.borderColor='#4b5563';this.style.color='#6b7280'"
+        onmouseout="this.style.borderColor='#1f2937';this.style.color='#374151'">↺ Reset All Transfers</button>
       <button id="simBtn" onclick="runSimulation()" class="sim-btn" style="width:100%;padding:10px;border-radius:8px;font-weight:900;font-size:12px;letter-spacing:.02em;" disabled>
         Run Simulation →
       </button>
@@ -233,6 +236,13 @@
         <span class="lineup-count-badge" style="font-size:8px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 7px;color:#6b7280;">0/11</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
+        <select id="formationSelect" onchange="changeFormation(this.value)"
+          style="background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:6px;padding:3px 6px;font-size:9px;font-weight:700;cursor:pointer;outline:none;">
+          <option value="4-3-3">4-3-3</option>
+          <option value="4-2-3-1">4-2-3-1</option>
+          <option value="4-4-2">4-4-2</option>
+          <option value="3-5-2">3-5-2</option>
+        </select>
         <button class="ghost-btn" onclick="autoFillLineup()">AUTO XI</button>
         <button class="ghost-btn" onclick="clearLineup()" style="color:#6b7280;"
           onmouseover="this.style.color='#f87171';this.style.borderColor='#7f1d1d'"
@@ -358,6 +368,12 @@
       <div id="simEvents" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
 
+    <!-- Why You Finished Here -->
+    <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Why You Finished Here</div>
+      <div id="simWhySection" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+
     <!-- Budget IQ row -->
     <div style="display:flex;justify-content:space-between;align-items:center;background:#0c1a2e;border-radius:8px;padding:7px 10px;margin-bottom:10px;">
       <span style="font-size:9px;color:#6b7280;">Transfer Discipline</span>
@@ -437,13 +453,55 @@ const CURRENT_YEAR = 2026;
 
 // ── Season data ────────────────────────────────────────────────────────
 const SEASONS = {
-  2009:{ budget:12000000, netSpend:6000000,   result:'3rd', pts:75, targets:['Karim Benzema','David Villa','Yoann Gourcuff','Franck Ribery','Samuel Eto\'o'] },
-  2010:{ budget:10000000, netSpend:-1000000,  result:'4th', pts:68, targets:['Wesley Sneijder','Gary Cahill',"Yann M'Vila",'Juan Mata','Ivan Perišić'] },
-  2011:{ budget:8000000,  netSpend:44000000,  result:'3rd', pts:70, targets:['Luis Suárez','Gary Cahill','Clint Dempsey','Juan Mata','Loic Remy'] },
-  2012:{ budget:8000000,  netSpend:-9000000,  result:'4th', pts:73, targets:['Gonzalo Higuaín','Juan Mata','Marouane Fellaini','Willian','Wayne Rooney'] },
-  2013:{ budget:42000000, netSpend:28000000,  result:'4th', pts:79, targets:['Luis Suárez','Karim Benzema','Gonzalo Higuaín','Cesc Fàbregas','Julian Draxler'] },
-  2014:{ budget:80000000, netSpend:52000000,  result:'3rd', pts:75, targets:['Karim Benzema','Jamie Vardy','Morgan Schneiderlin','Raheem Sterling','Kevin De Bruyne'] },
-  2015:{ budget:35000000, netSpend:11000000,  result:'2nd', pts:71, targets:['Gonzalo Higuaín','Alexandre Lacazette','Pepe Reina','Jamie Vardy','Riyad Mahrez'] },
+  2009:{ budget:12000000, netSpend:6000000,   result:'3rd', pts:75,
+    targets:{
+      GK:['Joe Hart','Heurelho Gomes'],
+      DEF:['Gary Cahill','Joleon Lescott'],
+      MID:['Yoann Gourcuff','Franck Ribery','Luka Modrić','Gareth Barry',"Yann M'Vila"],
+      ATT:['Karim Benzema','David Villa','Samuel Eto\'o','Dimitar Berbatov','Robinho'],
+    }},
+  2010:{ budget:10000000, netSpend:-1000000,  result:'4th', pts:68,
+    targets:{
+      GK:['Joe Hart','Pepe Reina'],
+      DEF:['Gary Cahill','Branislav Ivanović'],
+      MID:['Wesley Sneijder','Juan Mata','Ivan Perišić',"Yann M'Vila",'Luka Modrić'],
+      ATT:['David Villa','Fernando Torres','Didier Drogba','Wayne Rooney','Carlos Tevez'],
+    }},
+  2011:{ budget:8000000,  netSpend:44000000,  result:'3rd', pts:70,
+    targets:{
+      GK:['Joe Hart','Manuel Neuer'],
+      DEF:['Gary Cahill','Jan Vertonghen'],
+      MID:['Juan Mata','Clint Dempsey','Luka Modrić','David Silva','Mikel Arteta'],
+      ATT:['Luis Suárez','Loic Remy','Edin Džeko','Javier Hernández','Demba Ba'],
+    }},
+  2012:{ budget:8000000,  netSpend:-9000000,  result:'4th', pts:73,
+    targets:{
+      GK:['Julio César','Anders Lindegaard'],
+      DEF:['Jan Vertonghen','Joleon Lescott'],
+      MID:['Juan Mata','Marouane Fellaini','Willian','Santi Cazorla','Kevin De Bruyne'],
+      ATT:['Gonzalo Higuaín','Wayne Rooney','Javier Hernández','Michu','Fernando Torres'],
+    }},
+  2013:{ budget:42000000, netSpend:28000000,  result:'4th', pts:79,
+    targets:{
+      GK:['Manuel Neuer','David De Gea'],
+      DEF:['Thiago Silva','Branislav Ivanović'],
+      MID:['Cesc Fàbregas','Julian Draxler','Marco Verratti','Isco','Santi Cazorla'],
+      ATT:['Luis Suárez','Karim Benzema','Gonzalo Higuaín','Edinson Cavani','Falcao'],
+    }},
+  2014:{ budget:80000000, netSpend:52000000,  result:'3rd', pts:75,
+    targets:{
+      GK:['Pepe Reina','Thibaut Courtois'],
+      DEF:['Mats Hummels','Marquinhos'],
+      MID:['Morgan Schneiderlin','Kevin De Bruyne','Ilkay Gündogan','Thiago Alcântara','Isco'],
+      ATT:['Karim Benzema','Raheem Sterling','Jamie Vardy','Alexis Sánchez','Riyad Mahrez'],
+    }},
+  2015:{ budget:35000000, netSpend:11000000,  result:'2nd', pts:71,
+    targets:{
+      GK:['Pepe Reina','Kasper Schmeichel'],
+      DEF:['Jamaal Lascelles','Laurent Koscielny'],
+      MID:['N\'Golo Kanté','Danny Drinkwater','Jamie Vardy','Riyad Mahrez','Demarai Gray'],
+      ATT:['Gonzalo Higuaín','Alexandre Lacazette','Jamie Vardy','Harry Kane','Marcus Rashford'],
+    }},
 };
 
 // ── League benchmarks (proxy ratings) ─────────────────────────────────
@@ -538,15 +596,40 @@ const LEGACY_SCORE = {
   'Vardy':3,'Kanté':4,'Firmino':2,"M'Vila":1,'Dempsey':2,'Fellaini':2,'Welbeck':1,
 };
 
-// ── Lineup config ──────────────────────────────────────────────────────
-const LINEUP_ROWS = [['gk'],['lb','cb1','cb2','rb'],['lm','cm','rm'],['lw','cf','rw']];
-const SLOT_CFG = {
-  gk:{grp:'GK',lbl:'GK'}, lb:{grp:'DEF',lbl:'LB'}, cb1:{grp:'DEF',lbl:'CB'},
-  cb2:{grp:'DEF',lbl:'CB'}, rb:{grp:'DEF',lbl:'RB'}, lm:{grp:'MID',lbl:'LM'},
-  cm:{grp:'MID',lbl:'CM'}, rm:{grp:'MID',lbl:'RM'}, lw:{grp:'ATT',lbl:'LW'},
-  cf:{grp:'ATT',lbl:'CF'}, rw:{grp:'ATT',lbl:'RW'},
+// ── Formations ─────────────────────────────────────────────────────────
+const FORMATIONS = {
+  '4-3-3':{
+    rows:[['gk'],['lb','cb1','cb2','rb'],['lm','cm','rm'],['lw','cf','rw']],
+    slots:{gk:{grp:'GK',lbl:'GK'},lb:{grp:'DEF',lbl:'LB'},cb1:{grp:'DEF',lbl:'CB'},cb2:{grp:'DEF',lbl:'CB'},rb:{grp:'DEF',lbl:'RB'},lm:{grp:'MID',lbl:'LM'},cm:{grp:'MID',lbl:'CM'},rm:{grp:'MID',lbl:'RM'},lw:{grp:'ATT',lbl:'LW'},cf:{grp:'ATT',lbl:'CF'},rw:{grp:'ATT',lbl:'RW'}},
+  },
+  '4-2-3-1':{
+    rows:[['gk'],['lb','cb1','cb2','rb'],['dm1','dm2'],['lam','cam','ram'],['cf']],
+    slots:{gk:{grp:'GK',lbl:'GK'},lb:{grp:'DEF',lbl:'LB'},cb1:{grp:'DEF',lbl:'CB'},cb2:{grp:'DEF',lbl:'CB'},rb:{grp:'DEF',lbl:'RB'},dm1:{grp:'MID',lbl:'DM'},dm2:{grp:'MID',lbl:'DM'},lam:{grp:'MID',lbl:'LM'},cam:{grp:'MID',lbl:'AM'},ram:{grp:'MID',lbl:'RM'},cf:{grp:'ATT',lbl:'ST'}},
+  },
+  '4-4-2':{
+    rows:[['gk'],['lb','cb1','cb2','rb'],['lm','cm1','cm2','rm'],['st1','st2']],
+    slots:{gk:{grp:'GK',lbl:'GK'},lb:{grp:'DEF',lbl:'LB'},cb1:{grp:'DEF',lbl:'CB'},cb2:{grp:'DEF',lbl:'CB'},rb:{grp:'DEF',lbl:'RB'},lm:{grp:'MID',lbl:'LM'},cm1:{grp:'MID',lbl:'CM'},cm2:{grp:'MID',lbl:'CM'},rm:{grp:'MID',lbl:'RM'},st1:{grp:'ATT',lbl:'ST'},st2:{grp:'ATT',lbl:'ST'}},
+  },
+  '3-5-2':{
+    rows:[['gk'],['cb1','cb2','cb3'],['lwb','dm','cm1','cm2','rwb'],['st1','st2']],
+    slots:{gk:{grp:'GK',lbl:'GK'},cb1:{grp:'DEF',lbl:'CB'},cb2:{grp:'DEF',lbl:'CB'},cb3:{grp:'DEF',lbl:'CB'},lwb:{grp:'MID',lbl:'LWB'},dm:{grp:'MID',lbl:'DM'},cm1:{grp:'MID',lbl:'CM'},cm2:{grp:'MID',lbl:'CM'},rwb:{grp:'MID',lbl:'RWB'},st1:{grp:'ATT',lbl:'ST'},st2:{grp:'ATT',lbl:'ST'}},
+  },
 };
+let LINEUP_ROWS = FORMATIONS['4-3-3'].rows;
+let SLOT_CFG    = FORMATIONS['4-3-3'].slots;
 const BENCH_IDS = ['b1','b2','b3','b4','b5','b6','b7'];
+
+// ── Unsellable / youth protection ──────────────────────────────────────
+const UNSELLABLE = {
+  2009:['Bendtner','Almunia','Denilson'],
+  2010:['Bendtner','Denilson','Diaby'],
+  2011:['Bendtner','Diaby','Park Chu-Young'],
+  2012:['Bendtner','Diaby','Fabianski'],
+  2013:['Bendtner','Sanogo','Miyaichi'],
+  2014:['Sanogo','Wellington Silva','Miyaichi'],
+  2015:['Sanogo','Zelalem','Reine-Adelaide'],
+};
+const MAX_YOUTH_SALES = 2;
 
 // ── Position maps ──────────────────────────────────────────────────────
 const POS_MAP = {
@@ -564,7 +647,7 @@ const SOFT_RIVALS = ['Liverpool','Manchester City'];
 const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
 // ── State ──────────────────────────────────────────────────────────────
-const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0 };
+const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0 };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -709,14 +792,14 @@ function fmt(n) {
   return sign+'€0';
 }
 function grp(pos){
-  if(!pos) return 'ATT';
+  if(!pos) return 'MID';
+  const p=pos.toLowerCase().trim();
+  if(p==='gk'||p.includes('goalkeeper')||p.includes('keeper')) return 'GK';
   if(POS_MAP[pos]) return POS_MAP[pos];
-  const p=pos.toLowerCase();
-  if(p.includes('goalkeeper')||p.includes('keeper')) return 'GK';
   if(p.includes('back')||p.includes('defend')||p.includes('stopper')||p.includes('centre-back')||p.includes('center-back')) return 'DEF';
   if(p.includes('midfield')) return 'MID';
   if(p.includes('winger')||p.includes('forward')||p.includes('striker')) return 'ATT';
-  return 'ATT';
+  return 'MID';
 }
 function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function ordinal(n){return n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th';}
@@ -770,6 +853,8 @@ function openLineupModal(){
   const filled=Object.keys(S.lineup).filter(k=>!k.startsWith('b')&&S.lineup[k]).length;
   if(filled<3) autoFillLineup(true);
   else renderLineup();
+  const sel=document.getElementById('formationSelect');
+  if(sel)sel.value=S.formation;
   document.getElementById('lineupModal').classList.add('open');
 }
 function closeLineupModal(e){
@@ -845,12 +930,10 @@ function autoFillLineup(silent=false){
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const assigned=new Set();
   const avail=g=>all.filter(p=>grp(p.position)===g&&!assigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
-  for(const{slot,grp:g}of[
-    {slot:'gk',grp:'GK'},{slot:'cb1',grp:'DEF'},{slot:'cb2',grp:'DEF'},
-    {slot:'lb',grp:'DEF'},{slot:'rb',grp:'DEF'},{slot:'cm',grp:'MID'},
-    {slot:'lm',grp:'MID'},{slot:'rm',grp:'MID'},{slot:'cf',grp:'ATT'},
-    {slot:'lw',grp:'ATT'},{slot:'rw',grp:'ATT'},
-  ]){
+  // Fill in order: GK first, then DEF, MID, ATT — using current formation's slots
+  const order=['GK','DEF','MID','ATT'];
+  const slotsByGroup=order.flatMap(g=>Object.entries(SLOT_CFG).filter(([,c])=>c.grp===g).map(([id])=>({slot:id,grp:g})));
+  for(const{slot,grp:g}of slotsByGroup){
     const a=avail(g); if(a.length){S.lineup[slot]=a[0];assigned.add(a[0].id);}
   }
   const allAssigned=new Set(Object.values(S.lineup).filter(Boolean).map(p=>p.id));
@@ -860,6 +943,13 @@ function autoFillLineup(silent=false){
   if(!silent)showToast('Best available lineup set.',2200);
 }
 function clearLineup(){S.lineup={};renderLineup();}
+function changeFormation(f){
+  if(!FORMATIONS[f])return;
+  S.formation=f;S.lineup={};
+  LINEUP_ROWS=FORMATIONS[f].rows;SLOT_CFG=FORMATIONS[f].slots;
+  renderLineup();
+  showToast(`Formation: ${f}`,1800);
+}
 
 // ── Slot picker ────────────────────────────────────────────────────────
 let _activeSlotId=null;
@@ -917,9 +1007,52 @@ function closeSlotModal(e){if(e&&e.target!==document.getElementById('slotModal')
 
 // ── Sell / Unsign ──────────────────────────────────────────────────────
 function sellPlayer(id,val){
+  const player=S.players.find(p=>p.id===id);
+  if(!player)return;
+  const lastName=player.name.split(' ').pop();
+
+  // Board veto: unsellable players
+  const blocked=UNSELLABLE[S.season]||[];
+  if(blocked.some(n=>player.name.includes(n))){
+    showToast(`The board refuses to sell ${lastName}. He stays, whether you like it or not.`,3500);
+    return;
+  }
+
+  // Youth protection: max 2 young players sold per season
+  const ageInSeason=parseInt(player.age||99)-(CURRENT_YEAR-S.season);
+  if(ageInSeason<22&&S.youthSold>=MAX_YOUTH_SALES){
+    showToast(`The board won't release more young players — Wenger wants to develop them.`,3500);
+    return;
+  }
+  const isYouth=ageInSeason<22;
+  if(isYouth)S.youthSold++;
+
   S.sold.add(id);S.sales+=val;
+  S.sellHistory.push({id,val,name:player.name,isYouth});
   for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===id){delete S.lineup[s];break;}}
   render();updateSidebar();updateLineupCountBadges();
+
+  // Undo toast
+  const t=document.getElementById('toast');
+  t.innerHTML=`Sold ${lastName}. <button onclick="undoSell()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:9px;font-weight:700;text-decoration:underline;padding:0 0 0 4px;">Undo</button>`;
+  t.style.display='block';
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.style.display='none',5000);
+}
+function undoSell(){
+  const last=S.sellHistory.pop();
+  if(!last)return;
+  S.sold.delete(last.id);S.sales-=last.val;
+  if(last.isYouth&&S.youthSold>0)S.youthSold--;
+  document.getElementById('toast').style.display='none';
+  render();updateSidebar();updateLineupCountBadges();
+  showToast(`${last.name.split(' ').pop()} sale cancelled.`,2500);
+}
+function resetAll(){
+  S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;
+  S.lineup={};S.sellHistory=[];S.youthSold=0;
+  render();updateSidebar();updateLineupCountBadges();
+  showToast('All transfers reset.',2500);
 }
 function unsignPlayer(id,val){
   S.bought=S.bought.filter(p=>p.id!==id);S.spent-=val;
@@ -943,17 +1076,15 @@ function updateSidebar(){
   const actual=SEASONS[S.season]?.netSpend||0, diff=net-actual;
   const diffEl=document.getElementById('targetDiff');
   if(diffEl){
-    if(Math.abs(diff)<1e6){
-      diffEl.textContent='On target';
-      diffEl.style.background='rgba(74,222,128,.15)';diffEl.style.color='#4ade80';
-    }else if(diff<0){
-      diffEl.textContent=fmt(Math.abs(diff))+' under — you\'re good';
+    if(diff<=0){
+      const room=Math.abs(diff);
+      diffEl.textContent=room<1e6?'✓ On budget — ready to simulate':`✓ ${fmt(room)} room to buy more`;
       diffEl.style.background='rgba(74,222,128,.1)';diffEl.style.color='#4ade80';
     }else if(diff<=5e6){
-      diffEl.textContent=fmt(diff)+' over Wenger';
+      diffEl.textContent=`${fmt(diff)} over Wenger — borderline, can still simulate`;
       diffEl.style.background='rgba(251,191,36,.12)';diffEl.style.color='#fbbf24';
     }else{
-      diffEl.textContent=fmt(diff)+' over — sell players first';
+      diffEl.textContent=`${fmt(diff)} over limit — sell a player to unlock`;
       diffEl.style.background='rgba(248,113,113,.12)';diffEl.style.color='#f87171';
     }
   }
@@ -989,10 +1120,9 @@ function updateSidebar(){
     const mDiff=document.getElementById('mobileTargetDiff');
     if(mDiff){
       const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
-      if(Math.abs(diff2)<1e6){mDiff.textContent='On target';mDiff.style.color='#4ade80';}
-      else if(diff2<0){mDiff.textContent=fmt(Math.abs(diff2))+' under';mDiff.style.color='#4ade80';}
+      if(diff2<=0){mDiff.textContent=Math.abs(diff2)<1e6?'On budget':fmt(Math.abs(diff2))+' to spend';mDiff.style.color='#4ade80';}
       else if(diff2<=5e6){mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#fbbf24';}
-      else{mDiff.textContent=fmt(diff2)+' over';mDiff.style.color='#f87171';}
+      else{mDiff.textContent='Sell to unlock';mDiff.style.color='#f87171';}
     }
     const mBtn=document.getElementById('mobileSimBtn');
     if(mBtn){mBtn.disabled=(used===0)||((net-(SEASONS[S.season]?.netSpend||0))>5e6);}
@@ -1055,7 +1185,7 @@ function renderSignings(){
 
 // ── Load season ────────────────────────────────────────────────────────
 async function loadSeason(yr){
-  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};
+  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;
   const m=SEASONS[yr]||{};
   document.getElementById('budgetAmt').textContent=fmt(m.budget);
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
@@ -1098,7 +1228,10 @@ function openModal(g){
   document.getElementById('searchInput').value='';
   document.getElementById('searchResults').innerHTML='';
   document.getElementById('searchHint').textContent=`Type to search. ${S.season}/${String(S.season+1).slice(-2)} era.`;
-  const targets=SEASONS[S.season]?.targets||[];
+  // Show position-filtered targets; GK shows 2, others show 4-5
+  const maxByGrp={GK:2,DEF:4,MID:5,ATT:5};
+  const allTargets=SEASONS[S.season]?.targets||{};
+  const targets=(allTargets[g]||[]).slice(0,maxByGrp[g]||5);
   const chips=document.getElementById('targetChips');
   if(targets.length){
     chips.style.display='flex';
@@ -1519,6 +1652,69 @@ function runSimulation(){
   // Budget IQ
   const biqEl=document.getElementById('simBudgetIQ');
   biqEl.textContent=iq.label;biqEl.style.color=iq.color;
+
+  // ── Why You Finished Here analysis ────────────────────────────────────
+  (function(){
+    const lineNames={def:'defence',mid:'midfield',att:'attack'};
+    const whyLines=[];
+    // Identify strongest rival overall
+    const rivalEntries=Object.entries(rivals||{});
+    const topRivalEntry=rivalEntries.sort((a,b)=>(b[1].def+b[1].mid+b[1].att)-(a[1].def+a[1].mid+a[1].att))[0];
+
+    if(arsenalPos===1){
+      whyLines.push({icon:'🏆',text:`Your squad was complete across all three lines — no rival found a way through over 38 games.`});
+      const best=Object.entries({def:defDelta,mid:midDelta,att:attDelta}).sort((a,b)=>b[1]-a[1])[0];
+      if(best[1]>1)whyLines.push({icon:'✅',text:`The smartest signing window was in ${lineNames[best[0]]} — that line improved by +${best[1]} rating points and made the difference.`});
+    }else{
+      if(topRivalEntry){
+        const[rName,rStr]=topRivalEntry;
+        const rShort=rName.replace('Manchester','Man').split(' ').pop();
+        const defGap=newLines.def-rStr.att;
+        const atkGap=newLines.att-rStr.def;
+        const midGap=newLines.mid-rStr.mid;
+        if(defGap<=-4)
+          whyLines.push({icon:'⚔️',text:`${rShort}'s attack (${rStr.att}) tore through your defence (${newLines.def}). Those games cost you the most points.`});
+        else if(atkGap<=-4)
+          whyLines.push({icon:'🔒',text:`${rShort}'s backline (${rStr.def}) shut down your attack (${newLines.att}) in both meetings — you couldn't score when it mattered.`});
+        else if(midGap<=-4)
+          whyLines.push({icon:'🎯',text:`${rShort} dominated midfield (${rStr.mid} vs your ${newLines.mid}), starving your attack of service in the key clashes.`});
+        else
+          whyLines.push({icon:'📊',text:`You matched ${rShort} everywhere but just fell short in the fine margins. Season-defining details went against you.`});
+      }
+
+      // Unaddressed gap
+      const sw=SEASON_WEAKNESSES[S.season];
+      if(sw&&sw.gaps.length){
+        const unaddressed=sw.gaps.filter(g=>!S.bought.some(p=>grp(p.position)===g));
+        if(unaddressed.length>0){
+          const lineName=GRP_LBL[unaddressed[0]].toLowerCase();
+          whyLines.push({icon:'❌',text:`Arsenal's historical weakness was ${lineName} this season — your window didn't fully close that gap.`});
+        }else{
+          whyLines.push({icon:'✅',text:`You addressed Arsenal's known weaknesses going into this season. The gap to the top was down to margins, not holes.`});
+        }
+      }
+
+      // Improvement story
+      const bigImprove=Object.entries({def:defDelta,mid:midDelta,att:attDelta}).sort((a,b)=>b[1]-a[1])[0];
+      if(bigImprove[1]>=4)
+        whyLines.push({icon:'📈',text:`Your ${lineNames[bigImprove[0]]} signings were genuinely transformative (+${bigImprove[1]} pts) — just not enough to haul past all rivals.`});
+      else if(bigImprove[1]>=1)
+        whyLines.push({icon:'📈',text:`Signings added +${bigImprove[1]} pts to your ${lineNames[bigImprove[0]]} — incremental progress, but the elite gap remained.`});
+      else
+        whyLines.push({icon:'⚠️',text:`No signing meaningfully strengthened a line. A more targeted window could have unlocked several more points.`});
+    }
+
+    // Events footnote
+    if(ptsMod<=-3)whyLines.push({icon:'🏥',text:`Injuries and disruptions wiped ${Math.abs(ptsMod)} points off your tally — brutal timing derailed the campaign.`});
+    else if(ptsMod>=3)whyLines.push({icon:'🌟',text:`A fortunate run of events added ${ptsMod} points — you needed every one of them.`});
+
+    const whyEl=document.getElementById('simWhySection');
+    if(whyEl)whyEl.innerHTML=whyLines.slice(0,4).map(l=>`
+      <div style="display:flex;align-items:flex-start;gap:7px;padding:5px 7px;background:#111827;border-radius:6px;">
+        <span style="font-size:13px;flex-shrink:0;line-height:1.3;">${l.icon}</span>
+        <span style="flex:1;font-size:9px;color:#9ca3af;line-height:1.5;">${l.text}</span>
+      </div>`).join('');
+  })();
 
   // Debug panel (hidden — revealed by secret trigger)
   document.getElementById('dbgScore').textContent=total;
