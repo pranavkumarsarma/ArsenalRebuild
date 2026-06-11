@@ -376,11 +376,8 @@
       <div id="simEvents" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
 
-    <!-- Why You Finished Here -->
-    <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Why You Finished Here</div>
-      <div id="simWhySection" style="display:flex;flex-direction:column;gap:5px;"></div>
-    </div>
+    <!-- Why You Finished Here (hidden) -->
+    <div style="display:none;"><div id="simWhySection"></div></div>
 
     <!-- Budget IQ row -->
     <div style="display:flex;justify-content:space-between;align-items:center;background:#0c1a2e;border-radius:8px;padding:7px 10px;margin-bottom:10px;">
@@ -863,6 +860,28 @@ function grp(pos){
   if(p.includes('winger')||p.includes('forward')||p.includes('striker')) return 'ATT';
   return 'MID';
 }
+function specificPos(pos){
+  if(!pos) return null;
+  const l=pos.toLowerCase().trim();
+  if(l.includes('goalkeeper')||l==='gk') return 'GK';
+  if(l==='centre-back'||l==='center-back'||l.includes('centre back')||l.includes('center back')||l==='cb') return 'CB';
+  if(l==='left-back'||l==='left back'||l==='lb') return 'LB';
+  if(l==='right-back'||l==='right back'||l==='rb') return 'RB';
+  if(l==='defender') return 'CB';
+  if(l==='defensive midfield'||l.includes('defensive mid')||l==='dm') return 'DM';
+  if(l==='central midfield'||l.includes('central mid')||l==='cm') return 'CM';
+  if(l==='attacking midfield'||l.includes('attacking mid')||l==='cam') return 'CAM';
+  if(l==='right midfield'||l.includes('right mid')||l==='rm') return 'RM';
+  if(l==='left midfield'||l.includes('left mid')||l==='lm') return 'LM';
+  if(l==='midfielder') return 'CM';
+  if(l==='right winger'||l.includes('right wing')||l==='rw') return 'RW';
+  if(l==='left winger'||l.includes('left wing')||l==='lw') return 'LW';
+  if(l==='centre-forward'||l==='center-forward'||l.includes('centre forward')||l.includes('center forward')||l==='st'||l==='striker') return 'ST';
+  if(l==='second striker') return 'ST';
+  if(l==='forward') return 'ST';
+  return null;
+}
+const SPOS_LBL={GK:'goalkeepers',CB:'centre-backs',LB:'left-backs',RB:'right-backs',DM:'defensive midfielders',CM:'central midfielders',CAM:'attacking midfielders',RM:'right midfielders',LM:'left midfielders',LW:'left wingers',RW:'right wingers',ST:'strikers'};
 function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function ordinal(n){return n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th';}
 function showToast(msg,ms=3500){
@@ -889,24 +908,23 @@ function checkSpecificPositionDepth(position){
   return {blocked:qual.length>=2, count:same.length, qualCount:qual.length};
 }
 function checkEliteSquadCap(signedPosition){
-  const posGrp=grp(signedPosition);
-  if(!posGrp)return;
-  // Count quality players (rating >= 82) in this position group across squad + new signings
-  const posAll=[...S.players.filter(p=>!S.sold.has(p.id)&&grp(p.position)===posGrp),
-                ...S.bought.filter(p=>grp(p.position)===posGrp)];
-  const qualityCount=posAll.filter(p=>mvToRating(p.marketValue||0)>=82).length;
-  if(qualityCount>=4){
-    // Weakest existing squad player in this position wants out
+  const sPos=specificPos(signedPosition);
+  if(!sPos)return;
+  const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const same=all.filter(p=>specificPos(p.position)===sPos);
+  const qualCount=same.filter(p=>mvToRating(p.marketValue||0)>=80).length;
+  if(qualCount>=3){
     const candidates=S.players
-      .filter(p=>!S.sold.has(p.id)&&grp(p.position)===posGrp&&mvToRating(p.marketValue||0)>=78)
+      .filter(p=>!S.sold.has(p.id)&&specificPos(p.position)===sPos&&mvToRating(p.marketValue||0)>=78)
       .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0));
     if(candidates.length>0){
       const v=candidates[0];
-      const posLabel=(GRP_LBL[posGrp]||'player').slice(0,-1).toLowerCase();
+      const posLabel=SPOS_LBL[sPos]||sPos;
+      const posGrp=grp(v.position);
       S.sold.add(v.id);
       if(S.salesByGrp[posGrp]!==undefined)S.salesByGrp[posGrp]++;
       for(const[s,lp]of Object.entries(S.lineup)){if(lp&&lp.id===v.id){delete S.lineup[s];break;}}
-      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}s, not enough minutes.`,4500),400);
+      setTimeout(()=>showToast(`${v.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}, not enough minutes.`,4500),400);
     }
   }
 }
