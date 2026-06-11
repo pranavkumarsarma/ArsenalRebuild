@@ -1018,13 +1018,13 @@ function sellPlayer(id,val){
     return;
   }
 
-  // Youth protection: max 2 young players sold per season
-  const ageInSeason=parseInt(player.age||99)-(CURRENT_YEAR-S.season);
-  if(ageInSeason<22&&S.youthSold>=MAX_YOUTH_SALES){
+  // Youth protection: max 2 young players (age <21 in that season) sold per window
+  const ageInSeason=parseInt(player.age||99);
+  if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
     showToast(`The board won't release more young players, you need to develop them.`,3500);
     return;
   }
-  const isYouth=ageInSeason<22;
+  const isYouth=ageInSeason<21;
   if(isYouth)S.youthSold++;
 
   S.sold.add(id);S.sales+=val;
