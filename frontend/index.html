@@ -1376,15 +1376,21 @@ function renderSignings(){
   const area=document.getElementById('signingsArea'), strip=document.getElementById('signingsStrip');
   if(!S.bought.length){area.style.display='none';return;}
   area.style.display='block';
-  strip.innerHTML=S.bought.map(p=>`
+  strip.innerHTML=S.bought.map(p=>{
+    const pg=grp(p.position);
+    // Show specific position if available (e.g. "CF" not just "ATT"), fallback to group
+    const sp=specificPos(p.position);
+    const lbl=sp||(p.position&&!/^\d+$/.test(p.position.trim())?pg:'?');
+    return `
     <div class="signing-card">
-      <span class="badge ${GRP_CSS[grp(p.position)]}">${grp(p.position)}</span>
+      <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
       <div>
         <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
         <div style="font-size:8px;color:#4ade80;">${fmt(p.marketValue)}</div>
       </div>
       <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Load season ────────────────────────────────────────────────────────
