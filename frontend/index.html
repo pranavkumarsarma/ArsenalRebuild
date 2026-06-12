@@ -386,10 +386,17 @@
     </div>
 
     <!-- Squad Analysis button -->
-    <button onclick="openSquadAnalysis()" style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;margin-bottom:8px;transition:all .15s;"
+    <button onclick="openSquadAnalysis()" style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;margin-bottom:6px;transition:all .15s;"
       onmouseover="this.style.borderColor='#6b7280';this.style.color='#fff'"
       onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">
       📊 Detailed Squad Analysis
+    </button>
+
+    <!-- Match ticker button -->
+    <button onclick="openMatchModal()" style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;margin-bottom:8px;transition:all .15s;"
+      onmouseover="this.style.borderColor='#4ade80';this.style.color='#4ade80'"
+      onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">
+      ⚽ Match-by-Match Ticker
     </button>
 
     <!-- Hidden debug panel (secret: triple-tap AFC logo) -->
@@ -445,6 +452,47 @@
       <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your Signings · Gap Analysis</div>
       <div id="saSignings" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══ MATCH TICKER MODAL ══════════════════════════════════════════════ -->
+<div id="matchModal" class="modal-bg" style="z-index:70;" onclick="closeMatchModal(event)">
+  <div class="modal-inner" style="max-width:400px;padding:0;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div style="padding:13px 15px 10px;border-bottom:1px solid #1f2937;flex-shrink:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+        <div>
+          <div style="font-weight:800;font-size:13px;" id="mmTitle">Season Ticker</div>
+          <div style="font-size:8px;color:#6b7280;margin-top:1px;" id="mmSub">Match-by-match simulation · 38 games</div>
+        </div>
+        <button onclick="closeMatchModal()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;line-height:1;padding:0 2px;">✕</button>
+      </div>
+      <!-- W/D/L/Pts strip -->
+      <div style="display:flex;gap:5px;">
+        <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
+          <div style="font-size:17px;font-weight:900;color:#4ade80;line-height:1;" id="mmW">—</div>
+          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">WINS</div>
+        </div>
+        <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
+          <div style="font-size:17px;font-weight:900;color:#fbbf24;line-height:1;" id="mmD">—</div>
+          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">DRAWS</div>
+        </div>
+        <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
+          <div style="font-size:17px;font-weight:900;color:#f87171;line-height:1;" id="mmL">—</div>
+          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">LOSSES</div>
+        </div>
+        <div style="flex:2;background:#111827;border:1px solid #374151;border-radius:6px;padding:5px 4px;text-align:center;">
+          <div style="font-size:17px;font-weight:900;color:#EF0107;line-height:1;" id="mmPts">—</div>
+          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">POINTS</div>
+        </div>
+        <div style="flex:1.5;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
+          <div style="font-size:17px;font-weight:900;color:#e5e7eb;line-height:1;" id="mmPos">—</div>
+          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">FINISH</div>
+        </div>
+      </div>
+    </div>
+    <!-- Scrollable match list -->
+    <div id="mmList" style="flex:1;overflow-y:auto;padding:8px 10px;"></div>
   </div>
 </div>
 
@@ -645,6 +693,67 @@ const SEASON_WEAKNESSES = {
   2014:{ gaps:['ATT','DEF'], desc:"Giroud's injury exposed the lack of striker depth. Welbeck wasn't the answer. The left-back position was also a weakness, Gibbs and Monreal competing, neither dominant." },
   2015:{ gaps:['DEF','MID'], desc:"Leicester's organisation exposed Arsenal's defensive fragility. The back four was soft under pressure. Coquelin was a band-aid, not a solution. A world-class CB or DM was needed." },
 };
+
+// ── Match ticker: 19 opponents per season with their actual final pts ──
+const SEASON_OPPONENTS = {
+  2009:[
+    {n:'Chelsea',pts:86},{n:'Man Utd',pts:85},{n:'Tottenham',pts:70},{n:'Man City',pts:67},
+    {n:'Aston Villa',pts:64},{n:'Liverpool',pts:63},{n:'Everton',pts:61},{n:'Birmingham',pts:50},
+    {n:'Blackburn',pts:50},{n:'Stoke',pts:47},{n:'Fulham',pts:46},{n:'Sunderland',pts:44},
+    {n:'Bolton',pts:39},{n:'Wolves',pts:38},{n:'Wigan',pts:36},{n:'West Ham',pts:35},
+    {n:'Burnley',pts:30},{n:'Hull City',pts:30},{n:'Portsmouth',pts:19},
+  ],
+  2010:[
+    {n:'Man Utd',pts:80},{n:'Chelsea',pts:71},{n:'Man City',pts:71},{n:'Tottenham',pts:62},
+    {n:'Liverpool',pts:58},{n:'Everton',pts:54},{n:'Fulham',pts:49},{n:'Aston Villa',pts:48},
+    {n:'Sunderland',pts:47},{n:'West Brom',pts:47},{n:'Newcastle',pts:46},{n:'Stoke',pts:46},
+    {n:'Bolton',pts:46},{n:'Blackburn',pts:43},{n:'Wigan',pts:42},{n:'Wolves',pts:40},
+    {n:'Birmingham',pts:39},{n:'Blackpool',pts:39},{n:'West Ham',pts:33},
+  ],
+  2011:[
+    {n:'Man City',pts:89},{n:'Man Utd',pts:89},{n:'Tottenham',pts:69},{n:'Newcastle',pts:65},
+    {n:'Chelsea',pts:64},{n:'Everton',pts:56},{n:'Liverpool',pts:52},{n:'Fulham',pts:52},
+    {n:'West Brom',pts:47},{n:'Swansea',pts:47},{n:'Norwich',pts:47},{n:'Sunderland',pts:45},
+    {n:'Stoke',pts:45},{n:'Wigan',pts:43},{n:'Aston Villa',pts:38},{n:'QPR',pts:37},
+    {n:'Bolton',pts:36},{n:'Blackburn',pts:31},{n:'Wolves',pts:25},
+  ],
+  2012:[
+    {n:'Man Utd',pts:89},{n:'Man City',pts:78},{n:'Chelsea',pts:75},{n:'Tottenham',pts:72},
+    {n:'Everton',pts:63},{n:'Liverpool',pts:61},{n:'West Brom',pts:49},{n:'Swansea',pts:46},
+    {n:'West Ham',pts:46},{n:'Norwich',pts:44},{n:'Fulham',pts:43},{n:'Stoke',pts:42},
+    {n:'Southampton',pts:41},{n:'Aston Villa',pts:41},{n:'Newcastle',pts:41},
+    {n:'Sunderland',pts:39},{n:'Wigan',pts:36},{n:'Reading',pts:28},{n:'QPR',pts:25},
+  ],
+  2013:[
+    {n:'Man City',pts:86},{n:'Liverpool',pts:84},{n:'Chelsea',pts:82},{n:'Man Utd',pts:64},
+    {n:'Everton',pts:72},{n:'Tottenham',pts:69},{n:'Southampton',pts:56},{n:'Stoke',pts:50},
+    {n:'Newcastle',pts:49},{n:'Crystal Palace',pts:45},{n:'Swansea',pts:42},
+    {n:'West Ham',pts:40},{n:'Sunderland',pts:38},{n:'Aston Villa',pts:38},
+    {n:'West Brom',pts:36},{n:'Hull City',pts:38},{n:'Norwich',pts:33},
+    {n:'Fulham',pts:32},{n:'Cardiff',pts:30},
+  ],
+  2014:[
+    {n:'Chelsea',pts:87},{n:'Man City',pts:79},{n:'Man Utd',pts:70},{n:'Tottenham',pts:64},
+    {n:'Liverpool',pts:62},{n:'Southampton',pts:60},{n:'Swansea',pts:56},{n:'Stoke',pts:54},
+    {n:'Crystal Palace',pts:48},{n:'Everton',pts:47},{n:'West Ham',pts:47},
+    {n:'West Brom',pts:44},{n:'Leicester',pts:41},{n:'Newcastle',pts:39},
+    {n:'Sunderland',pts:38},{n:'Aston Villa',pts:38},{n:'Hull City',pts:35},
+    {n:'Burnley',pts:33},{n:'QPR',pts:30},
+  ],
+  2015:[
+    {n:'Leicester',pts:81},{n:'Tottenham',pts:70},{n:'Man City',pts:66},{n:'Man Utd',pts:66},
+    {n:'Southampton',pts:63},{n:'West Ham',pts:62},{n:'Liverpool',pts:60},{n:'Stoke',pts:51},
+    {n:'Chelsea',pts:50},{n:'Everton',pts:47},{n:'Swansea',pts:47},{n:'Watford',pts:45},
+    {n:'West Brom',pts:43},{n:'Crystal Palace',pts:42},{n:'Bournemouth',pts:42},
+    {n:'Sunderland',pts:39},{n:'Newcastle',pts:37},{n:'Norwich',pts:34},
+    {n:'Aston Villa',pts:17},
+  ],
+};
+const MATCH_MONTHS=[
+  {m:'August',c:3},{m:'September',c:4},{m:'October',c:3},{m:'November',c:4},
+  {m:'December',c:6},{m:'January',c:3},{m:'February',c:3},{m:'March',c:3},
+  {m:'April',c:5},{m:'May',c:4},
+]; // 38 total
 
 // ── Season narrative summaries ────────────────────────────────────────
 const SEASON_SUMMARY = {
@@ -1634,23 +1743,28 @@ function _closestEntry(entries, yr){
   return best;
 }
 async function fetchHistoricalValue(pid,yr){
-  // 1. Check static cache
+  let entries;
   const cached=PLAYER_CACHE.history?.[String(pid)];
   if(cached){
     if(!cached.length)return null;
-    const best=_closestEntry(cached,yr);
-    return best?{value:best.value??null,club:best.club??null}:null;
+    entries=cached;
+  }else{
+    try{
+      const r=await fetch(`${API}/players/${pid}/market_value`);
+      if(!r.ok)return null;
+      const d=await r.json();
+      entries=(d.marketValueHistory||[]).map(e=>({date:e.date,value:e.marketValue,club:e.clubName}));
+      if(!entries.length)return null;
+    }catch(e){return null;}
   }
-  // 2. Fall back to live API
-  try{
-    const r=await fetch(`${API}/players/${pid}/market_value`);
-    if(!r.ok)return null;
-    const d=await r.json();
-    const history=d.marketValueHistory||[];
-    if(!history.length)return null;
-    const best=_closestEntry(history.map(e=>({date:e.date,value:e.marketValue,club:e.clubName})),yr);
-    return best?{value:best.value??null,club:best.club??null}:null;
-  }catch(e){return null;}
+  const e1=_closestEntry(entries,yr);
+  if(!e1)return null;
+  // Average current season value with next season — reflects a player's trajectory
+  // (e.g. Kanté at €5m in 2015 but €30m in 2016 → averaged higher rating)
+  const e2=_closestEntry(entries,yr+1);
+  const v1=e1.value??0;
+  const v2=e2?.value??v1;
+  return {value:Math.round((v1+v2)/2), club:e1.club??null};
 }
 
 // ── Search ─────────────────────────────────────────────────────────────
@@ -1792,6 +1906,13 @@ function handleCardClick(card,name,position,currClub){
   // Blocked (in squad, retired-by-era, etc.)
   if(card.dataset.blocked==='true'){
     showToast(`${lastName} refused to negotiate, unwilling to move to Arsenal.`);
+    return;
+  }
+
+  // Block signing if historical value hasn't loaded yet (data-loading spinner still visible)
+  const _loadSpin=card.querySelector('[data-loading]');
+  if(_loadSpin&&_loadSpin.style.display!=='none'){
+    showToast(`${lastName}'s era value is still loading — give it a second.`,2000);
     return;
   }
 
@@ -1970,14 +2091,29 @@ function runSimulation(){
   let table=buildSimTable(simPts,S.season);
   let arsenalPos=table.findIndex(r=>r.yours)+1;
 
-  // 50% cap on 1st place — Arsenal don't always win even with a better squad
-  if(arsenalPos===1&&Math.random()<0.5){
-    const rivals=ACTUAL_TABLE[S.season]?.filter(r=>r.club!=='Arsenal')||[];
-    const topRival=rivals.sort((a,b)=>b.pts-a.pts)[0];
+  // Merit-based title cap: drop chance scales with how dominant the squad is vs the champion
+  if(arsenalPos===1){
+    const titleRivals=ACTUAL_TABLE[S.season]?.filter(r=>r.club!=='Arsenal')||[];
+    const topRival=titleRivals.sort((a,b)=>b.pts-a.pts)[0];
     if(topRival){
-      simPts=Math.min(topRival.pts-1,simPts-3);
-      table=buildSimTable(simPts,S.season);
-      arsenalPos=table.findIndex(r=>r.yours)+1;
+      const bench=LEAGUE_BENCHMARK[S.season]?.teams[0];
+      let dropChance=0.45; // base: slightly-better-than-even Arsenal still slip sometimes
+      if(bench){
+        // How much better is Arsenal's squad overall vs the historical champion?
+        const arAvg=(ar.gk+ar.def*1.5+ar.mid*1.5+ar.fwd)/5;
+        const chAvg=(bench.gk+(bench.def||75)*1.5+(bench.mid||75)*1.5+(bench.fwd||78))/5;
+        const edge=arAvg-chAvg;
+        // edge +6 → ~0.15 drop, edge +2 → ~0.35, edge 0 → ~0.45, edge -2 → ~0.55
+        dropChance=Math.max(0.40,Math.min(0.70,0.55-edge*0.04));
+      }
+      // Slight reduction if season weaknesses were addressed — but floor stays at 0.40
+      const gapsFilled=(SEASON_WEAKNESSES[S.season]?.gaps||[]).filter(g=>S.bought.some(p=>grp(p.position)===g)).length;
+      dropChance=Math.max(0.40,dropChance-gapsFilled*0.05);
+      if(Math.random()<dropChance){
+        simPts=Math.min(topRival.pts-1,simPts-3);
+        table=buildSimTable(simPts,S.season);
+        arsenalPos=table.findIndex(r=>r.yours)+1;
+      }
     }
   }
 
@@ -1987,7 +2123,7 @@ function runSimulation(){
   const verdict=rebuildVerdict(total);
   const topRival=LEAGUE_BENCHMARK[S.season]?.teams[0];
 
-  _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season};
+  _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season,newLines,simPts};
 
   // ── Position display ───────────────────────────────────────────────
   let emoji,title,posColor;
@@ -2135,6 +2271,165 @@ function runSimulation(){
   document.getElementById('resultModal').classList.add('open');
 }
 function closeResult(){document.getElementById('resultModal').classList.remove('open');}
+
+// ── Match ticker ───────────────────────────────────────────────────────
+function _opponentStr(teamName,finalPts,season){
+  const rv=RIVAL_STRENGTH[season]||{};
+  if(rv[teamName]){const r=rv[teamName];return Math.round((r.def+r.mid+r.att)/3);}
+  return Math.round(67+Math.max(0,finalPts-30)*0.37);
+}
+// Build scorer/assister pool with position-weighted probabilities
+function _buildScorerPool(allActive){
+  return allActive.filter(p=>grp(p.position)!=='GK').map(p=>{
+    const sp=specificPos(p.position)||'';
+    const g=grp(p.position);
+    const r=mvToRating(p.marketValue);
+    let gW,aW;
+    if(sp==='ST'||(g==='ATT'&&!sp)){gW=r*2.2;aW=r*0.7;}
+    else if(sp==='LW'||sp==='RW'){gW=r*1.5;aW=r*1.5;}
+    else if(sp==='CAM'){gW=r*0.9;aW=r*2.0;}
+    else if(sp==='CM'){gW=r*0.5;aW=r*1.2;}
+    else if(sp==='DM'){gW=r*0.3;aW=r*0.8;}
+    else if(sp==='LM'||sp==='RM'){gW=r*0.7;aW=r*1.4;}
+    else if(g==='DEF'){gW=r*0.10;aW=r*0.30;}
+    else{gW=r*0.4;aW=r*1.0;}
+    return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
+  });
+}
+function _pickW(pool){
+  const total=pool.reduce((s,p)=>s+p.gW,0);if(!total)return null;
+  let r=Math.random()*total;for(const p of pool){r-=p.gW;if(r<=0)return p;}return pool[pool.length-1];
+}
+function _pickA(pool,scorerId){
+  const ap=pool.filter(p=>p.id!==scorerId&&p.aW>0);if(!ap.length)return null;
+  const total=ap.reduce((s,p)=>s+p.aW,0);let r=Math.random()*total;
+  for(const p of ap){r-=p.aW;if(r<=0)return p;}return ap[ap.length-1];
+}
+// Build fixtures: realistic seasonal order — big rivals not in the opening games
+function _buildFixtures(opps,season){
+  const all=[];
+  opps.forEach(o=>{
+    const str=_opponentStr(o.n,o.pts,season);
+    all.push({opp:o.n,home:true,str,pts:o.pts});
+    all.push({opp:o.n,home:false,str,pts:o.pts});
+  });
+  for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+  // Push the 4 biggest matchups past the first 3 slots (avoid blockbusters in August)
+  const bigNames=[...opps].sort((a,b)=>b.pts-a.pts).slice(0,4).map(o=>o.n);
+  for(let i=0;i<3;i++){
+    if(bigNames.includes(all[i].opp)){
+      const swap=3+Math.floor(Math.random()*16);
+      [all[i],all[swap]]=[all[swap],all[i]];
+    }
+  }
+  return all;
+}
+function _generateTicker(newLines,season,targetPts){
+  const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const pool=_buildScorerPool(allActive);
+  const fixtures=_buildFixtures(SEASON_OPPONENTS[season]||[],season);
+  const arOvr=newLines.def*0.35+newLines.mid*0.30+newLines.att*0.35;
+  let cum=0;
+  let defBudget=5+Math.floor(Math.random()*2); // 5–6 defender goals across the season
+  fixtures.forEach((g,idx)=>{
+    const left=fixtures.length-idx;
+    const ppg=Math.max(0,targetPts-cum)/left;
+    const adv=arOvr-g.str+(g.home?2.5:-1.5);
+    const baseW=Math.max(0.06,Math.min(0.88,0.38+adv*0.042));
+    const nudge=(ppg-1.62)*0.10;
+    const wP=Math.max(0.07,Math.min(0.87,baseW+nudge));
+    const r=Math.random();
+    const res=r<wP?'W':r<wP+0.20?'D':'L';
+    let gf,ga;
+    if(res==='W'){gf=1+Math.floor(Math.random()*3);ga=Math.floor(Math.random()*gf);}
+    else if(res==='D'){gf=Math.floor(Math.random()*3);ga=gf;}
+    else{ga=1+Math.floor(Math.random()*3);gf=Math.floor(Math.random()*ga);}
+    const scorers=[];
+    for(let i=0;i<gf;i++){
+      // Nudge towards defender goals in the second half of the season
+      const forceDefender=defBudget>0&&idx>19&&Math.random()<(defBudget/Math.max(1,fixtures.length-idx));
+      const defPool=pool.filter(p=>p.g==='DEF'&&p.gW>0);
+      const scorer=forceDefender&&defPool.length?_pickW(defPool):_pickW(pool.filter(p=>p.gW>0));
+      if(scorer){
+        scorer.goals++;
+        if(scorer.g==='DEF')defBudget--;
+        if(Math.random()<0.68){const a=_pickA(pool,scorer.id);if(a)a.assists++;}
+        scorers.push(scorer.lastName);
+      }
+    }
+    g.res=res;g.gf=gf;g.ga=ga;g.scorers=scorers;
+    cum+=res==='W'?3:res==='D'?1:0;g.cum=cum;
+  });
+  return {fixtures,pool};
+}
+function openMatchModal(){
+  if(!_lastSimData){showToast('Run a simulation first.');return;}
+  const{season,newLines,simPts}=_lastSimData;
+  const{fixtures,pool}=_generateTicker(newLines,season,simPts);
+  let W=0,D=0,L=0;
+  fixtures.forEach(g=>{if(g.res==='W')W++;else if(g.res==='D')D++;else L++;});
+  const tbl=buildSimTable(simPts,season);
+  const ar=tbl.find(r=>r.yours);
+  const pos=ar?ordinal(ar.pos):'?';
+  document.getElementById('mmTitle').textContent=`Season Ticker · ${season}/${String(season+1).slice(-2)}`;
+  document.getElementById('mmW').textContent=W;
+  document.getElementById('mmD').textContent=D;
+  document.getElementById('mmL').textContent=L;
+  document.getElementById('mmPts').textContent=simPts;
+  document.getElementById('mmPos').textContent=pos;
+  // Match list grouped by month
+  let gi=0;
+  const matchRows=MATCH_MONTHS.map(({m,c})=>{
+    const mg=fixtures.slice(gi,gi+c);gi+=c;
+    const rows=mg.map(g=>{
+      const rc=g.res==='W'?'#4ade80':g.res==='D'?'#fbbf24':'#f87171';
+      const ha=g.home?'H':'A';
+      const scorerTxt=g.scorers.length
+        ?`<span style="font-size:7.5px;color:#6b7280;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;">${g.scorers.join(', ')}</span>`:'';
+      return `<div style="display:flex;align-items:center;gap:5px;padding:3px 5px;border-radius:4px;"
+        onmouseover="this.style.background='#111827'" onmouseout="this.style.background='transparent'">
+        <span style="width:18px;height:18px;border-radius:4px;background:${rc}22;color:${rc};font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${g.res}</span>
+        <span style="font-size:10px;font-weight:600;color:#e5e7eb;white-space:nowrap;min-width:80px;">${g.opp}</span>
+        <span style="font-size:8px;color:#4b5563;flex-shrink:0;">(${ha})</span>
+        <span style="flex:1;">${scorerTxt}</span>
+        <span style="font-size:9px;font-weight:700;color:#d1d5db;flex-shrink:0;min-width:26px;text-align:right;">${g.gf}–${g.ga}</span>
+        <span style="font-size:7px;color:#374151;flex-shrink:0;min-width:29px;text-align:right;">${g.cum}pts</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:4px;">
+      <div style="font-size:7px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 5px 2px;">${m}</div>
+      ${rows}</div>`;
+  }).join('');
+  // Season stats: top scorers + assisters
+  const topScorers=[...pool].sort((a,b)=>b.goals-a.goals).filter(p=>p.goals>0).slice(0,5);
+  const topAssists=[...pool].sort((a,b)=>b.assists-a.assists).filter(p=>p.assists>0).slice(0,4);
+  const statsHTML=`<div style="border-top:1px solid #1f2937;padding:10px 5px 6px;margin-top:4px;">
+    <div style="font-size:7px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;">Season Stats</div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-size:7px;color:#374151;font-weight:700;margin-bottom:4px;">GOALS</div>
+        ${topScorers.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">
+          <span style="font-size:9px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
+          <span style="font-size:10px;font-weight:800;color:${i===0?'#f87171':'#6b7280'};">${p.goals}</span>
+        </div>`).join('')}
+      </div>
+      <div style="width:1px;background:#1f2937;"></div>
+      <div style="flex:1;">
+        <div style="font-size:7px;color:#374151;font-weight:700;margin-bottom:4px;">ASSISTS</div>
+        ${topAssists.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">
+          <span style="font-size:9px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
+          <span style="font-size:10px;font-weight:800;color:${i===0?'#60a5fa':'#6b7280'};">${p.assists}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('mmList').innerHTML=matchRows+statsHTML;
+  document.getElementById('matchModal').classList.add('open');
+}
+function closeMatchModal(e){
+  if(e&&e.target!==document.getElementById('matchModal'))return;
+  document.getElementById('matchModal').classList.remove('open');
+}
 
 // ── Share result ───────────────────────────────────────────────────────
 function generateShareText(){
