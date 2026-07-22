@@ -94,6 +94,11 @@
       <div id="simCountDisplay" style="font-size:14px;font-weight:900;color:#EF0107;line-height:1;">0</div>
     </div>
     <div style="width:1px;height:20px;background:#1f2937;"></div>
+    <button id="difficultyBtn" onclick="toggleDifficulty()" title="Simulation difficulty — Normal rewards sharp transfer windows with a higher ceiling; Difficult keeps it historically realistic"
+      style="background:#111827;border:1px solid #374151;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;">
+      <span id="difficultyLabel">Normal</span>
+    </button>
+    <div style="width:1px;height:20px;background:#1f2937;"></div>
     <span style="font-size:10px;color:#6b7280;">Season</span>
     <select id="seasonSelect" style="background:#111827;border:1px solid #374151;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;color:#fff;outline:none;cursor:pointer;">
       <option value="2015">2015/16</option>
@@ -845,7 +850,8 @@ const SOFT_RIVALS = ['Liverpool','Manchester City'];
 const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
 // ── State ──────────────────────────────────────────────────────────────
-const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0} };
+const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
+  difficulty: (localStorage.getItem('arsenalRebuildDifficulty')==='difficult') ? 'difficult' : 'normal' };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -962,6 +968,24 @@ function computeSigningIQ(xi, bought, season) {
     return sum + Math.min(100, s);
   }, 0);
   return Math.round(total / bought.length);
+}
+// ── Squad IQ (hidden) ────────────────────────────────────────────────────
+// Signing IQ only judges the players bought — it can't tell "sold a bench player to
+// fund a great signing" from "sold my best CB to buy two squad-fillers", and those are
+// very different transfer windows. Squad IQ blends signing quality with sale wisdom:
+// selling a player who was a nailed-on starter in the original historical XI is a real
+// cost even if what you bought with the proceeds looks good in isolation.
+function computeSquadIQ(xi, bought, soldIds, season) {
+  const signingIQ = computeSigningIQ(xi, bought, season);
+  if (!soldIds.length) return signingIQ;
+  const historicalXI = getAutoXI(S.players); // pre-transfer — who would have actually started
+  const historicalStarterIds = new Set(historicalXI.map(p => p.id));
+  let starterSales = 0, benchSales = 0;
+  soldIds.forEach(id => historicalStarterIds.has(id) ? starterSales++ : benchSales++);
+  // Each nailed-on starter sold is a real cost; trimming bench/reserve players to fund
+  // the window is smart business and gets a small credit instead.
+  const saleScore = Math.max(0, Math.min(100, 100 - starterSales * 35 + Math.min(10, benchSales * 3)));
+  return Math.round(signingIQ * 0.7 + saleScore * 0.3);
 }
 function computeLineRatings(players) {
   const gks=players.filter(p=>grp(p.position)==='GK');
@@ -2085,8 +2109,10 @@ function runSimulation(){
   const {f1,f2,f3,f4,total,ar}=computeRebuildScore(scoringXI,S.bought);
   const iq=getBudgetIQ();
   // Hidden — a genuinely sharp window (not just a big-spend one) raises the ceiling below.
-  const signingIQ=computeSigningIQ(scoringXI,S.bought,S.season);
-  const ceilingBoost=Math.max(0,Math.min(5,Math.round((signingIQ-55)/9)));
+  // Squad IQ also accounts for who you sold to fund it, not just who you bought.
+  // Difficult mode disables the boost entirely — realism regardless of window quality.
+  const squadIQ=computeSquadIQ(scoringXI,S.bought,[...S.sold],S.season);
+  const ceilingBoost=S.difficulty==='difficult'?0:Math.max(0,Math.min(5,Math.round((squadIQ-55)/9)));
 
   // Draw chaos events before computing points
   const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
@@ -2305,7 +2331,7 @@ function runSimulation(){
     {label:'vs Top 4',       score:f2, max:30},
     {label:'Attack/Defense', score:f3, max:20},
     {label:'Player Legacy',  score:f4, max:15},
-    {label:'Signing IQ (hidden, ceiling +'+ceilingBoost+')', score:signingIQ, max:100},
+    {label:'Squad IQ (hidden, '+S.difficulty+', ceiling +'+ceilingBoost+')', score:squadIQ, max:100},
   ];
   document.getElementById('dbgBreakdown').innerHTML=bars.map(b=>{
     const pct=Math.round(b.score/b.max*100);
@@ -2593,6 +2619,27 @@ function secretTap(){
     if(panel){panel.style.display=panel.style.display==='none'?'block':'none';}
   }
 }
+
+// ── Difficulty toggle ────────────────────────────────────────────────────
+// Normal: sharp transfer windows earn a higher simulation ceiling (Squad IQ, hidden).
+// Difficult: historically realistic — a title win stays genuinely rare regardless of window quality.
+function renderDifficulty(){
+  const btn=document.getElementById('difficultyBtn'),lbl=document.getElementById('difficultyLabel');
+  if(!btn||!lbl)return;
+  const hard=S.difficulty==='difficult';
+  lbl.textContent=hard?'Difficult':'Normal';
+  btn.style.color=hard?'#f87171':'#4ade80';
+  btn.style.borderColor=hard?'#7f1d1d':'#166534';
+}
+function toggleDifficulty(){
+  S.difficulty=S.difficulty==='difficult'?'normal':'difficult';
+  localStorage.setItem('arsenalRebuildDifficulty',S.difficulty);
+  renderDifficulty();
+  showToast(S.difficulty==='difficult'
+    ?'Difficult mode — realistic odds, a title win is genuinely rare.'
+    :'Normal mode — a sharp transfer window earns better odds.',3000);
+}
+renderDifficulty();
 
 document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));
 loadSeason(2010);
