@@ -937,6 +937,32 @@ function computeRebuildScore(xi, bought) {
   const f1=scoreBalance(ar), f2=scoreVsTop4(ar,xi,S.season), f3=scoreTactical(ar,bought,S.season), f4=scoreLegacy(bought);
   return { f1, f2, f3, f4, total:f1+f2+f3+f4, ar };
 }
+// ── Signing IQ (hidden) ──────────────────────────────────────────────────
+// Not shown to the player — rewards genuinely sharp transfer windows (not just big spend)
+// with a higher simulation ceiling. Per signing, out of 100:
+//   40 for actually starting in the best XI (a bench-filler signing changes nothing)
+//   30 for rating earned per euro spent (value efficiency, capped so ultra-cheap fringe
+//      picks can't blow out the scale)
+//   20 for "foresight" — how much the player's value rose the following season, a proxy
+//      for spotting a rising player before the market did (the era-value averaging already
+//      fetches next-season value for this)
+//   10 for signing into that season's actual documented weak line
+function computeSigningIQ(xi, bought, season) {
+  if (!bought.length) return 0;
+  const xiIds = new Set(xi.map(p => p.id));
+  const gaps = SEASON_WEAKNESSES[season]?.gaps || [];
+  const total = bought.reduce((sum, p) => {
+    let s = 0;
+    if (xiIds.has(p.id)) s += 40;
+    const rating = mvToRating(p.marketValue);
+    const mv = Math.max(1, (p.marketValue || 0) / 1e6);
+    s += Math.min(30, (rating / mv) * 1.1);
+    s += Math.min(20, Math.max(0, (p.growth || 1) - 1) * 22);
+    if (gaps.includes(p._group)) s += 10;
+    return sum + Math.min(100, s);
+  }, 0);
+  return Math.round(total / bought.length);
+}
 function computeLineRatings(players) {
   const gks=players.filter(p=>grp(p.position)==='GK');
   const defs=players.filter(p=>grp(p.position)==='DEF');
@@ -1011,9 +1037,13 @@ function buildSimTable(simPts, season) {
 }
 
 // ── W/D/L ──────────────────────────────────────────────────────────────
+// Always returns a W/D/L that sums to exactly 38 games and W*3+D === pts.
 function wdlFromPts(pts) {
-  const D=Math.max(2,Math.round(2+Math.random()*8)), W=Math.max(0,Math.floor((pts-D)/3));
-  return {W, D:pts-W*3, L:Math.max(0,38-W-(pts-W*3))};
+  pts=Math.max(0,pts);
+  const seed=Math.max(2,Math.round(2+Math.random()*8));
+  let W=Math.max(0,Math.floor((pts-seed)/3)), D=pts-W*3;
+  while(W+D>38){W++;D=pts-W*3;}
+  return {W, D, L:38-W-D};
 }
 
 // ── Top performer predictions ──────────────────────────────────────────
@@ -1712,6 +1742,7 @@ async function selectClub(clubId,clubName){
         }
         if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
         if(hist.value)card.dataset.value=hist.value;
+        card.dataset.growth=hist.growth||1;
         if(noteEl)noteEl.textContent=yrLabel;
         if(subEl){subEl.textContent=(p.position||'')+(hist.club?' · '+hist.club:'');}
         card.dataset.eraClub=hist.club||clubName;
@@ -1765,7 +1796,10 @@ async function fetchHistoricalValue(pid,yr){
   const e2=_closestEntry(entries,yr+1);
   const v1=e1.value??0;
   const v2=e2?.value??v1;
-  return {value:Math.round((v1+v2)/2), club:e1.club??null};
+  // How much the player's value rose the following season — a proxy for "signed a
+  // rising player before the market caught up", used only internally (Signing IQ).
+  const growth=v1>0?v2/v1:1;
+  return {value:Math.round((v1+v2)/2), club:e1.club??null, growth};
 }
 
 // ── Search ─────────────────────────────────────────────────────────────
@@ -1865,6 +1899,7 @@ async function doSearch(q){
         }
         if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
         if(hist.value)card.dataset.value=hist.value;
+        card.dataset.growth=hist.growth||1;
         if(noteEl)noteEl.textContent=yrLabel;
         if(subEl){
           const clubPart=hist.club?' · '+hist.club:'';
@@ -1961,7 +1996,8 @@ function handleCardClick(card,name,position,currClub){
   const posGroup=_grp||grp(cleanPos);
   const fallbackPos={'GK':'Goalkeeper','DEF':'Centre-Back','MID':'Central Midfield','ATT':'Centre-Forward'};
   const finalPos=cleanPos||(fallbackPos[posGroup]||'');
-  S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value});S.spent+=value;
+  const growth=parseFloat(card.dataset.growth)||1;
+  S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value,growth});S.spent+=value;
   checkEliteSquadCap(finalPos);
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
@@ -2048,6 +2084,9 @@ function runSimulation(){
   const scoringXI=getAutoXI(allActive);
   const {f1,f2,f3,f4,total,ar}=computeRebuildScore(scoringXI,S.bought);
   const iq=getBudgetIQ();
+  // Hidden — a genuinely sharp window (not just a big-spend one) raises the ceiling below.
+  const signingIQ=computeSigningIQ(scoringXI,S.bought,S.season);
+  const ceilingBoost=Math.max(0,Math.min(5,Math.round((signingIQ-55)/9)));
 
   // Draw chaos events before computing points
   const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
@@ -2079,11 +2118,11 @@ function runSimulation(){
     // Scale: 7-duel improvement of 7 pts (avg 1pt/duel) ≈ 0.35 extra pts per game × 2 games
     vsTop4Delta+=(edgeImprovement/7)*0.35*2;
   }
-  vsTop4Delta=Math.round(Math.max(-8,Math.min(10,vsTop4Delta)));
+  vsTop4Delta=Math.round(Math.max(-8,Math.min(10+ceilingBoost,vsTop4Delta)));
 
   // vs Rest of table (30 games): overall line improvement vs league average
   const overallDelta=defDelta*0.35+midDelta*0.3+attDelta*0.35;
-  const vsRestDelta=Math.round(Math.max(-5,Math.min(7,overallDelta*0.5)));
+  const vsRestDelta=Math.round(Math.max(-5,Math.min(7+Math.round(ceilingBoost*0.6),overallDelta*0.5)));
 
   const totalDelta=vsTop4Delta+vsRestDelta+Math.round(iq.bonus*0.3)+Math.round((Math.random()-.5)*4)+ptsMod;
   let simPts=Math.max(30,Math.min(99,historicalPts+totalDelta));
@@ -2105,11 +2144,12 @@ function runSimulation(){
         const chAvg=(bench.gk+(bench.def||75)*1.5+(bench.mid||75)*1.5+(bench.fwd||78))/5;
         const edge=arAvg-chAvg;
         // edge +6 → ~0.15 drop, edge +2 → ~0.35, edge 0 → ~0.45, edge -2 → ~0.55
-        dropChance=Math.max(0.40,Math.min(0.70,0.55-edge*0.04));
+        dropChance=Math.max(0.15-ceilingBoost*0.01,Math.min(0.70,0.45-edge*0.05));
       }
-      // Slight reduction if season weaknesses were addressed — but floor stays at 0.40
+      // Slight reduction if season weaknesses were addressed — floor drops further for a
+      // genuinely sharp window (ceilingBoost), never below 0.05 (always some luck involved)
       const gapsFilled=(SEASON_WEAKNESSES[S.season]?.gaps||[]).filter(g=>S.bought.some(p=>grp(p.position)===g)).length;
-      dropChance=Math.max(0.40,dropChance-gapsFilled*0.05);
+      dropChance=Math.max(0.05,dropChance-gapsFilled*0.05-ceilingBoost*0.01);
       if(Math.random()<dropChance){
         simPts=Math.min(topRival.pts-1,simPts-3);
         table=buildSimTable(simPts,S.season);
@@ -2119,12 +2159,18 @@ function runSimulation(){
   }
 
   const wdl=wdlFromPts(simPts);
-  const scorer=predictTopScorer(scoringXI);
-  const assister=predictTopAssister(scoringXI);
+  // Simulate the season match-by-match once here — the result modal and the Match
+  // Ticker both read this single simulation, so points/W-D-L/top scorer stay consistent
+  // between the two views and don't reshuffle if the ticker is reopened.
+  const {fixtures,pool:scorerPool}=_generateTicker(newLines,S.season,wdl);
+  const topScorerP=[...scorerPool].sort((a,b)=>b.goals-a.goals).find(p=>p.goals>0);
+  const topAssistP=[...scorerPool].sort((a,b)=>b.assists-a.assists).find(p=>p.assists>0);
+  const scorer=topScorerP?{name:topScorerP.lastName,goals:topScorerP.goals}:predictTopScorer(scoringXI);
+  const assister=topAssistP?{name:topAssistP.lastName,assists:topAssistP.assists}:predictTopAssister(scoringXI);
   const verdict=rebuildVerdict(total);
   const topRival=LEAGUE_BENCHMARK[S.season]?.teams[0];
 
-  _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season,newLines,simPts};
+  _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season,newLines,simPts,wdl,fixtures,scorerPool};
 
   // ── Position display ───────────────────────────────────────────────
   let emoji,title,posColor;
@@ -2259,6 +2305,7 @@ function runSimulation(){
     {label:'vs Top 4',       score:f2, max:30},
     {label:'Attack/Defense', score:f3, max:20},
     {label:'Player Legacy',  score:f4, max:15},
+    {label:'Signing IQ (hidden, ceiling +'+ceilingBoost+')', score:signingIQ, max:100},
   ];
   document.getElementById('dbgBreakdown').innerHTML=bars.map(b=>{
     const pct=Math.round(b.score/b.max*100);
@@ -2325,22 +2372,26 @@ function _buildFixtures(opps,season){
   }
   return all;
 }
-function _generateTicker(newLines,season,targetPts){
+// Draws results from the exact {W,D,L} tally (matches the result modal's W/D/L and points
+// by construction) while still weighting each pick by matchup strength so tougher fixtures
+// are more likely to draw from the remaining losses/draws.
+function _generateTicker(newLines,season,wdl){
   const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const pool=_buildScorerPool(allActive);
   const fixtures=_buildFixtures(SEASON_OPPONENTS[season]||[],season);
   const arOvr=newLines.def*0.35+newLines.mid*0.30+newLines.att*0.35;
   let cum=0;
+  const remaining={W:wdl.W,D:wdl.D,L:wdl.L};
   let defBudget=5+Math.floor(Math.random()*2); // 5–6 defender goals across the season
   fixtures.forEach((g,idx)=>{
-    const left=fixtures.length-idx;
-    const ppg=Math.max(0,targetPts-cum)/left;
     const adv=arOvr-g.str+(g.home?2.5:-1.5);
-    const baseW=Math.max(0.06,Math.min(0.88,0.38+adv*0.042));
-    const nudge=(ppg-1.62)*0.10;
-    const wP=Math.max(0.07,Math.min(0.87,baseW+nudge));
-    const r=Math.random();
-    const res=r<wP?'W':r<wP+0.20?'D':'L';
+    const wScore=remaining.W>0?Math.max(0.02,0.5+adv*0.035):0;
+    const dScore=remaining.D>0?0.30:0;
+    const lScore=remaining.L>0?Math.max(0.02,0.5-adv*0.035):0;
+    const scoreTotal=wScore+dScore+lScore;
+    let r=Math.random()*scoreTotal,res;
+    if((r-=wScore)<=0)res='W';else if((r-=dScore)<=0)res='D';else res='L';
+    remaining[res]--;
     let gf,ga;
     if(res==='W'){gf=1+Math.floor(Math.random()*3);ga=Math.floor(Math.random()*gf);}
     else if(res==='D'){gf=Math.floor(Math.random()*3);ga=gf;}
@@ -2365,17 +2416,14 @@ function _generateTicker(newLines,season,targetPts){
 }
 function openMatchModal(){
   if(!_lastSimData){showToast('Run a simulation first.');return;}
-  const{season,newLines,simPts}=_lastSimData;
-  const{fixtures,pool}=_generateTicker(newLines,season,simPts);
-  let W=0,D=0,L=0;
-  fixtures.forEach(g=>{if(g.res==='W')W++;else if(g.res==='D')D++;else L++;});
+  const{season,simPts,wdl,fixtures,scorerPool:pool}=_lastSimData;
   const tbl=buildSimTable(simPts,season);
   const ar=tbl.find(r=>r.yours);
   const pos=ar?ordinal(ar.pos):'?';
   document.getElementById('mmTitle').textContent=`Season Ticker · ${season}/${String(season+1).slice(-2)}`;
-  document.getElementById('mmW').textContent=W;
-  document.getElementById('mmD').textContent=D;
-  document.getElementById('mmL').textContent=L;
+  document.getElementById('mmW').textContent=wdl.W;
+  document.getElementById('mmD').textContent=wdl.D;
+  document.getElementById('mmL').textContent=wdl.L;
   document.getElementById('mmPts').textContent=simPts;
   document.getElementById('mmPos').textContent=pos;
   // Match list grouped by month
