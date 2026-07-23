@@ -73,7 +73,11 @@
       #matchModal .modal-inner{max-height:calc(100svh - 70px)!important;margin:6px 6px 60px!important;}
       .modal-inner{border-radius:14px!important;}
       #simCountDisplay{font-size:11px!important;}
-      header{padding:0 10px!important;}
+      header{padding:0 8px!important;}
+      #headerControls{gap:5px!important;}
+      #simCountBlock,#difficultyHeaderLabel,#seasonHeaderLabel,.header-divider{display:none!important;}
+      #difficultyBtn{padding:4px 9px!important;font-size:9px!important;}
+      #seasonSelect{padding:3px 6px!important;font-size:10px!important;}
     }
   </style>
 </head>
@@ -88,18 +92,19 @@
       <div style="font-size:8px;color:#4b5563;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div style="text-align:right;">
+  <div id="headerControls" style="display:flex;align-items:center;gap:10px;">
+    <div id="simCountBlock" style="text-align:right;">
       <div style="font-size:7px;color:#374151;line-height:1;margin-bottom:1px;">SIMULATIONS</div>
       <div id="simCountDisplay" style="font-size:14px;font-weight:900;color:#EF0107;line-height:1;">0</div>
     </div>
-    <div style="width:1px;height:20px;background:#1f2937;"></div>
-    <button id="difficultyBtn" onclick="toggleDifficulty()" title="Simulation difficulty — Normal rewards sharp transfer windows with a higher ceiling; Difficult keeps it historically realistic"
-      style="background:#111827;border:1px solid #374151;border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;">
+    <div class="header-divider" style="width:1px;height:20px;background:#1f2937;"></div>
+    <span id="difficultyHeaderLabel" style="font-size:10px;color:#6b7280;">Difficulty</span>
+    <button id="difficultyBtn" onclick="toggleDifficulty()" title="Normal rewards a sharp transfer window with better odds. Difficult keeps the odds historically realistic no matter how good your window is."
+      style="border-radius:9999px;padding:4px 12px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.02em;border-width:1.5px;border-style:solid;">
       <span id="difficultyLabel">Normal</span>
     </button>
-    <div style="width:1px;height:20px;background:#1f2937;"></div>
-    <span style="font-size:10px;color:#6b7280;">Season</span>
+    <div class="header-divider" style="width:1px;height:20px;background:#1f2937;"></div>
+    <span id="seasonHeaderLabel" style="font-size:10px;color:#6b7280;">Season</span>
     <select id="seasonSelect" style="background:#111827;border:1px solid #374151;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;color:#fff;outline:none;cursor:pointer;">
       <option value="2015">2015/16</option>
       <option value="2014">2014/15</option>
@@ -185,13 +190,14 @@
 
     <!-- View Lineup button -->
     <div style="flex-shrink:0;padding:8px 12px;border-bottom:1px solid #1f2937;">
-      <button onclick="openLineupModal()"
+      <button onclick="openLineupModal()" title="Optional: for display only. The simulation always picks your strongest XI automatically, whatever you set here."
         style="width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s;"
         onmouseover="this.style.borderColor='#4b5563';this.style.background='#1a2535'"
         onmouseout="this.style.borderColor='#374151';this.style.background='#111827'">
         <div style="display:flex;align-items:center;gap:7px;">
           <span style="font-size:11px;font-weight:700;color:#e5e7eb;">Lineup</span>
           <span class="lineup-count-badge" style="font-size:7px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:1px 6px;color:#6b7280;">0/11</span>
+          <span style="font-size:7px;color:#374151;">optional</span>
         </div>
         <span style="font-size:9px;color:#374151;">View →</span>
       </button>
@@ -230,7 +236,7 @@
     <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Buy <span id="mobileBuy" style="color:#f87171;font-weight:700;">€0</span></div>
     <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Sell <span id="mobileSell" style="color:#4ade80;font-weight:700;">€0</span></div>
   </div>
-  <button onclick="openLineupModal()" style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
+  <button onclick="openLineupModal()" title="Optional: for display only. The simulation always picks your strongest XI automatically." style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
     Lineup <span id="mobileLineupBadge" style="font-size:8px;color:#6b7280;">0/11</span>
   </button>
   <button id="mobileSimBtn" onclick="runSimulation()" class="sim-btn" style="border-radius:8px;padding:7px 14px;font-weight:900;font-size:11px;flex-shrink:0;white-space:nowrap;" disabled>Sim →</button>
@@ -821,7 +827,7 @@ const SQUAD_EXCLUSIONS = {
   2014:['van Persie','Fabregas','Nasri'],
   2015:['van Persie','Fabregas','Nasri'],
 };
-// Players Wenger actually signed that summer — can't be immediately sold
+// Players Wenger actually signed that summer, can't be immediately sold
 const LOCKED_SIGNINGS = {
   2009:['Vermaelen'],
   2010:['Koscielny','Squillaci','Chamakh'],
@@ -944,12 +950,12 @@ function computeRebuildScore(xi, bought) {
   return { f1, f2, f3, f4, total:f1+f2+f3+f4, ar };
 }
 // ── Signing IQ (hidden) ──────────────────────────────────────────────────
-// Not shown to the player — rewards genuinely sharp transfer windows (not just big spend)
+// Not shown to the player. Rewards genuinely sharp transfer windows (not just big spend)
 // with a higher simulation ceiling. Per signing, out of 100:
 //   40 for actually starting in the best XI (a bench-filler signing changes nothing)
 //   30 for rating earned per euro spent (value efficiency, capped so ultra-cheap fringe
 //      picks can't blow out the scale)
-//   20 for "foresight" — how much the player's value rose the following season, a proxy
+//   20 for "foresight": how much the player's value rose the following season, a proxy
 //      for spotting a rising player before the market did (the era-value averaging already
 //      fetches next-season value for this)
 //   10 for signing into that season's actual documented weak line
@@ -970,7 +976,7 @@ function computeSigningIQ(xi, bought, season) {
   return Math.round(total / bought.length);
 }
 // ── Squad IQ (hidden) ────────────────────────────────────────────────────
-// Signing IQ only judges the players bought — it can't tell "sold a bench player to
+// Signing IQ only judges the players bought. It can't tell "sold a bench player to
 // fund a great signing" from "sold my best CB to buy two squad-fillers", and those are
 // very different transfer windows. Squad IQ blends signing quality with sale wisdom:
 // selling a player who was a nailed-on starter in the original historical XI is a real
@@ -978,7 +984,7 @@ function computeSigningIQ(xi, bought, season) {
 function computeSquadIQ(xi, bought, soldIds, season) {
   const signingIQ = computeSigningIQ(xi, bought, season);
   if (!soldIds.length) return signingIQ;
-  const historicalXI = getAutoXI(S.players); // pre-transfer — who would have actually started
+  const historicalXI = getAutoXI(S.players); // pre-transfer: who would have actually started
   const historicalStarterIds = new Set(historicalXI.map(p => p.id));
   let starterSales = 0, benchSales = 0;
   soldIds.forEach(id => historicalStarterIds.has(id) ? starterSales++ : benchSales++);
@@ -1156,7 +1162,7 @@ function checkEliteSquadCap(signedPosition){
   if(!sPos)return;
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const same=all.filter(p=>specificPos(p.position)===sPos);
-  // Only fires when 3+ elite (85+) players at the exact same position — just a narrative warning, no forced sale
+  // Only fires when 3+ elite (85+) players at the exact same position, just a narrative warning, no forced sale
   const eliteCount=same.filter(p=>mvToRating(p.marketValue||0)>=85).length;
   if(eliteCount>=3){
     const weakest=same.filter(p=>mvToRating(p.marketValue||0)>=82)
@@ -1273,7 +1279,7 @@ function autoFillLineup(silent=false){
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const assigned=new Set();
   const avail=g=>all.filter(p=>grp(p.position)===g&&!assigned.has(p.id)).sort((a,b)=>(b.marketValue||0)-(a.marketValue||0));
-  // Fill in order: GK first, then DEF, MID, ATT — prefer position-specific match per slot
+  // Fill in order: GK first, then DEF, MID, ATT. Prefer position-specific match per slot
   const order=['GK','DEF','MID','ATT'];
   const slotsByGroup=order.flatMap(g=>Object.entries(SLOT_CFG).filter(([,c])=>c.grp===g).map(([id,c])=>({slot:id,grp:g,lbl:c.lbl})));
   for(const{slot,grp:g,lbl}of slotsByGroup){
@@ -1368,7 +1374,7 @@ function sellPlayer(id,val){
     showToast(msg,3500);return;
   }
 
-  // Board veto: players signed this summer — can't immediately flip them
+  // Board veto: players signed this summer, can't immediately flip them
   const locked=LOCKED_SIGNINGS[S.season]||[];
   if(locked.some(n=>player.name.includes(n))){
     showToast(`The board won't sanction selling ${lastName}. He only just arrived this window.`,3500);return;
@@ -1386,7 +1392,7 @@ function sellPlayer(id,val){
     showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
   }
 
-  // Youth protection — player.age is already the season-time age from the historical squad page
+  // Youth protection: player.age is already the season-time age from the historical squad page
   // Use parseInt(x||0)||99 so null/undefined/"0" all fall back to 99 (not youth)
   const ageInSeason=parseInt(player.age||0)||99;
   if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
@@ -1465,7 +1471,7 @@ function updateSidebar(){
   document.getElementById('slotsLabel').style.color=left===0?'#f87171':'#e5e7eb';
   document.getElementById('slotDots').innerHTML=
     Array.from({length:MAX_SIGNINGS},(_,i)=>`<span class="slot-dot ${i<used?'slot-used':'slot-free'}"></span>`).join('');
-  // Simulate button — requires at least 1 signing AND net spend ≤ Wenger's (no grace)
+  // Simulate button: requires at least 1 signing AND net spend <= Wenger's (no grace)
   const _simActual=SEASONS[S.season]?.netSpend||0;
   const _overBy=net-_simActual;
   const _tooOver=_overBy>0;
@@ -1743,7 +1749,7 @@ async function selectClub(clubId,clubName){
           </div>
         </div>`;
     }).join('');
-    // Async historical value loading — same as doSearch
+    // Async historical value loading, same as doSearch
     const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
     let done=0;
     const budget2=SEASONS[S.season]?.budget||0;
@@ -1815,12 +1821,12 @@ async function fetchHistoricalValue(pid,yr){
   }
   const e1=_closestEntry(entries,yr);
   if(!e1)return null;
-  // Average current season value with next season — reflects a player's trajectory
+  // Average current season value with next season, reflects a player's trajectory
   // (e.g. Kanté at €5m in 2015 but €30m in 2016 → averaged higher rating)
   const e2=_closestEntry(entries,yr+1);
   const v1=e1.value??0;
   const v2=e2?.value??v1;
-  // How much the player's value rose the following season — a proxy for "signed a
+  // How much the player's value rose the following season, a proxy for "signed a
   // rising player before the market caught up", used only internally (Signing IQ).
   const growth=v1>0?v2/v1:1;
   return {value:Math.round((v1+v2)/2), club:e1.club??null, growth};
@@ -1958,7 +1964,7 @@ function handleCardClick(card,name,position,currClub){
   const ec=card.dataset.eraClub||currClub;
   const lastName=name.split(' ').pop();
 
-  // Hard rival — clickable but always refuses
+  // Hard rival: clickable but always refuses
   if(card.dataset.hardRival==='true'&&HARD_RIVALS.some(r=>ec.includes(r))){
     showToast(`${lastName} does not want to join Arsenal.`);
     return;
@@ -1972,7 +1978,7 @@ function handleCardClick(card,name,position,currClub){
   // Block signing if historical value hasn't loaded yet (data-loading spinner still visible)
   const _loadSpin=card.querySelector('[data-loading]');
   if(_loadSpin&&_loadSpin.style.display!=='none'){
-    showToast(`${lastName}'s era value is still loading — give it a second.`,2000);
+    showToast(`${lastName}'s era value is still loading, give it a second.`,2000);
     return;
   }
 
@@ -1980,13 +1986,13 @@ function handleCardClick(card,name,position,currClub){
   const remaining=budget-S.spent+S.sales;
   let value=parseInt(card.dataset.value)||0;
 
-  // Soft rival — 50% refuse, 50% accept (sometimes with premium)
+  // Soft rival: 50% refuse, 50% accept (sometimes with premium)
   if(card.dataset.softRival==='true'&&SOFT_RIVALS.some(r=>ec.includes(r))){
     if(Math.random()<0.5){
       showToast(`${lastName} doesn't want to leave for Arsenal. Try again.`);
       return;
     }
-    // Accepted — 50% chance of premium
+    // Accepted, 50% chance of premium
     if(Math.random()<0.5){
       const premium=Math.round((5+Math.random()*5)*1e6);
       value+=premium;
@@ -2050,7 +2056,7 @@ function drawSeasonEvents(xi, bought) {
   const goodSigning=bought.find(p=>mvToRating(p.marketValue)>=79);
 
   // Build candidate pool with weights (higher w = more likely to be picked)
-  // Injuries/red cards are low-weight — they happen, just not every season
+  // Injuries/red cards are low-weight, they happen, just not every season
   if(starRating>=83){
     pool.push({icon:'🤕',text:`${starName} picked up a knee injury and missed six weeks.`,mod:-2,w:8});
   }
@@ -2061,11 +2067,11 @@ function drawSeasonEvents(xi, bought) {
     const nm=qualSigning.name.split(' ').pop();
     pool.push({icon:'😤',text:`${nm} agitated for a move in January. Wenger persuaded him to stay.`,mod:-1,w:9});
   }
-  // Ref events — low frequency
+  // Ref events: low frequency
   pool.push({icon:'🟥',text:'Two controversial red cards in key games cost Arsenal crucial points.',mod:-2,w:8});
   pool.push({icon:'🟡',text:'A penalty decision at the Emirates in November went against Arsenal.',mod:-1,w:10});
   pool.push({icon:'🟢',text:'Wenger had the officials to thank in a crucial away win in February.',mod:+1,w:9});
-  // Form events — these are the meat
+  // Form events: these are the meat
   pool.push({icon:'📉',text:`Arsenal won just one in six during a difficult ${Math.random()<0.5?'winter':'autumn'} run.`,mod:-3,w:20});
   pool.push({icon:'💪',text:'An 8-game unbeaten run in October put Arsenal in the driving seat.',mod:+4,w:18});
   pool.push({icon:'😰',text:'Arsenal blew a 4-point lead with 8 games to go.',mod:-3,w:16});
@@ -2108,16 +2114,16 @@ function runSimulation(){
   const scoringXI=getAutoXI(allActive);
   const {f1,f2,f3,f4,total,ar}=computeRebuildScore(scoringXI,S.bought);
   const iq=getBudgetIQ();
-  // Hidden — a genuinely sharp window (not just a big-spend one) raises the ceiling below.
+  // Hidden. A genuinely sharp window (not just a big-spend one) raises the ceiling below.
   // Squad IQ also accounts for who you sold to fund it, not just who you bought.
-  // Difficult mode disables the boost entirely — realism regardless of window quality.
+  // Difficult mode disables the boost entirely, realism regardless of window quality.
   const squadIQ=computeSquadIQ(scoringXI,S.bought,[...S.sold],S.season);
   const ceilingBoost=S.difficulty==='difficult'?0:Math.max(0,Math.min(5,Math.round((squadIQ-55)/9)));
 
   // Draw chaos events before computing points
   const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
 
-  // Points estimate — improvement over Arsenal's own historical baseline
+  // Points estimate: improvement over Arsenal's own historical baseline
   const historicalRow=ACTUAL_TABLE[S.season]?.find(r=>r.club==='Arsenal');
   const historicalPts=historicalRow?.pts||68;
 
@@ -2172,7 +2178,7 @@ function runSimulation(){
         // edge +6 → ~0.15 drop, edge +2 → ~0.35, edge 0 → ~0.45, edge -2 → ~0.55
         dropChance=Math.max(0.15-ceilingBoost*0.01,Math.min(0.70,0.45-edge*0.05));
       }
-      // Slight reduction if season weaknesses were addressed — floor drops further for a
+      // Slight reduction if season weaknesses were addressed, floor drops further for a
       // genuinely sharp window (ceilingBoost), never below 0.05 (always some luck involved)
       const gapsFilled=(SEASON_WEAKNESSES[S.season]?.gaps||[]).filter(g=>S.bought.some(p=>grp(p.position)===g)).length;
       dropChance=Math.max(0.05,dropChance-gapsFilled*0.05-ceilingBoost*0.01);
@@ -2185,7 +2191,7 @@ function runSimulation(){
   }
 
   const wdl=wdlFromPts(simPts);
-  // Simulate the season match-by-match once here — the result modal and the Match
+  // Simulate the season match-by-match once here. The result modal and the Match
   // Ticker both read this single simulation, so points/W-D-L/top scorer stay consistent
   // between the two views and don't reshuffle if the ticker is reopened.
   const {fixtures,pool:scorerPool}=_generateTicker(newLines,S.season,wdl);
@@ -2268,9 +2274,9 @@ function runSimulation(){
     const topRivalEntry=rivalEntries.sort((a,b)=>(b[1].def+b[1].mid+b[1].att)-(a[1].def+a[1].mid+a[1].att))[0];
 
     if(arsenalPos===1){
-      whyLines.push({icon:'🏆',text:`Your squad was complete across all three lines — no rival found a way through over 38 games.`});
+      whyLines.push({icon:'🏆',text:`Your squad was complete across all three lines. No rival found a way through over 38 games.`});
       const best=Object.entries({def:defDelta,mid:midDelta,att:attDelta}).sort((a,b)=>b[1]-a[1])[0];
-      if(best[1]>1)whyLines.push({icon:'✅',text:`The smartest signing window was in ${lineNames[best[0]]} — that line improved by +${best[1]} rating points and made the difference.`});
+      if(best[1]>1)whyLines.push({icon:'✅',text:`The smartest signing window was in ${lineNames[best[0]]}. That line improved by +${best[1]} rating points and made the difference.`});
     }else{
       if(topRivalEntry){
         const[rName,rStr]=topRivalEntry;
@@ -2281,7 +2287,7 @@ function runSimulation(){
         if(defGap<=-4)
           whyLines.push({icon:'⚔️',text:`${rShort}'s attack (${rStr.att}) tore through your defence (${newLines.def}). Those games cost you the most points.`});
         else if(atkGap<=-4)
-          whyLines.push({icon:'🔒',text:`${rShort}'s backline (${rStr.def}) shut down your attack (${newLines.att}) in both meetings — you couldn't score when it mattered.`});
+          whyLines.push({icon:'🔒',text:`${rShort}'s backline (${rStr.def}) shut down your attack (${newLines.att}) in both meetings. You couldn't score when it mattered.`});
         else if(midGap<=-4)
           whyLines.push({icon:'🎯',text:`${rShort} dominated midfield (${rStr.mid} vs your ${newLines.mid}), starving your attack of service in the key clashes.`});
         else
@@ -2294,7 +2300,7 @@ function runSimulation(){
         const unaddressed=sw.gaps.filter(g=>!S.bought.some(p=>grp(p.position)===g));
         if(unaddressed.length>0){
           const lineName=GRP_LBL[unaddressed[0]].toLowerCase();
-          whyLines.push({icon:'❌',text:`Arsenal's historical weakness was ${lineName} this season — your window didn't fully close that gap.`});
+          whyLines.push({icon:'❌',text:`Arsenal's historical weakness was ${lineName} this season. Your window didn't fully close that gap.`});
         }else{
           whyLines.push({icon:'✅',text:`You addressed Arsenal's known weaknesses going into this season. The gap to the top was down to margins, not holes.`});
         }
@@ -2303,16 +2309,16 @@ function runSimulation(){
       // Improvement story
       const bigImprove=Object.entries({def:defDelta,mid:midDelta,att:attDelta}).sort((a,b)=>b[1]-a[1])[0];
       if(bigImprove[1]>=4)
-        whyLines.push({icon:'📈',text:`Your ${lineNames[bigImprove[0]]} signings were genuinely transformative (+${bigImprove[1]} pts) — just not enough to haul past all rivals.`});
+        whyLines.push({icon:'📈',text:`Your ${lineNames[bigImprove[0]]} signings were genuinely transformative (+${bigImprove[1]} pts), just not enough to haul past all rivals.`});
       else if(bigImprove[1]>=1)
-        whyLines.push({icon:'📈',text:`Signings added +${bigImprove[1]} pts to your ${lineNames[bigImprove[0]]} — incremental progress, but the elite gap remained.`});
+        whyLines.push({icon:'📈',text:`Signings added +${bigImprove[1]} pts to your ${lineNames[bigImprove[0]]}. Incremental progress, but the elite gap remained.`});
       else
         whyLines.push({icon:'⚠️',text:`No signing meaningfully strengthened a line. A more targeted window could have unlocked several more points.`});
     }
 
     // Events footnote
-    if(ptsMod<=-3)whyLines.push({icon:'🏥',text:`Injuries and disruptions wiped ${Math.abs(ptsMod)} points off your tally — brutal timing derailed the campaign.`});
-    else if(ptsMod>=3)whyLines.push({icon:'🌟',text:`A fortunate run of events added ${ptsMod} points — you needed every one of them.`});
+    if(ptsMod<=-3)whyLines.push({icon:'🏥',text:`Injuries and disruptions wiped ${Math.abs(ptsMod)} points off your tally. Brutal timing derailed the campaign.`});
+    else if(ptsMod>=3)whyLines.push({icon:'🌟',text:`A fortunate run of events added ${ptsMod} points. You needed every one of them.`});
 
     const whyEl=document.getElementById('simWhySection');
     if(whyEl)whyEl.innerHTML=whyLines.slice(0,4).map(l=>`
@@ -2322,7 +2328,7 @@ function runSimulation(){
       </div>`).join('');
   })();
 
-  // Debug panel (hidden — revealed by secret trigger)
+  // Debug panel (hidden, revealed by secret trigger)
   document.getElementById('dbgScore').textContent=total;
   document.getElementById('dbgScore').style.color=verdict.color;
   document.getElementById('dbgVerdict').textContent=verdict.label;
@@ -2379,7 +2385,7 @@ function _pickA(pool,scorerId){
   const total=ap.reduce((s,p)=>s+p.aW,0);let r=Math.random()*total;
   for(const p of ap){r-=p.aW;if(r<=0)return p;}return ap[ap.length-1];
 }
-// Build fixtures: realistic seasonal order — big rivals not in the opening games
+// Build fixtures: realistic seasonal order, big rivals not in the opening games
 function _buildFixtures(opps,season){
   const all=[];
   opps.forEach(o=>{
@@ -2622,22 +2628,23 @@ function secretTap(){
 
 // ── Difficulty toggle ────────────────────────────────────────────────────
 // Normal: sharp transfer windows earn a higher simulation ceiling (Squad IQ, hidden).
-// Difficult: historically realistic — a title win stays genuinely rare regardless of window quality.
+// Difficult: historically realistic. A title win stays genuinely rare regardless of window quality.
 function renderDifficulty(){
   const btn=document.getElementById('difficultyBtn'),lbl=document.getElementById('difficultyLabel');
   if(!btn||!lbl)return;
   const hard=S.difficulty==='difficult';
-  lbl.textContent=hard?'Difficult':'Normal';
+  lbl.textContent=hard?'🔥 Difficult':'⚖️ Normal';
   btn.style.color=hard?'#f87171':'#4ade80';
-  btn.style.borderColor=hard?'#7f1d1d':'#166534';
+  btn.style.borderColor=hard?'#b91c1c':'#166534';
+  btn.style.background=hard?'rgba(239,68,68,.14)':'rgba(74,222,128,.14)';
 }
 function toggleDifficulty(){
   S.difficulty=S.difficulty==='difficult'?'normal':'difficult';
   localStorage.setItem('arsenalRebuildDifficulty',S.difficulty);
   renderDifficulty();
   showToast(S.difficulty==='difficult'
-    ?'Difficult mode — realistic odds, a title win is genuinely rare.'
-    :'Normal mode — a sharp transfer window earns better odds.',3000);
+    ?'Difficult mode. Realistic odds, a title win is genuinely rare.'
+    :'Normal mode. A sharp transfer window earns better odds.',3000);
 }
 renderDifficulty();
 
