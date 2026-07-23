@@ -2391,8 +2391,12 @@ function _opponentStr(teamName,finalPts,season){
   if(rv[teamName]){const r=rv[teamName];return Math.round((r.def+r.mid+r.att)/3);}
   return Math.round(67+Math.max(0,finalPts-30)*0.37);
 }
-// Build scorer/assister pool with position-weighted probabilities
-function _buildScorerPool(allActive){
+// Build scorer/assister pool with position-weighted probabilities. Starters (the actual
+// best XI) carry the weight from real minutes played; a bench player realistically gets
+// a handful of substitute appearances across a season, not the same scoring chance as
+// a nailed-on starter, so their weight is heavily damped rather than judged on rating alone.
+function _buildScorerPool(allActive,starterIds){
+  const BENCH_FACTOR=0.15;
   return allActive.filter(p=>grp(p.position)!=='GK').map(p=>{
     const sp=specificPos(p.position)||'';
     const g=grp(p.position);
@@ -2406,7 +2410,9 @@ function _buildScorerPool(allActive){
     else if(sp==='LM'||sp==='RM'){gW=r*0.7;aW=r*1.4;}
     else if(g==='DEF'){gW=r*0.10;aW=r*0.30;}
     else{gW=r*0.4;aW=r*1.0;}
-    return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
+    const isStarter=starterIds.has(p.id);
+    if(!isStarter){gW*=BENCH_FACTOR;aW*=BENCH_FACTOR;}
+    return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,isStarter,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
   });
 }
 function _pickW(pool){
@@ -2442,7 +2448,8 @@ function _buildFixtures(opps,season){
 // are more likely to draw from the remaining losses/draws.
 function _generateTicker(newLines,season,wdl){
   const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
-  const pool=_buildScorerPool(allActive);
+  const starterIds=new Set(getAutoXI(allActive).map(p=>p.id));
+  const pool=_buildScorerPool(allActive,starterIds);
   const fixtures=_buildFixtures(SEASON_OPPONENTS[season]||[],season);
   const arOvr=newLines.def*0.35+newLines.mid*0.30+newLines.att*0.35;
   let cum=0;
