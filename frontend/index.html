@@ -44,6 +44,10 @@
     .signing-card{background:#0f2a1a;border:1px solid #166534;border-radius:8px;padding:5px 8px;display:flex;align-items:center;gap:6px;flex-shrink:0;}
     .signing-card .unsign{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #166534;color:#4ade80;cursor:pointer;font-size:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
     .signing-card .unsign:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
+    .sig-rate{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
+    .sig-rate-good{background:rgba(74,222,128,.18);}
+    .sig-rate-medium{background:rgba(251,191,36,.18);}
+    .sig-rate-bad{background:rgba(248,113,113,.18);}
     .pslot{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
     .pslot>div:first-child{transition:opacity .15s;} .pslot:hover>div:first-child{opacity:.75;}
     .sb-mini-card{background:#111827;border-radius:6px;padding:4px 8px;flex:1;}
@@ -312,6 +316,15 @@
       <button onclick="document.getElementById('slotModal').classList.remove('open')" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;">✕</button>
     </div>
     <div id="slotPlayerList" style="overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+  </div>
+</div>
+
+<!-- ══ SIMULATION LOADING (brief, month-by-month, before the result reveals) ══ -->
+<div id="simLoadingOverlay" class="modal-bg" style="z-index:60;">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div class="spin" style="width:32px;height:32px;border:3px solid #1f2937;border-top-color:#EF0107;border-radius:50%;"></div>
+    <div style="font-size:13px;font-weight:800;color:#e5e7eb;">Simulating the season&hellip;</div>
+    <div id="simLoadingMonth" style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.1em;min-width:80px;text-align:center;">August</div>
   </div>
 </div>
 
@@ -728,6 +741,29 @@ function essentialGapsFilled(bought, season) {
     const role = need[g];
     return role ? bought.some(p => specificPos(p.position) === role) : bought.some(p => p._group === g);
   });
+}
+// Simple three-tier read on a single signing, shown to the player (unlike Squad IQ,
+// which stays a hidden number). 'good' cracks the best XI or is real value for the
+// price; 'bad' does neither; 'medium' is everything in between.
+function rateSigning(player, season) {
+  const allActive = [...S.players.filter(p => !S.sold.has(p.id)), ...S.bought];
+  const xi = getAutoXI(allActive);
+  const wouldStart = xi.some(p => p.id === player.id);
+  const gaps = [...new Set(SEASON_WEAKNESSES[season]?.gaps || [])];
+  const need = SEASON_SPECIFIC_NEED[season] || {};
+  const group = player._group || grp(player.position);
+  const role = need[group];
+  const addressesGap = gaps.includes(group) && (role ? specificPos(player.position) === role : true);
+  // Only judge value when we actually know the market value, mvToRating(0) returns a
+  // 62 baseline, which would otherwise make an unknown-value player look artificially
+  // efficient (62 rating over a near-zero price) instead of just unrated.
+  const hasValue = (player.marketValue || 0) > 0;
+  const rating = mvToRating(player.marketValue);
+  const mv = Math.max(1, (player.marketValue || 0) / 1e6);
+  const goodValue = hasValue && (rating / mv) >= 8;
+  if (wouldStart && (addressesGap || goodValue)) return 'good';
+  if (!wouldStart && !addressesGap) return 'bad';
+  return 'medium';
 }
 
 // ── Match ticker: 19 opponents per season with their actual final pts ──
@@ -1571,6 +1607,8 @@ function playerCell(p){
         : `<button class="sell-btn" style="margin-top:1px;" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
     </div>`;
 }
+const SIGNING_RATE_ICON={good:'👍',medium:'✋',bad:'👎'};
+const SIGNING_RATE_LABEL={good:'Good signing',medium:'Medium',bad:'Not a good signing'};
 function renderSignings(){
   const area=document.getElementById('signingsArea'), strip=document.getElementById('signingsStrip');
   if(!S.bought.length){area.style.display='none';return;}
@@ -1579,6 +1617,7 @@ function renderSignings(){
     const pg=p._group||grp(p.position);
     const sp=specificPos(p.position);
     const lbl=sp||pg||'?';
+    const rate=rateSigning(p,S.season);
     return `
     <div class="signing-card">
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
@@ -1586,6 +1625,7 @@ function renderSignings(){
         <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
         <div style="font-size:8px;color:#4ade80;">${fmt(p.marketValue)}</div>
       </div>
+      <span class="sig-rate sig-rate-${rate}" title="${SIGNING_RATE_LABEL[rate]}" aria-label="${SIGNING_RATE_LABEL[rate]}">${SIGNING_RATE_ICON[rate]}</span>
       <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
     </div>`;
   }).join('');
@@ -1706,15 +1746,7 @@ function renderBrowseClubs(){
 async function selectClub(clubId,clubName){
   const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
   hint.textContent=`Loading ${clubName} ${S.season}/${String(S.season+1).slice(-2)} squad…`;
-  box.innerHTML=Array.from({length:4},()=>`
-    <div style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;opacity:.4;">
-      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;flex-shrink:0;"></div>
-      <div style="flex:1;">
-        <div style="background:#1f2937;height:9px;border-radius:3px;width:55%;margin-bottom:5px;"></div>
-        <div style="background:#1f2937;height:7px;border-radius:3px;width:35%;"></div>
-      </div>
-      <div style="background:#1f2937;height:9px;border-radius:3px;width:28px;"></div>
-    </div>`).join('');
+  box.innerHTML=_skeletonCards(4);
   try{
     // Cache-first: use pre-fetched roster if available
     let rawPlayers;
@@ -1740,77 +1772,14 @@ async function selectClub(clubId,clubName){
       return;
     }
     const posLabel=_grp&&posFiltered.length>0?` · ${(GRP_LBL[_grp]||'').toLowerCase()} only`:'';
-    hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel}`;
-    const budget=SEASONS[S.season]?.budget||0,remaining=budget-S.spent+S.sales;
-    const isHardRivalClub=HARD_RIVALS.some(r=>clubName.includes(r));
-    const isSoftRivalClub=!isHardRivalClub&&SOFT_RIVALS.some(r=>clubName.includes(r));
-    box.innerHTML=results.map(p=>{
-      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
-      const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-      let badgeTxt,badgeClr,blocked;
-      if(inSquad){badgeTxt='In squad';badgeClr='#6b7280';blocked=true;}
-      else{badgeTxt='Loading era…';badgeClr='#4b5563';blocked=false;}
-      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="0"
-          data-blocked="${blocked}" data-soft-rival="${isSoftRivalClub}"
-          data-era-club="${esc(clubName)}" data-hard-rival="${isHardRivalClub}"
-          onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(clubName)}')"
-          style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${blocked?'.38':'1'};"
-          onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
-          <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-            <div data-sub style="font-size:8px;color:#6b7280;">${p.position||''}<span data-club-loading style="color:#2d3748;"> · ···</span></div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-bottom:2px;">
-              <div class="spin" data-loading style="width:8px;height:8px;border:1.5px solid #2d3748;border-top-color:#60a5fa;border-radius:50%;flex-shrink:0;"></div>
-              <div data-mv style="font-size:10px;font-weight:700;color:#6b7280;">—</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:3px;justify-content:flex-end;">
-              <span data-badge style="font-size:9px;color:${badgeClr};">${badgeTxt}</span>
-              <span data-mv-note style="font-size:7px;color:#374151;"></span>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
-    // Async historical value loading, same as doSearch
+    hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel} · loading ${S.season} data…`;
+    box.innerHTML=_skeletonCards(results.length);
+    const budget=SEASONS[S.season]?.budget||0;
     const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
-    let done=0;
-    const budget2=SEASONS[S.season]?.budget||0;
-    results.forEach(p=>{
-      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
-      fetchHistoricalValue(p.id,yr).then(hist=>{
-        done++;
-        if(done===results.length)hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel} · ${yrLabel} values loaded`;
-        const card=document.getElementById(`pcard-${p.id}`);
-        if(!card)return;
-        const mvEl=card.querySelector('[data-mv]'),noteEl=card.querySelector('[data-mv-note]');
-        const bdgEl=card.querySelector('[data-badge]'),subEl=card.querySelector('[data-sub]');
-        const loadEl=card.querySelector('[data-loading]'),clubLoadEl=card.querySelector('[data-club-loading]');
-        if(loadEl)loadEl.style.display='none';
-        if(clubLoadEl)clubLoadEl.remove();
-        if(!hist){
-          if(mvEl){mvEl.textContent='—';mvEl.style.color='#374151';}
-          if(bdgEl&&!inSquad){bdgEl.textContent='No era data';bdgEl.style.color='#374151';}
-          return;
-        }
-        if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
-        if(hist.value)card.dataset.value=hist.value;
-        card.dataset.growth=hist.growth||1;
-        if(noteEl)noteEl.textContent=yrLabel;
-        if(subEl){subEl.textContent=(p.position||'')+(hist.club?' · '+hist.club:'');}
-        card.dataset.eraClub=hist.club||clubName;
-        if(inSquad)return;
-        const remaining2=budget2-S.spent+S.sales;
-        const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
-        const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
-        card.dataset.hardRival=String(eraHardRival);
-        card.dataset.softRival=String(eraSoftRival);
-        card.style.opacity='1';
-        const t2=hist.value&&hist.value>remaining2;
-        if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
-      });
-    });
+    const resolved=await Promise.all(results.map(p=>_resolveCandidate(p,yr,budget,squadIds.has(p.id)||boughtIds.has(p.id))));
+    resolved.sort((a,b)=>_candidateRank(a)-_candidateRank(b));
+    hint.textContent=`${results.length} player${results.length===1?'':'s'} from ${clubName}${posLabel} · ${yrLabel} values loaded`;
+    box.innerHTML=resolved.map(_candidateCard).join('');
   }catch(e){
     hint.textContent='Failed to load squad. Try searching by name.';
     box.innerHTML='<div style="text-align:center;color:#f87171;font-size:11px;padding:12px;">Could not load squad</div>';
@@ -1857,11 +1826,9 @@ async function fetchHistoricalValue(pid,yr){
 }
 
 // ── Search ─────────────────────────────────────────────────────────────
-async function doSearch(q){
-  const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
-  hint.textContent='Searching…';
-  // Skeleton cards while waiting for search results
-  box.innerHTML=Array.from({length:4},()=>`
+// Skeleton cards shown while candidates are still resolving era values.
+function _skeletonCards(n){
+  return Array.from({length:n},()=>`
     <div style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;opacity:.4;">
       <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;flex-shrink:0;"></div>
       <div style="flex:1;">
@@ -1870,12 +1837,62 @@ async function doSearch(q){
       </div>
       <div style="background:#1f2937;height:9px;border-radius:3px;width:28px;"></div>
     </div>`).join('');
+}
+// Resolves a candidate's era value/rival status up front, so the list can be sorted
+// (affordable and available first) and badged correctly before the player ever clicks,
+// instead of badging "Available" then flipping to "Over budget" after the fact.
+async function _resolveCandidate(p,yr,budget,inSquad){
+  const currClub=p.club?.name||'', isRetired=!currClub.trim()||/retired/i.test(currClub);
+  if(inSquad)return{p,inSquad:true,blocked:true,noData:false,badgeTxt:'In squad',badgeClr:'#6b7280',value:0,growth:1,hardRival:false,softRival:false,eraClub:'',club:currClub};
+  const hist=await fetchHistoricalValue(p.id,yr);
+  if(!hist){
+    if(isRetired)return{p,inSquad:false,blocked:true,noData:true,badgeTxt:'Retired by then',badgeClr:'#374151',value:0,growth:1,hardRival:false,softRival:false,eraClub:'',club:currClub};
+    return{p,inSquad:false,blocked:false,noData:true,badgeTxt:'No era data',badgeClr:'#374151',value:0,growth:1,hardRival:false,softRival:false,eraClub:'',club:currClub};
+  }
+  const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
+  const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
+  const remaining=budget-S.spent+S.sales;
+  const tooExp=hist.value&&hist.value>remaining;
+  return{
+    p,inSquad:false,blocked:false,noData:false,tooExp,
+    badgeTxt:tooExp?'Over budget':'Available',badgeClr:tooExp?'#fbbf24':'#4ade80',
+    value:hist.value||0,growth:hist.growth||1,hardRival:eraHardRival,softRival:eraSoftRival,
+    eraClub:hist.club||'',club:hist.club||currClub,
+  };
+}
+// Affordable + available candidates first, then over-budget, then in-squad/no-data last.
+function _candidateRank(r){return r.inSquad?3:r.noData?4:r.tooExp?2:1;}
+function _candidateCard(r){
+  const p=r.p;
+  const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  const clubPart=r.club?' · '+r.club:'';
+  return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${r.value}" data-blocked="${r.blocked}"
+      data-soft-rival="${r.softRival}" data-era-club="${esc(r.eraClub)}" data-growth="${r.growth}"
+      onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(r.club)}')"
+      data-hard-rival="${r.hardRival}"
+      style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${r.blocked?'.38':'1'};"
+      onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
+      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+        <div style="font-size:8px;color:#6b7280;">${p.position||''}${clubPart}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:10px;font-weight:700;color:${r.value?'#fff':'#374151'};margin-bottom:2px;">${r.value?fmt(r.value):'—'}</div>
+        <span style="font-size:9px;color:${r.badgeClr};">${r.badgeTxt}</span>
+      </div>
+    </div>`;
+}
+async function doSearch(q){
+  const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
+  hint.textContent='Searching…';
+  box.innerHTML=_skeletonCards(4);
   try{
     const r=await fetch(`${API}/players/search/${encodeURIComponent(q)}`);
     const d=await r.json();
     const allResults=(d.results||[]).slice(0,14);
     const squadIds=new Set(S.players.map(p=>p.id)), boughtIds=new Set(S.bought.map(p=>p.id));
-    const budget=SEASONS[S.season]?.budget||0, remaining=budget-S.spent+S.sales;
+    const budget=SEASONS[S.season]?.budget||0;
     const eraFiltered=allResults.filter(p=>!eraCheck(p.age));
     // Filter by position group when modal was opened from a position column
     const posFiltered=_grp?eraFiltered.filter(p=>!p.position||grp(p.position)===_grp):eraFiltered;
@@ -1889,98 +1906,12 @@ async function doSearch(q){
     }
     const posLabel=posFiltering?` · ${GRP_LBL[_grp]?.toLowerCase()||_grp} only`:'';
     hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · loading ${S.season} data…`;
-    box.innerHTML=results.map(p=>{
-      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
-      const currClub=p.club?.name||'', isRetired=!currClub.trim()||/retired/i.test(currClub);
-      const isHardRival=!isRetired&&HARD_RIVALS.some(rv=>currClub.includes(rv));
-      const isSoftRival=!isRetired&&!isHardRival&&SOFT_RIVALS.some(rv=>currClub.includes(rv));
-      const isAnyRival=isHardRival||isSoftRival;
-      const tooExp=!isRetired&&!isAnyRival&&p.marketValue&&p.marketValue>remaining;
-      const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-      let badgeTxt,badgeClr,initBlocked;
-      if(inSquad){badgeTxt='In squad';badgeClr='#6b7280';initBlocked=true;}
-      else if(isHardRival){badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
-      else if(isSoftRival){badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
-      else if(isRetired){badgeTxt='Loading era…';badgeClr='#4b5563';initBlocked=false;}
-      else if(tooExp){badgeTxt='Over budget';badgeClr='#fbbf24';initBlocked=false;}
-      else{badgeTxt='Available';badgeClr='#4ade80';initBlocked=false;}
-      return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${p.marketValue||0}" data-blocked="${initBlocked}"
-          data-soft-rival="${isSoftRival}" data-era-club=""
-          onclick="handleCardClick(this,'${esc(p.name)}','${esc(p.position||'')}','${esc(currClub)}')"
-          data-hard-rival="${isHardRival}"
-          style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${initBlocked?'.38':'1'};"
-          onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
-          <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-            <div data-sub style="font-size:8px;color:#6b7280;">${p.position||''}<span data-club-loading style="color:#2d3748;"> · ···</span></div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-bottom:2px;">
-              <div class="spin" data-loading style="width:8px;height:8px;border:1.5px solid #2d3748;border-top-color:#60a5fa;border-radius:50%;flex-shrink:0;${isRetired||isAnyRival?'':''}"></div>
-              <div data-mv style="font-size:10px;font-weight:700;color:#6b7280;">—</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:3px;justify-content:flex-end;">
-              <span data-badge style="font-size:9px;color:${badgeClr};">${badgeTxt}</span>
-              <span data-mv-note style="font-size:7px;color:#374151;"></span>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+    box.innerHTML=_skeletonCards(results.length);
     const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
-    let done=0;
-    results.forEach(p=>{
-      const inSquad=squadIds.has(p.id)||boughtIds.has(p.id);
-      const currClub=p.club?.name||'', isRetired=!currClub.trim()||/retired/i.test(currClub);
-      fetchHistoricalValue(p.id,yr).then(hist=>{
-        done++;
-        if(done===results.length)hint.textContent=`${results.length} result${results.length===1?'':'s'} · ${yrLabel} values loaded`;
-        const card=document.getElementById(`pcard-${p.id}`);
-        if(!card)return;
-        const mvEl=card.querySelector('[data-mv]'),noteEl=card.querySelector('[data-mv-note]');
-        const bdgEl=card.querySelector('[data-badge]'),subEl=card.querySelector('[data-sub]');
-        const loadEl=card.querySelector('[data-loading]');
-        const clubLoadingEl=card.querySelector('[data-club-loading]');
-        if(loadEl)loadEl.style.display='none';
-        if(clubLoadingEl)clubLoadingEl.remove();
-        if(!hist){
-          if(isRetired){
-            if(bdgEl){bdgEl.textContent='Retired by then';bdgEl.style.color='#374151';}
-            card.style.opacity='0.2';card.dataset.blocked='true';
-          }
-          if(mvEl){mvEl.textContent='—';mvEl.style.color='#374151';}
-          return;
-        }
-        if(hist.value&&mvEl){mvEl.textContent=fmt(hist.value);mvEl.style.color='#fff';}
-        if(hist.value)card.dataset.value=hist.value;
-        card.dataset.growth=hist.growth||1;
-        if(noteEl)noteEl.textContent=yrLabel;
-        if(subEl){
-          const clubPart=hist.club?' · '+hist.club:'';
-          subEl.textContent=(p.position||'')+clubPart;
-        }
-        card.dataset.eraClub=hist.club||'';
-        if(inSquad)return;
-        const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
-        const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
-        if(eraHardRival){
-          card.dataset.blocked='false';card.dataset.softRival='false';card.dataset.hardRival='true';card.style.opacity='1';
-          const remaining2=budget-S.spent+S.sales;
-          const t2=hist.value&&hist.value>remaining2;
-          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
-        }else if(eraSoftRival){
-          card.dataset.blocked='false';card.dataset.softRival='true';card.style.opacity='1';
-          const remaining2=budget-S.spent+S.sales;
-          const t2=hist.value&&hist.value>remaining2;
-          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
-        }else{
-          card.dataset.blocked='false';card.dataset.softRival='false';card.style.opacity='1';
-          const remaining2=budget-S.spent+S.sales;
-          const t2=hist.value&&hist.value>remaining2;
-          if(bdgEl){bdgEl.textContent=t2?'Over budget':'Available';bdgEl.style.color=t2?'#fbbf24':'#4ade80';}
-        }
-      });
-    });
+    const resolved=await Promise.all(results.map(p=>_resolveCandidate(p,yr,budget,squadIds.has(p.id)||boughtIds.has(p.id))));
+    resolved.sort((a,b)=>_candidateRank(a)-_candidateRank(b));
+    hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · ${yrLabel} values loaded`;
+    box.innerHTML=resolved.map(_candidateCard).join('');
   }catch(e){hint.textContent='Search failed. Is the API running?';box.innerHTML='';}
 }
 
@@ -1988,21 +1919,18 @@ function handleCardClick(card,name,position,currClub){
   const ec=card.dataset.eraClub||currClub;
   const lastName=name.split(' ').pop();
 
-  // Hard rival: clickable but always refuses
+  // Hard rival: refuses almost every time, but not literally always, a shock move
+  // happens roughly 1 in 10 tries so it's never a guaranteed dead end
   if(card.dataset.hardRival==='true'&&HARD_RIVALS.some(r=>ec.includes(r))){
-    showToast(`${lastName} does not want to join Arsenal.`);
-    return;
+    if(Math.random()>=0.10){
+      showToast(`${lastName} does not want to join Arsenal.`);
+      return;
+    }
+    showToast(`Shock move: ${lastName} agrees to join Arsenal despite the rivalry.`,3500);
   }
   // Blocked (in squad, retired-by-era, etc.)
   if(card.dataset.blocked==='true'){
     showToast(`${lastName} refused to negotiate, unwilling to move to Arsenal.`);
-    return;
-  }
-
-  // Block signing if historical value hasn't loaded yet (data-loading spinner still visible)
-  const _loadSpin=card.querySelector('[data-loading]');
-  if(_loadSpin&&_loadSpin.style.display!=='none'){
-    showToast(`${lastName}'s era value is still loading, give it a second.`,2000);
     return;
   }
 
@@ -2125,6 +2053,7 @@ function runSimulation(){
   const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   if(!allActive.length){showToast('Load a season first.');return;}
 
+  _startSimLoading();
   S.simCount++;
   const cntEl=document.getElementById('simCountDisplay');
   if(cntEl){
@@ -2383,9 +2312,36 @@ function runSimulation(){
     </div>`;
   }).join('');
 
-  document.getElementById('resultModal').classList.add('open');
+  _revealSimResult();
 }
 function closeResult(){document.getElementById('resultModal').classList.remove('open');}
+
+// ── Sim loading sequence ─────────────────────────────────────────────────
+// Runs the month names past the player while the (already-computed) result modal sits
+// hidden behind it, so one click reads as watching a season play out rather than an
+// instant, arbitrary-feeling dice roll.
+let _simLoadingTimer=null,_simRevealToken=0;
+function _startSimLoading(){
+  clearInterval(_simLoadingTimer);
+  _simRevealToken++;
+  const overlay=document.getElementById('simLoadingOverlay'),monthEl=document.getElementById('simLoadingMonth');
+  overlay.classList.add('open');
+  let i=0;
+  monthEl.textContent=MATCH_MONTHS[0].m;
+  _simLoadingTimer=setInterval(()=>{
+    i=(i+1)%MATCH_MONTHS.length;
+    monthEl.textContent=MATCH_MONTHS[i].m;
+  },140);
+}
+function _revealSimResult(){
+  const token=_simRevealToken;
+  setTimeout(()=>{
+    if(token!==_simRevealToken)return; // a newer sim started before this one revealed
+    clearInterval(_simLoadingTimer);
+    document.getElementById('simLoadingOverlay').classList.remove('open');
+    document.getElementById('resultModal').classList.add('open');
+  },1400);
+}
 
 // ── Match ticker ───────────────────────────────────────────────────────
 function _opponentStr(teamName,finalPts,season){
