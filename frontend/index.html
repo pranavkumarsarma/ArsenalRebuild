@@ -1487,15 +1487,22 @@ function sellPlayer(id,val){
   clearTimeout(t._t);
   t._t=setTimeout(()=>t.style.display='none',5000);
 }
-function undoSell(){
-  const last=S.sellHistory.pop();
-  if(!last)return;
-  S.sold.delete(last.id);S.sales-=last.val;
-  if(last.isYouth&&S.youthSold>0)S.youthSold--;
-  if(last.posGrp&&S.salesByGrp[last.posGrp]>0)S.salesByGrp[last.posGrp]--;
+// Reverses any sale, not just the most recent, so a sold player's row can carry its
+// own permanent Undo rather than relying on the toast's few-second window.
+function unsellById(id){
+  const idx=S.sellHistory.findIndex(s=>s.id===id);
+  if(idx===-1)return;
+  const[entry]=S.sellHistory.splice(idx,1);
+  S.sold.delete(entry.id);S.sales-=entry.val;
+  if(entry.isYouth&&S.youthSold>0)S.youthSold--;
+  if(entry.posGrp&&S.salesByGrp[entry.posGrp]>0)S.salesByGrp[entry.posGrp]--;
   document.getElementById('toast').style.display='none';
   render();updateSidebar();updateLineupCountBadges();
-  showToast(`${last.name.split(' ').pop()} sale cancelled.`,2500);
+  showToast(`${entry.name.split(' ').pop()} sale cancelled.`,2500);
+}
+function undoSell(){
+  const last=S.sellHistory[S.sellHistory.length-1];
+  if(last)unsellById(last.id);
 }
 function resetAll(){
   S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;
@@ -1616,7 +1623,7 @@ function playerCell(p){
       <div style="width:3px;align-self:stretch;min-height:14px;border-radius:1px;background:${c};flex-shrink:0;margin-top:1px;"></div>
       <span style="flex:1;min-width:0;font-size:10px;font-weight:600;line-height:1.4;word-break:break-word;">${p.name}</span>
       ${sold
-        ? '<span style="font-size:7px;color:#374151;flex-shrink:0;padding-top:2px;">sold</span>'
+        ? `<button onclick="unsellById('${p.id}')" title="Undo this sale" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:7px;font-weight:700;text-decoration:underline;flex-shrink:0;padding:2px 0 0;white-space:nowrap;">undo sale</button>`
         : `<button class="sell-btn" style="margin-top:1px;" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
     </div>`;
 }
@@ -1631,7 +1638,9 @@ function renderSignings(){
     const sp=specificPos(p.position);
     const lbl=sp||pg||'?';
     const rate=rateSigning(p,S.season);
-    const rateHtml=rate==='medium'?'':`<span class="sig-rate sig-rate-${rate}" title="${SIGNING_RATE_LABEL[rate]}" aria-label="${SIGNING_RATE_LABEL[rate]}">${SIGNING_RATE_ICON[rate]}</span>`;
+    // Only surface the positive signal, no down vote, just let a good pickup stand out
+    // so players learn what "good" looks like without being told what's wrong.
+    const rateHtml=rate==='good'?`<span class="sig-rate sig-rate-good" title="${SIGNING_RATE_LABEL.good}" aria-label="${SIGNING_RATE_LABEL.good}">${SIGNING_RATE_ICON.good}</span>`:'';
     return `
     <div class="signing-card">
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
