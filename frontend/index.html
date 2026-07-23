@@ -1623,6 +1623,7 @@ function renderSignings(){
     const sp=specificPos(p.position);
     const lbl=sp||pg||'?';
     const rate=rateSigning(p,S.season);
+    const rateHtml=rate==='medium'?'':`<span class="sig-rate sig-rate-${rate}" title="${SIGNING_RATE_LABEL[rate]}" aria-label="${SIGNING_RATE_LABEL[rate]}">${SIGNING_RATE_ICON[rate]}</span>`;
     return `
     <div class="signing-card">
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
@@ -1630,7 +1631,7 @@ function renderSignings(){
         <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
         <div style="font-size:8px;color:#4ade80;">${fmt(p.marketValue)}</div>
       </div>
-      <span class="sig-rate sig-rate-${rate}" title="${SIGNING_RATE_LABEL[rate]}" aria-label="${SIGNING_RATE_LABEL[rate]}">${SIGNING_RATE_ICON[rate]}</span>
+      ${rateHtml}
       <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
     </div>`;
   }).join('');
