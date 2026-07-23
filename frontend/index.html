@@ -2397,7 +2397,7 @@ function _opponentStr(teamName,finalPts,season){
 // a nailed-on starter, so their weight is heavily damped rather than judged on rating alone.
 function _buildScorerPool(allActive,starterIds){
   const BENCH_FACTOR=0.15;
-  return allActive.filter(p=>grp(p.position)!=='GK').map(p=>{
+  const pool=allActive.filter(p=>grp(p.position)!=='GK').map(p=>{
     const sp=specificPos(p.position)||'';
     const g=grp(p.position);
     const r=mvToRating(p.marketValue);
@@ -2414,6 +2414,16 @@ function _buildScorerPool(allActive,starterIds){
     if(!isStarter){gW*=BENCH_FACTOR;aW*=BENCH_FACTOR;}
     return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,isStarter,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
   });
+  // A real season is usually carried by one main striker and one main creator, not an
+  // even split across the front line. Give the single highest-weighted starter in each
+  // category a further boost so they clearly lead, everyone else still has a real
+  // (randomized, weighted-draw) chance to chip in, just not an equal one.
+  const starters=pool.filter(p=>p.isStarter);
+  const topScorer=starters.reduce((best,p)=>p.gW>(best?.gW||0)?p:best,null);
+  if(topScorer)topScorer.gW*=2.8;
+  const topCreator=starters.reduce((best,p)=>p.aW>(best?.aW||0)?p:best,null);
+  if(topCreator)topCreator.aW*=2.4;
+  return pool;
 }
 function _pickW(pool){
   const total=pool.reduce((s,p)=>s+p.gW,0);if(!total)return null;
