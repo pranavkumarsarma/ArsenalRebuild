@@ -352,6 +352,8 @@
         <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Final Table · <span id="simSeasonLabel"></span></div>
         <div id="simTable" style="display:flex;flex-direction:column;gap:3px;"></div>
       </div>
+      <!-- Transfer window summary (signings + sales), part of the shared card -->
+      <div id="simTransferSummary" style="margin-top:10px;padding-top:9px;border-top:1px solid #1f2937;"></div>
       <!-- Share attribution (always visible in screenshot) -->
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:8px;color:#4b5563;font-weight:600;">Arsenal Rebuild Simulator</span>
@@ -1445,25 +1447,31 @@ function sellPlayer(id,val){
     showToast(`The board won't sanction selling ${lastName}. He only just arrived this window.`,3500);return;
   }
 
-  // Position group sale cap
-  const posGrp=grp(player.position);
-  const capMsg={
-    GK:`The board won't sanction another keeper leaving. You'd have no cover in goal.`,
-    DEF:`The board won't sanction another defender leaving. The backline is already thin.`,
-    MID:`The board won't sanction another midfielder leaving. The squad needs the depth.`,
-    ATT:`The board won't sanction another forward leaving. Goals are already hard to come by.`,
-  };
-  if((S.salesByGrp[posGrp]||0)>=(MAX_SALES_BY_GRP[posGrp]||99)){
-    showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
-  }
-
   // Youth protection: player.age is already the season-time age from the historical squad page
   // Use parseInt(x||0)||99 so null/undefined/"0" all fall back to 99 (not youth)
   const ageInSeason=parseInt(player.age||0)||99;
-  if(ageInSeason<21&&S.youthSold>=MAX_YOUTH_SALES){
-    showToast(`The board won't release more young players, you need to develop them.`,3500);return;
+  const isYouth=ageInSeason<19;
+  const posGrp=grp(player.position);
+
+  if(isYouth){
+    // Youth sales bypass the per-position cap below, the board weighs selling a
+    // promising kid differently from thinning out first-team depth, but they're
+    // governed by their own stricter cap instead of being unlimited.
+    if(S.youthSold>=MAX_YOUTH_SALES){
+      showToast(`The board wants to develop young players, not sell them all. No more youth sales this window.`,3500);return;
+    }
+  }else{
+    // Position group sale cap (youth-exempt, see above)
+    const capMsg={
+      GK:`The board won't sanction another keeper leaving. You'd have no cover in goal.`,
+      DEF:`The board won't sanction another defender leaving. The backline is already thin.`,
+      MID:`The board won't sanction another midfielder leaving. The squad needs the depth.`,
+      ATT:`The board won't sanction another forward leaving. Goals are already hard to come by.`,
+    };
+    if((S.salesByGrp[posGrp]||0)>=(MAX_SALES_BY_GRP[posGrp]||99)){
+      showToast(capMsg[posGrp]||`Too many ${posGrp} sales already.`,3500);return;
+    }
   }
-  const isYouth=ageInSeason<21;
   if(isYouth)S.youthSold++;
 
   S.salesByGrp[posGrp]=(S.salesByGrp[posGrp]||0)+1;
@@ -2205,6 +2213,28 @@ function runSimulation(){
     </div>`;
   }).join('');
 
+  // Transfer window summary (signings + sales), shown on the shared result card
+  (function(){
+    const row=(name,val,valClr)=>`<div style="display:flex;justify-content:space-between;gap:6px;font-size:9px;padding:2px 0;">
+      <span style="color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</span>
+      <span style="color:${valClr};font-weight:700;flex-shrink:0;">${fmt(val)}</span>
+    </div>`;
+    const signingsHtml=S.bought.length?S.bought.map(p=>row(p.name,p.marketValue,'#4ade80')).join(''):'<div style="font-size:9px;color:#374151;">None</div>';
+    const salesHtml=S.sellHistory.length?S.sellHistory.map(s=>row(s.name,s.val,'#f87171')).join(''):'<div style="font-size:9px;color:#374151;">None</div>';
+    document.getElementById('simTransferSummary').innerHTML=`
+      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Transfer Window</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-size:7px;color:#4ade80;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SIGNINGS (${S.bought.length})</div>
+          ${signingsHtml}
+        </div>
+        <div>
+          <div style="font-size:7px;color:#f87171;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SALES (${S.sellHistory.length})</div>
+          ${salesHtml}
+        </div>
+      </div>`;
+  })();
+
   // W/D/L
   document.getElementById('simW').textContent=wdl.W;
   document.getElementById('simD').textContent=wdl.D;
@@ -2515,7 +2545,8 @@ function generateShareText(){
   const scorer=document.getElementById('simTopScorer').textContent;
   const goals=document.getElementById('simTopScorerGoals').textContent;
   const signings=S.bought.map(p=>p.name).join(', ')||'none';
-  return `Arsenal Rebuild Simulator\n${season}: ${pos} Place, ${title}\n${pts}\n\nTop scorer: ${scorer} (${goals})\nSignings: ${signings}`;
+  const sales=S.sellHistory.map(s=>s.name).join(', ')||'none';
+  return `Arsenal Rebuild Simulator\n${season}: ${pos} Place, ${title}\n${pts}\n\nTop scorer: ${scorer} (${goals})\nSignings: ${signings}\nSales: ${sales}`;
 }
 
 async function shareResult(){
