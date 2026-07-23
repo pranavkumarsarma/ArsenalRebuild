@@ -95,6 +95,7 @@
       <div style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;">Arsenal Rebuild</div>
       <div style="font-size:8px;color:#4b5563;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
     </div>
+    <button onclick="openHowToPlay()" title="How to play" style="width:20px;height:20px;border-radius:50%;background:#111827;border:1px solid #374151;color:#9ca3af;font-size:10px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">?</button>
   </div>
   <div id="headerControls" style="display:flex;align-items:center;gap:10px;">
     <div id="simCountBlock" style="text-align:right;">
@@ -361,6 +362,11 @@
       </div>
     </div>
 
+    <!-- Try Again, right under the reveal so it's visible without scrolling the whole breakdown -->
+    <button onclick="closeResult()" style="width:100%;background:linear-gradient(135deg,#EF0107,#b91c1c);border:none;color:#fff;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <span>🔄</span><span>Try Again</span>
+    </button>
+
     <!-- Season Context -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
       <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Actually Happened</div>
@@ -449,6 +455,37 @@
       <button onclick="shareResult()" style="flex:1;background:linear-gradient(135deg,#EF0107,#b91c1c);border:none;color:#fff;border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;" id="shareBtn">
         <span>📤</span><span>Share Result</span>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HOW TO PLAY MODAL ══════════════════════════════════════════════ -->
+<div id="howToPlayModal" class="modal-bg" onclick="closeHowToPlay(event)">
+  <div class="modal-inner" style="max-width:400px;padding:18px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-weight:800;font-size:14px;">How to Play</span>
+      <button onclick="closeHowToPlay()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;font-size:11px;color:#9ca3af;line-height:1.6;">
+      <div>
+        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">The idea</div>
+        Pick a season, then rebuild that summer's Arsenal squad with the actual budget Wenger had to work with. Search for players, sign the ones you think fix the squad's real weaknesses, and sell if you need the room. Then run the simulation and see how your version of that season plays out against what actually happened.
+      </div>
+      <div>
+        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Budgets are tiny on purpose</div>
+        The transfer budgets and net spend limits are historically accurate, which means they're small. That's the actual challenge: finding real value instead of chasing big names you can't afford. Browsing other leagues often turns up better deals than the obvious targets.
+      </div>
+      <div>
+        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Difficulty modes</div>
+        <div style="margin-bottom:6px;"><b style="color:#f87171;">🔥 Difficult</b>, fully historically realistic. A title win stays genuinely rare no matter how good your transfer window is.</div>
+        <div style="margin-bottom:6px;"><b style="color:#4ade80;">⚖️ Normal</b>, a genuinely sharp transfer window (not just a big-spending one) earns better odds of a strong finish.</div>
+        <div><b style="color:#c084fc;">🎉 Fun</b>, actually fix the squad's real weakness and clearly outperform the top sides, and you'll taste title glory far more often. Built for when you just want to see the club win.</div>
+      </div>
+      <div>
+        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Play it again</div>
+        Every squad plays out differently each time you simulate, so a mediocre result doesn't mean a bad window, and a great one doesn't mean you nailed it forever. Hit Try Again, tweak the squad, or try a different season entirely.
+      </div>
     </div>
   </div>
 </div>
@@ -926,7 +963,7 @@ const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
 // ── State ──────────────────────────────────────────────────────────────
 const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
-  difficulty: (localStorage.getItem('arsenalRebuildDifficulty')==='difficult') ? 'difficult' : 'normal' };
+  difficulty: (['difficult','fun'].includes(localStorage.getItem('arsenalRebuildDifficulty'))) ? localStorage.getItem('arsenalRebuildDifficulty') : 'normal' };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -1231,14 +1268,35 @@ function checkEliteSquadCap(signedPosition){
   if(!sPos)return;
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const same=all.filter(p=>specificPos(p.position)===sPos);
-  // Only fires when 3+ elite (85+) players at the exact same position, just a narrative warning, no forced sale
+  // Fires when 3+ elite (85+) players stack at the exact same position: the squad is
+  // genuinely overloaded there, so the weakest of the bunch actually leaves and the
+  // budget adjusts, rather than a toast that describes a transfer request nothing follows up on.
   const eliteCount=same.filter(p=>mvToRating(p.marketValue||0)>=85).length;
   if(eliteCount>=3){
     const weakest=same.filter(p=>mvToRating(p.marketValue||0)>=82)
       .sort((a,b)=>(a.marketValue||0)-(b.marketValue||0))[0];
     if(weakest){
       const posLabel=SPOS_LBL[sPos]||sPos;
-      setTimeout(()=>showToast(`${weakest.name.split(' ').pop()} has handed in a transfer request. Too many ${posLabel}, not enough minutes.`,4500),400);
+      const lastName=weakest.name.split(' ').pop();
+      const val=weakest.marketValue||0;
+      const boughtIdx=S.bought.findIndex(p=>p.id===weakest.id);
+      if(boughtIdx>=0){
+        // The window's own new arrival is the weakest of the three, the move collapses and the spend is refunded
+        S.bought.splice(boughtIdx,1);
+        S.spent-=val;
+      }else{
+        // An existing squad player is forced out, same bookkeeping sellPlayer uses so
+        // the squad list's "undo sale" button works correctly if reversed
+        const posGrp=grp(weakest.position);
+        S.salesByGrp[posGrp]=(S.salesByGrp[posGrp]||0)+1;
+        S.sold.add(weakest.id);S.sales+=val;
+        S.sellHistory.push({id:weakest.id,val,name:weakest.name,isYouth:false,posGrp});
+        for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===weakest.id){delete S.lineup[s];break;}}
+      }
+      setTimeout(()=>{
+        showToast(`${lastName} has forced through a move. Too many ${posLabel}, not enough minutes, the deal is done and your budget reflects it.`,4500);
+        setTimeout(()=>showToast(`The board wants a youth signing next, they want you looking at the club's future too.`,4200),4700);
+      },400);
     }
   }
 }
@@ -2090,10 +2148,14 @@ function runSimulation(){
   // Hidden. A genuinely sharp window (not just a big-spend one) raises the ceiling below,
   // but only when BOTH bars clear: the season's specific need was actually filled (a real
   // CF, not just any attacker, when that's what the desc calls for) AND Squad IQ is good
-  // (accounts for who you sold to fund it too, not just who you bought). Difficult mode
-  // never grants this regardless of squad quality, realism no matter how sharp the window.
+  // (accounts for who you sold to fund it too, not just who you bought). Normal mode only.
+  // Fun mode uses a lighter bar (gap filled alone, no Squad IQ threshold) for the same
+  // ceiling boost, and a much friendlier title-hold chance further down.
   const squadIQ=computeSquadIQ(scoringXI,S.bought,[...S.sold],S.season);
-  const meritWindow=S.difficulty!=='difficult'&&squadIQ>=SQUAD_IQ_GOOD_THRESHOLD&&essentialGapsFilled(S.bought,S.season);
+  const essentialFilled=essentialGapsFilled(S.bought,S.season);
+  const meritWindow=S.difficulty==='normal'&&squadIQ>=SQUAD_IQ_GOOD_THRESHOLD&&essentialFilled;
+  const funBoost=S.difficulty==='fun'&&essentialFilled;
+  const higherCeiling=meritWindow||funBoost;
 
   // Draw chaos events before computing points
   const {events,ptsMod}=drawSeasonEvents(scoringXI,S.bought);
@@ -2125,11 +2187,11 @@ function runSimulation(){
     // Scale: 7-duel improvement of 7 pts (avg 1pt/duel) ≈ 0.35 extra pts per game × 2 games
     vsTop4Delta+=(edgeImprovement/7)*0.35*2;
   }
-  vsTop4Delta=Math.round(Math.max(-8,Math.min(meritWindow?15:10,vsTop4Delta)));
+  vsTop4Delta=Math.round(Math.max(-8,Math.min(higherCeiling?15:10,vsTop4Delta)));
 
   // vs Rest of table (30 games): overall line improvement vs league average
   const overallDelta=defDelta*0.35+midDelta*0.3+attDelta*0.35;
-  const vsRestDelta=Math.round(Math.max(-5,Math.min(meritWindow?10:7,overallDelta*0.5)));
+  const vsRestDelta=Math.round(Math.max(-5,Math.min(higherCeiling?10:7,overallDelta*0.5)));
 
   const totalDelta=vsTop4Delta+vsRestDelta+Math.round(iq.bonus*0.3)+Math.round((Math.random()-.5)*4)+ptsMod;
   let simPts=Math.max(30,Math.min(99,historicalPts+totalDelta));
@@ -2139,6 +2201,9 @@ function runSimulation(){
   let arsenalPos=table.findIndex(r=>r.yours)+1;
 
   // Title cap: reaching 1st on points doesn't automatically mean keeping it.
+  // Fun mode: gap filled AND a considerable improvement against the top 4 (vsTop4Delta>=5)
+  // gets a 7-in-10 shot at actually holding it, the whole point of this mode is to let a
+  // genuinely good window feel rewarded, not grind against realism.
   // meritWindow (real need filled + good Squad IQ, Normal mode only) gets a flat 30%
   // chance to actually hold the title. Anything short of that, including every Difficult
   // mode run regardless of squad quality, uses the historical-realism odds below, where
@@ -2148,7 +2213,9 @@ function runSimulation(){
     const topRival=titleRivals.sort((a,b)=>b.pts-a.pts)[0];
     if(topRival){
       let dropChance;
-      if(meritWindow){
+      if(S.difficulty==='fun'&&essentialFilled&&vsTop4Delta>=5){
+        dropChance=0.30; // fun mode: earned it, 7-in-10 shot at actually lifting it
+      }else if(meritWindow){
         dropChance=0.70; // earned it: still only a 3-in-10 shot, not a guarantee
       }else{
         dropChance=0.45; // base: slightly-better-than-even Arsenal still slip sometimes
@@ -2343,7 +2410,7 @@ function runSimulation(){
     {label:'vs Top 4',       score:f2, max:30},
     {label:'Attack/Defense', score:f3, max:20},
     {label:'Player Legacy',  score:f4, max:15},
-    {label:'Squad IQ (hidden, '+S.difficulty+', merit window: '+(meritWindow?'YES':'no')+')', score:squadIQ, max:100},
+    {label:'Squad IQ (hidden, '+S.difficulty+', merit: '+(meritWindow?'YES':'no')+', fun boost: '+(funBoost?'YES':'no')+')', score:squadIQ, max:100},
   ];
   document.getElementById('dbgBreakdown').innerHTML=bars.map(b=>{
     const pct=Math.round(b.score/b.max*100);
@@ -2663,6 +2730,11 @@ function openSquadAnalysis(){
   document.getElementById('squadAnalysisModal').classList.add('open');
 }
 function closeSquadAnalysis(){document.getElementById('squadAnalysisModal').classList.remove('open');}
+function openHowToPlay(){document.getElementById('howToPlayModal').classList.add('open');}
+function closeHowToPlay(e){
+  if(e&&e.target!==document.getElementById('howToPlayModal'))return;
+  document.getElementById('howToPlayModal').classList.remove('open');
+}
 
 // ── Secret debug trigger (triple-tap AFC logo) ─────────────────────────
 let _secretTaps=0, _secretTimer;
@@ -2678,24 +2750,31 @@ function secretTap(){
 }
 
 // ── Difficulty toggle ────────────────────────────────────────────────────
-// Normal: sharp transfer windows earn a higher simulation ceiling (Squad IQ, hidden).
 // Difficult: historically realistic. A title win stays genuinely rare regardless of window quality.
+// Normal: sharp transfer windows earn a higher simulation ceiling (Squad IQ, hidden).
+// Fun: fill the season's actual gap and clearly improve against the top 4, and the game
+// hands you a real shot at the title, 7 times out of 10, instead of making you fight for it.
+const DIFFICULTY_ORDER=['difficult','normal','fun'];
+const DIFFICULTY_META={
+  difficult:{label:'🔥 Difficult',color:'#f87171',border:'#b91c1c',bg:'rgba(239,68,68,.14)',toast:'Difficult mode. Realistic odds, a title win is genuinely rare.'},
+  normal:{label:'⚖️ Normal',color:'#4ade80',border:'#166534',bg:'rgba(74,222,128,.14)',toast:'Normal mode. A sharp transfer window earns better odds.'},
+  fun:{label:'🎉 Fun',color:'#c084fc',border:'#7e22ce',bg:'rgba(192,132,252,.14)',toast:'Fun mode. Fill the gap, outperform the top 4, and you get a real 7-in-10 shot at the title.'},
+};
 function renderDifficulty(){
   const btn=document.getElementById('difficultyBtn'),lbl=document.getElementById('difficultyLabel');
   if(!btn||!lbl)return;
-  const hard=S.difficulty==='difficult';
-  lbl.textContent=hard?'🔥 Difficult':'⚖️ Normal';
-  btn.style.color=hard?'#f87171':'#4ade80';
-  btn.style.borderColor=hard?'#b91c1c':'#166534';
-  btn.style.background=hard?'rgba(239,68,68,.14)':'rgba(74,222,128,.14)';
+  const m=DIFFICULTY_META[S.difficulty]||DIFFICULTY_META.normal;
+  lbl.textContent=m.label;
+  btn.style.color=m.color;
+  btn.style.borderColor=m.border;
+  btn.style.background=m.bg;
 }
 function toggleDifficulty(){
-  S.difficulty=S.difficulty==='difficult'?'normal':'difficult';
+  const idx=DIFFICULTY_ORDER.indexOf(S.difficulty);
+  S.difficulty=DIFFICULTY_ORDER[(idx+1)%DIFFICULTY_ORDER.length];
   localStorage.setItem('arsenalRebuildDifficulty',S.difficulty);
   renderDifficulty();
-  showToast(S.difficulty==='difficult'
-    ?'Difficult mode. Realistic odds, a title win is genuinely rare.'
-    :'Normal mode. A sharp transfer window earns better odds.',3000);
+  showToast((DIFFICULTY_META[S.difficulty]||DIFFICULTY_META.normal).toast,3000);
 }
 renderDifficulty();
 
