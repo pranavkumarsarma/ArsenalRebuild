@@ -762,7 +762,10 @@ function rateSigning(player, season) {
   const mv = Math.max(1, (player.marketValue || 0) / 1e6);
   const goodValue = hasValue && (rating / mv) >= 8;
   if (wouldStart && (addressesGap || goodValue)) return 'good';
-  if (!wouldStart && !addressesGap) return 'bad';
+  // A genuine bargain (high value-for-money) that just can't dislodge an already-stacked
+  // line, or doesn't match the season's exact role label, is still a shrewd pickup, not a
+  // bad one, only fails outright when it clears none of the three bars.
+  if (!wouldStart && !addressesGap && !goodValue) return 'bad';
   return 'medium';
 }
 
@@ -1382,11 +1385,9 @@ function openSlotPicker(slotId){
   </div>`;
   html+=avail.map(p=>{
     const r=mvToRating(p.marketValue), clr=ratingColor(r);
-    const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     const isNew=bIds.has(p.id);
     return `<div onclick="assignSlot('${p.id}')" style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;${isNew?'border-left:2px solid #166534;':''}"
       onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
-      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#9ca3af;flex-shrink:0;">${abbr}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${isNew?' <span style="font-size:7px;color:#4ade80;">★ new</span>':''}</div>
         <div style="font-size:8px;color:#6b7280;">${p.position||''}</div>
@@ -1830,7 +1831,6 @@ async function fetchHistoricalValue(pid,yr){
 function _skeletonCards(n){
   return Array.from({length:n},()=>`
     <div style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;opacity:.4;">
-      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;flex-shrink:0;"></div>
       <div style="flex:1;">
         <div style="background:#1f2937;height:9px;border-radius:3px;width:55%;margin-bottom:5px;"></div>
         <div style="background:#1f2937;height:7px;border-radius:3px;width:35%;"></div>
@@ -1864,7 +1864,6 @@ async function _resolveCandidate(p,yr,budget,inSquad){
 function _candidateRank(r){return r.inSquad?3:r.noData?4:r.tooExp?2:1;}
 function _candidateCard(r){
   const p=r.p;
-  const abbr=(p.position||'').split(/[\s-]/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const clubPart=r.club?' · '+r.club:'';
   return `<div id="pcard-${p.id}" data-id="${p.id}" data-value="${r.value}" data-blocked="${r.blocked}"
       data-soft-rival="${r.softRival}" data-era-club="${esc(r.eraClub)}" data-growth="${r.growth}"
@@ -1872,7 +1871,6 @@ function _candidateCard(r){
       data-hard-rival="${r.hardRival}"
       style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;opacity:${r.blocked?'.38':'1'};"
       onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
-      <div style="background:#1f2937;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;color:#9ca3af;">${abbr}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
         <div style="font-size:8px;color:#6b7280;">${p.position||''}${clubPart}</div>
