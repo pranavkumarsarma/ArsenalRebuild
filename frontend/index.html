@@ -718,17 +718,21 @@ const SEASON_WEAKNESSES = {
   2014:{ gaps:['ATT','DEF'], desc:"Giroud's injury exposed the lack of striker depth. Welbeck wasn't the answer. The left-back position was also a weakness, Gibbs and Monreal competing, neither dominant." },
   2015:{ gaps:['DEF','MID'], desc:"Leicester's organisation exposed Arsenal's defensive fragility. The back four was soft under pressure. Coquelin was a band-aid, not a solution. A world-class CB or DM was needed." },
 };
-// The exact role each season's gaps call for, read from that season's own desc above.
+// The role(s) each season's gaps call for, read from that season's own desc above.
+// Each value is a list of specificPos() results that count as satisfying it, not just
+// one exact string, real-world data labels DM and CM interchangeably often enough
+// (Kanté himself is tagged "Central Midfield" in this data) that requiring an exact
+// 'DM' match punished a correct signing for a data quirk, not a real position error.
+// A striker vs a winger is a genuinely different role, so ST/CB/LB stay strict.
 // Missing an entry (e.g. 2011's MID) means the group-level match is enough, the desc
-// doesn't name one specific role. Used to check "essential gaps" precisely (a winger
-// doesn't satisfy a season that specifically needed a CF).
+// doesn't name one specific role.
 const SEASON_SPECIFIC_NEED = {
-  2009:{ GK:'GK', MID:'DM' },
-  2010:{ ATT:'ST', GK:'GK' },
-  2012:{ ATT:'ST' },
-  2013:{ ATT:'ST', MID:'DM' },
-  2014:{ ATT:'ST', DEF:'LB' },
-  2015:{ DEF:'CB', MID:'DM' },
+  2009:{ GK:['GK'], MID:['DM','CM'] },
+  2010:{ ATT:['ST'], GK:['GK'] },
+  2012:{ ATT:['ST'] },
+  2013:{ ATT:['ST'], MID:['DM','CM'] },
+  2014:{ ATT:['ST'], DEF:['LB'] },
+  2015:{ DEF:['CB'], MID:['DM','CM'] },
 };
 const SQUAD_IQ_GOOD_THRESHOLD = 65;
 // True only if every one of that season's weak lines was filled with the specific role
@@ -739,7 +743,7 @@ function essentialGapsFilled(bought, season) {
   const need = SEASON_SPECIFIC_NEED[season] || {};
   return gaps.every(g => {
     const role = need[g];
-    return role ? bought.some(p => specificPos(p.position) === role) : bought.some(p => p._group === g);
+    return role ? bought.some(p => role.includes(specificPos(p.position))) : bought.some(p => p._group === g);
   });
 }
 // Simple three-tier read on a single signing, shown to the player (unlike Squad IQ,
@@ -753,7 +757,7 @@ function rateSigning(player, season) {
   const need = SEASON_SPECIFIC_NEED[season] || {};
   const group = player._group || grp(player.position);
   const role = need[group];
-  const addressesGap = gaps.includes(group) && (role ? specificPos(player.position) === role : true);
+  const addressesGap = gaps.includes(group) && (role ? role.includes(specificPos(player.position)) : true);
   // Only judge value when we actually know the market value, mvToRating(0) returns a
   // 62 baseline, which would otherwise make an unknown-value player look artificially
   // efficient (62 rating over a near-zero price) instead of just unrated.
