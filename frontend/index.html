@@ -2246,8 +2246,10 @@ function runSimulation(){
   // Ticker both read this single simulation, so points/W-D-L/top scorer stay consistent
   // between the two views and don't reshuffle if the ticker is reopened.
   const {fixtures,pool:scorerPool}=_generateTicker(newLines,S.season,wdl);
-  const topScorerP=[...scorerPool].sort((a,b)=>b.goals-a.goals).find(p=>p.goals>0);
-  const topAssistP=[...scorerPool].sort((a,b)=>b.assists-a.assists).find(p=>p.assists>0);
+  // Fringe finishers can still pick up the odd goal (see FRINGE_FINISHERS above) but are
+  // never eligible to be crowned Top Scorer or Top Assister, no matter how the draw lands.
+  const topScorerP=[...scorerPool].sort((a,b)=>b.goals-a.goals).find(p=>p.goals>0&&!p.isFringe);
+  const topAssistP=[...scorerPool].sort((a,b)=>b.assists-a.assists).find(p=>p.assists>0&&!p.isFringe);
   const scorer=topScorerP?{name:topScorerP.lastName,goals:topScorerP.goals}:predictTopScorer(scoringXI);
   const assister=topAssistP?{name:topAssistP.lastName,assists:topAssistP.assists}:predictTopAssister(scoringXI);
   const verdict=rebuildVerdict(total);
@@ -2458,6 +2460,13 @@ function _opponentStr(teamName,finalPts,season){
   if(rv[teamName]){const r=rv[teamName];return Math.round((r.def+r.mid+r.att)/3);}
   return Math.round(67+Math.max(0,finalPts-30)*0.37);
 }
+// Known fringe attacking options this era, real banter-era flops whose actual output
+// never justified being anyone's main man. Real quality already prices their weight low,
+// but a low-probability lucky run across 38 games can still occasionally let one lead the
+// scoring charts, which reads as a broken result rather than a fun quirk. Excluded from
+// the "main striker/creator" boost below and hard-blocked from ever being crowned the
+// season's Top Scorer or Top Assister.
+const FRINGE_FINISHERS=['Park Chu-Young','Wellington Silva','Bendtner','Akpom','Miyaichi','Chamakh'];
 // Build scorer/assister pool with position-weighted probabilities. Starters (the actual
 // best XI) carry the weight from real minutes played; a bench player realistically gets
 // a handful of substitute appearances across a season, not the same scoring chance as
@@ -2479,13 +2488,16 @@ function _buildScorerPool(allActive,starterIds){
     else{gW=r*0.4;aW=r*1.0;}
     const isStarter=starterIds.has(p.id);
     if(!isStarter){gW*=BENCH_FACTOR;aW*=BENCH_FACTOR;}
-    return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,isStarter,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
+    const isFringe=FRINGE_FINISHERS.some(n=>p.name.includes(n));
+    if(isFringe){gW*=0.4;aW*=0.4;}
+    return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,isStarter,isFringe,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
   });
   // A real season is usually carried by one main striker and one main creator, not an
   // even split across the front line. Give the single highest-weighted starter in each
-  // category a further boost so they clearly lead, everyone else still has a real
-  // (randomized, weighted-draw) chance to chip in, just not an equal one.
-  const starters=pool.filter(p=>p.isStarter);
+  // category (fringe flops excluded, they never get to be "the guy") a further boost so
+  // they clearly lead, everyone else still has a real (randomized, weighted-draw) chance
+  // to chip in, just not an equal one.
+  const starters=pool.filter(p=>p.isStarter&&!p.isFringe);
   const topScorer=starters.reduce((best,p)=>p.gW>(best?.gW||0)?p:best,null);
   if(topScorer)topScorer.gW*=2.8;
   const topCreator=starters.reduce((best,p)=>p.aW>(best?.aW||0)?p:best,null);
