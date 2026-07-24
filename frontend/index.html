@@ -1715,7 +1715,12 @@ function renderSignings(){
 }
 
 // ── Load season ────────────────────────────────────────────────────────
+// Bumped on every call so an in-flight fetch from a season the user has since switched
+// away from can recognize it's stale and discard its response instead of overwriting
+// the squad that's actually selected now.
+let _loadSeasonToken=0;
 async function loadSeason(yr){
+  const token=++_loadSeasonToken;
   S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   const m=SEASONS[yr]||{};
   document.getElementById('budgetAmt').textContent=fmt(m.budget);
@@ -1736,25 +1741,38 @@ async function loadSeason(yr){
   document.getElementById('signingsArea').style.display='none';
   document.getElementById('lineupModal').classList.remove('open');
   updateLineupCountBadges();
+  // Disabled for the duration of this load, switching seasons mid-fetch is exactly what
+  // caused the mismatch, this closes off that path at the source rather than just racing it.
+  const selEls=[document.getElementById('seasonSelect')].filter(Boolean);
+  selEls.forEach(el=>{el.disabled=true;el.style.opacity='.5';el.style.cursor='not-allowed';});
   try {
     // Cache-first: use pre-fetched squad if available
     const _excl=SQUAD_EXCLUSIONS[yr]||[];
     const _filterSquad=ps=>ps.filter(p=>p.name&&!_excl.some(n=>p.name.includes(n)));
     const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
+    let players;
     if(cachedSquad?.length){
-      S.players=_filterSquad(cachedSquad);
-      render();updateSidebar();
+      players=_filterSquad(cachedSquad);
     } else {
       const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
       if(!r.ok)throw new Error();
       const d=await r.json();
-      S.players=_filterSquad(d.players||[]);
-      render();updateSidebar();
+      players=_filterSquad(d.players||[]);
     }
+    if(token!==_loadSeasonToken)return; // a newer season load started, this response is stale
+    S.players=players;
+    render();updateSidebar();
   } catch(e){
+    if(token!==_loadSeasonToken)return;
     loadEl.innerHTML=`
       <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Failed to load squad</div>
       <div style="font-size:9px;color:#4b5563;">Is the API running on port 8001?</div>`;
+  } finally {
+    // Only the most recent call re-enables the dropdown, a stale call finishing after a
+    // newer one started must not re-enable a select whose fetch is still in flight.
+    if(token===_loadSeasonToken){
+      selEls.forEach(el=>{el.disabled=false;el.style.opacity='';el.style.cursor='';});
+    }
   }
 }
 
