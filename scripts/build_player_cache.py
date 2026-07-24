@@ -16,12 +16,20 @@ Supports resuming — already-fetched entries are skipped.
 """
 
 import json
+import sys
 import time
 import argparse
 from datetime import datetime
 from pathlib import Path
 
 import requests
+
+# Progress lines contain accented player names and arrows; the default Windows console
+# codec (cp1252) can't encode them and crashes the whole run mid-phase. Force UTF-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -124,7 +132,9 @@ def save(cache):
     OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text(
         json.dumps(
-            {"version": "1.0", "generated": datetime.now().isoformat(), **cache},
+            # Spread first so the fresh version/timestamp win over any stale values
+            # carried in from a resumed cache file.
+            {**cache, "version": "1.0", "generated": datetime.now().isoformat()},
             ensure_ascii=False, separators=(",", ":"),
         ),
         encoding="utf-8",

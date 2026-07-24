@@ -1795,7 +1795,9 @@ async function loadSeason(yr){
     const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
     let players;
     if(cachedSquad?.length){
-      players=_filterSquad(cachedSquad);
+      // Cache stores market_value (snake_case); the rest of the app reads marketValue.
+      // Normalize so cached squads behave identically to a live API response.
+      players=_filterSquad(cachedSquad).map(p=>({...p,marketValue:p.marketValue??p.market_value??0}));
     } else {
       const r=await fetch(`${API}/clubs/11/players?season_id=${yr}`);
       if(!r.ok)throw new Error();
@@ -1808,8 +1810,8 @@ async function loadSeason(yr){
   } catch(e){
     if(token!==_loadSeasonToken)return;
     loadEl.innerHTML=`
-      <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Failed to load squad</div>
-      <div style="font-size:9px;color:#4b5563;">Is the API running on port 8001?</div>`;
+      <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Couldn't load the squad</div>
+      <div style="font-size:9px;color:#4b5563;">Check your connection and try picking the season again.</div>`;
   } finally {
     // Only the most recent call re-enables the dropdown, a stale call finishing after a
     // newer one started must not re-enable a select whose fetch is still in flight.
@@ -2053,7 +2055,7 @@ async function doSearch(q){
     resolved.sort((a,b)=>_candidateRank(a)-_candidateRank(b));
     hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · ${yrLabel} values loaded`;
     box.innerHTML=resolved.map(_candidateCard).join('');
-  }catch(e){hint.textContent='Search failed. Is the API running?';box.innerHTML='';}
+  }catch(e){hint.textContent='Search failed, check your connection and try again.';box.innerHTML='';}
 }
 
 function handleCardClick(card,name,position,currClub){
