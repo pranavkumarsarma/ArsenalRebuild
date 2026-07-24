@@ -60,10 +60,19 @@
     .table-row.yours{background:linear-gradient(90deg,#1a0d0d,#200d0d);border:1px solid #7f1d1d;}
     /* ── Mobile responsive ─────────────────────────────────── */
     @media (max-width: 639px) {
-      html,body{overflow:auto;}
-      #mainContainer{flex-direction:column;height:auto;min-height:calc(100vh - 42px - 54px);overflow:visible;}
-      #squadCol{border-right:none;border-bottom:1px solid #1f2937;height:calc(100svh - 42px - 54px);min-height:0;}
-      #squadGrid{grid-template-columns:repeat(2,1fr)!important;}
+      /* Only html scrolls, not both html and body, two independently-scrollable ancestors
+         is the kind of ambiguity that behaves inconsistently across mobile browsers. */
+      html{overflow-y:auto!important;height:auto!important;min-height:100%;}
+      body{overflow:visible!important;height:auto!important;}
+      #mainContainer{flex-direction:column;height:auto!important;min-height:calc(100vh - 42px - 54px);overflow:visible!important;}
+      /* Nested independently-scrolling columns inside a fixed-height box don't reliably
+         respond to touch-drag on real phones (confirmed: content beyond the fold was
+         unreachable). Mobile gets one natural scroll surface, the page itself, instead:
+         every column grows to its full content height and everything just flows. */
+      #squadCol{border-right:none;border-bottom:1px solid #1f2937;height:auto;min-height:0;overflow:visible!important;padding-bottom:60px;}
+      #squadGrid{grid-template-columns:repeat(2,1fr)!important;overflow:visible!important;}
+      .squad-col-wrap{overflow:visible!important;}
+      .squad-col-list{overflow:visible!important;max-height:none!important;}
       #sidebarCol{display:none!important;}
       #mobileBar{display:flex!important;}
       #signingsArea{order:-1;border-top:none;border-bottom:2px solid #166534;}
@@ -74,6 +83,7 @@
       #addModal .modal-inner,#lineupModal .modal-inner{max-height:95svh!important;margin:6px!important;}
       #resultModal .modal-inner{max-height:98svh!important;margin:4px!important;padding:14px!important;}
       #squadAnalysisModal .modal-inner{max-height:97svh!important;margin:6px!important;}
+      #howToPlayModal .modal-inner{max-height:90svh!important;margin:6px!important;padding:14px!important;}
       #matchModal .modal-inner{max-height:calc(100svh - 70px)!important;margin:6px 6px 60px!important;}
       .modal-inner{border-radius:14px!important;}
       #simCountDisplay{font-size:11px!important;}
@@ -1659,7 +1669,7 @@ function render(){
   el.innerHTML=GROUPS.map(g=>{
     const ps=groups[g], active=ps.filter(p=>!S.sold.has(p.id)).length;
     return `
-      <div style="display:flex;flex-direction:column;border-right:1px solid #1f2937;overflow:hidden;">
+      <div class="squad-col-wrap" style="display:flex;flex-direction:column;border-right:1px solid #1f2937;overflow:hidden;">
         <div class="col-hdr">
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="badge ${GRP_CSS[g]}">${g}</span>
@@ -1668,7 +1678,7 @@ function render(){
           </div>
           <button class="add-btn" onclick="openModal('${g}')" title="Sign a player">+</button>
         </div>
-        <div style="flex:1;overflow-y:auto;padding:3px 4px 6px;">
+        <div class="squad-col-list" style="flex:1;overflow-y:auto;padding:3px 4px 6px;">
           ${ps.map(p=>playerCell(p)).join('')}
         </div>
       </div>`;

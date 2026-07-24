@@ -155,7 +155,7 @@ def fetch_squad(api_url, club_id, yr, squads, all_ids):
     if d:
         players = [
             {"id": p["id"], "name": p.get("name", ""), "position": p.get("position", ""),
-             "age": p.get("age"), "market_value": p.get("market_value")}
+             "age": p.get("age"), "market_value": p.get("marketValue")}
             for p in d.get("players", []) if p.get("id") and p.get("name")
         ]
         squads[key] = players
