@@ -218,6 +218,30 @@
       </button>
     </div>
 
+    <!-- This Session -->
+    <div style="flex-shrink:0;padding:0 12px 8px;">
+      <div style="background:#111827;border-radius:8px;padding:9px 11px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+          <span style="font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#e5e7eb;">This Session</span>
+          <span style="font-size:8px;color:#6b7280;" id="sessionSimCount">0 simulations</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
+            <div style="font-size:19px;font-weight:900;line-height:1;color:#fbbf24;" id="sessionTitles">0</div>
+            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Titles</div>
+          </div>
+          <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
+            <div style="font-size:19px;font-weight:900;line-height:1;color:#d1d5db;" id="sessionTop2">0</div>
+            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 2</div>
+          </div>
+          <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
+            <div style="font-size:19px;font-weight:900;line-height:1;color:#60a5fa;" id="sessionTop4">0</div>
+            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Spacer -->
     <div style="flex:1;"></div>
 
@@ -975,7 +999,8 @@ const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
 // ── State ──────────────────────────────────────────────────────────────
 const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
-  difficulty: (['difficult','fun'].includes(localStorage.getItem('arsenalRebuildDifficulty'))) ? localStorage.getItem('arsenalRebuildDifficulty') : 'normal' };
+  difficulty: (['difficult','fun'].includes(localStorage.getItem('arsenalRebuildDifficulty'))) ? localStorage.getItem('arsenalRebuildDifficulty') : 'normal',
+  sessionRecord: {titles:0, top2:0, top4:0} };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -1658,6 +1683,14 @@ function updateSidebar(){
   }
   updateLineupCountBadges();
 }
+function updateSessionRecord(){
+  const r=S.sessionRecord;
+  const simEl=document.getElementById('sessionSimCount');
+  if(simEl)simEl.textContent=`${S.simCount} simulation${S.simCount===1?'':'s'}`;
+  const titlesEl=document.getElementById('sessionTitles');if(titlesEl)titlesEl.textContent=r.titles;
+  const top2El=document.getElementById('sessionTop2');if(top2El)top2El.textContent=r.top2;
+  const top4El=document.getElementById('sessionTop4');if(top4El)top4El.textContent=r.top4;
+}
 
 // ── Squad render ───────────────────────────────────────────────────────
 function render(){
@@ -2270,6 +2303,12 @@ function runSimulation(){
       }
     }
   }
+
+  // This Session record: a title also counts as a top-2 and top-4 finish
+  if(arsenalPos===1)S.sessionRecord.titles++;
+  if(arsenalPos<=2)S.sessionRecord.top2++;
+  if(arsenalPos<=4)S.sessionRecord.top4++;
+  updateSessionRecord();
 
   const wdl=wdlFromPts(simPts);
   // Simulate the season match-by-match once here. The result modal and the Match
