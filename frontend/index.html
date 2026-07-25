@@ -1300,7 +1300,7 @@ function checkSpecificPositionDepth(position){
   const qual=same.filter(p=>mvToRating(p.marketValue)>=80);
   return {blocked:qual.length>=2, count:same.length, qualCount:qual.length};
 }
-function checkEliteSquadCap(signedPosition){
+function checkEliteSquadCap(signedPosition,triggerId){
   const sPos=specificPos(signedPosition);
   if(!sPos)return;
   const all=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
@@ -1323,11 +1323,12 @@ function checkEliteSquadCap(signedPosition){
         S.spent-=val;
       }else{
         // An existing squad player is forced out, same bookkeeping sellPlayer uses so
-        // the squad list's "undo sale" button works correctly if reversed
+        // the squad list's "undo sale" button works correctly if reversed. autoFrom links
+        // this forced sale to the signing that caused it, so undoing that signing reverses it.
         const posGrp=grp(weakest.position);
         S.salesByGrp[posGrp]=(S.salesByGrp[posGrp]||0)+1;
         S.sold.add(weakest.id);S.sales+=val;
-        S.sellHistory.push({id:weakest.id,val,name:weakest.name,isYouth:false,posGrp});
+        S.sellHistory.push({id:weakest.id,val,name:weakest.name,isYouth:false,posGrp,autoFrom:triggerId});
         for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===weakest.id){delete S.lineup[s];break;}}
       }
       setTimeout(()=>{
@@ -1608,6 +1609,16 @@ function resetAll(){
 function unsignPlayer(id,val){
   S.bought=S.bought.filter(p=>p.id!==id);S.spent-=val;
   for(const[s,p]of Object.entries(S.lineup)){if(p&&p.id===id){delete S.lineup[s];break;}}
+  // If this signing forced an existing player out (elite-squad cap), undoing the signing
+  // must bring that player back too, otherwise their sale is orphaned and keeps counting
+  // against the position's sale cap.
+  const auto=S.sellHistory.filter(s=>s.autoFrom===id);
+  auto.forEach(entry=>{
+    const i=S.sellHistory.indexOf(entry);
+    if(i>-1)S.sellHistory.splice(i,1);
+    S.sold.delete(entry.id);S.sales-=entry.val;
+    if(entry.posGrp&&S.salesByGrp[entry.posGrp]>0)S.salesByGrp[entry.posGrp]--;
+  });
   render();updateSidebar();updateLineupCountBadges();
 }
 
@@ -2033,8 +2044,12 @@ async function doSearch(q){
   try{
     const r=await fetch(`${API}/players/search/${encodeURIComponent(q)}`);
     const d=await r.json();
-    const allResults=(d.results||[]).slice(0,14);
     const squadIds=new Set(S.players.map(p=>p.id)), boughtIds=new Set(S.bought.map(p=>p.id));
+    // Drop players already in the squad or already signed this window before slicing, so a
+    // result like Sánchez (already at Arsenal that era) never takes up a suggestion slot.
+    // A sold squad player still belongs to you (use "undo sale", not a re-sign), so exclude
+    // them too.
+    const allResults=(d.results||[]).filter(p=>!squadIds.has(p.id)&&!boughtIds.has(p.id)).slice(0,14);
     const budget=SEASONS[S.season]?.budget||0;
     const eraFiltered=allResults.filter(p=>!eraCheck(p.age));
     // Filter by position group when modal was opened from a position column
@@ -2123,7 +2138,7 @@ function handleCardClick(card,name,position,currClub){
   const finalPos=cleanPos||(fallbackPos[posGroup]||'');
   const growth=parseFloat(card.dataset.growth)||1;
   S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value,growth});S.spent+=value;
-  checkEliteSquadCap(finalPos);
+  checkEliteSquadCap(finalPos,card.dataset.id);
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
 }
@@ -2210,14 +2225,29 @@ function runSimulation(){
   const scoringXI=getAutoXI(allActive);
   const {f1,f2,f3,f4,total,ar}=computeRebuildScore(scoringXI,S.bought);
   const iq=getBudgetIQ();
+
+  // Baseline = Arsenal's ACTUAL historical XI, before ANY of your transfers. Measuring the
+  // post-transfer XI against this (rather than against the post-sale squad) is what makes a
+  // sale count: sell your only striker and buy no replacement and the attack line drops
+  // below its historical level, costing points, instead of the loss being invisible.
+  const baseXI=getAutoXI(S.players);
+  const baseLines=computeLineRatings(baseXI);
+  const newLines=computeLineRatings(scoringXI);
+  const defDelta=newLines.def-baseLines.def;
+  const midDelta=newLines.mid-baseLines.mid;
+  const attDelta=newLines.att-baseLines.att;
+  // A self-inflicted gap: you left a line meaningfully weaker than Arsenal actually had it
+  // (e.g. sold the star striker to fund midfield). That disqualifies the "clean window"
+  // ceiling boost even if the documented gaps were filled — no robbing Peter to pay Paul.
+  const noSelfInflictedGap=newLines.def>=baseLines.def-2&&newLines.mid>=baseLines.mid-2&&newLines.att>=baseLines.att-2;
+
   // Hidden. A genuinely sharp window (not just a big-spend one) raises the ceiling below,
-  // but only when BOTH bars clear: the season's specific need was actually filled (a real
-  // CF, not just any attacker, when that's what the desc calls for) AND Squad IQ is good
-  // (accounts for who you sold to fund it too, not just who you bought). Normal mode only.
-  // Fun mode uses a lighter bar (gap filled alone, no Squad IQ threshold) for the same
-  // ceiling boost, and a much friendlier title-hold chance further down.
+  // but only when the bars clear: the season's specific need was actually filled (a real
+  // CF, not just any attacker, when that's what the desc calls for), no other line was
+  // gutted to do it, AND (Normal) Squad IQ is good. Fun mode drops the Squad IQ threshold
+  // but still requires a genuinely clean window.
   const squadIQ=computeSquadIQ(scoringXI,S.bought,[...S.sold],S.season);
-  const essentialFilled=essentialGapsFilled(S.bought,S.season);
+  const essentialFilled=essentialGapsFilled(S.bought,S.season)&&noSelfInflictedGap;
   const meritWindow=S.difficulty==='normal'&&squadIQ>=SQUAD_IQ_GOOD_THRESHOLD&&essentialFilled;
   const funBoost=S.difficulty==='fun'&&essentialFilled;
   const higherCeiling=meritWindow||funBoost;
@@ -2228,17 +2258,6 @@ function runSimulation(){
   // Points estimate: improvement over Arsenal's own historical baseline
   const historicalRow=ACTUAL_TABLE[S.season]?.find(r=>r.club==='Arsenal');
   const historicalPts=historicalRow?.pts||68;
-
-  // Baseline: Arsenal's historical squad WITHOUT new signings (sold players already removed)
-  const baseXI=getAutoXI(S.players.filter(p=>!S.sold.has(p.id)));
-  const baseLines=computeLineRatings(baseXI);
-  // New: Arsenal's XI WITH signings
-  const newLines=computeLineRatings(scoringXI);
-
-  // How much did each line actually improve (or drop) from signings?
-  const defDelta=newLines.def-baseLines.def;
-  const midDelta=newLines.mid-baseLines.mid;
-  const attDelta=newLines.att-baseLines.att;
 
   // vs Top 4 rivals: positional duel improvement vs each rival (2 games each)
   const rivals=RIVAL_STRENGTH[S.season]||{};
@@ -2538,6 +2557,9 @@ function _opponentStr(teamName,finalPts,season){
 // the "main striker/creator" boost below and hard-blocked from ever being crowned the
 // season's Top Scorer or Top Assister.
 const FRINGE_FINISHERS=['Park Chu-Young','Wellington Silva','Bendtner','Akpom','Miyaichi','Chamakh'];
+// Realism ceilings for a single player's season tally (a Golden Boot year tops out low 30s;
+// even a Cazorla/Özil creative peak sits around 20 assists).
+const MAX_GOALS=33, MAX_ASSISTS=20;
 // Build scorer/assister pool with position-weighted probabilities. Starters (the actual
 // best XI) carry the weight from real minutes played; a bench player realistically gets
 // a handful of substitute appearances across a season, not the same scoring chance as
@@ -2580,7 +2602,7 @@ function _pickW(pool){
   let r=Math.random()*total;for(const p of pool){r-=p.gW;if(r<=0)return p;}return pool[pool.length-1];
 }
 function _pickA(pool,scorerId){
-  const ap=pool.filter(p=>p.id!==scorerId&&p.aW>0);if(!ap.length)return null;
+  const ap=pool.filter(p=>p.id!==scorerId&&p.aW>0&&p.assists<MAX_ASSISTS);if(!ap.length)return null;
   const total=ap.reduce((s,p)=>s+p.aW,0);let r=Math.random()*total;
   for(const p of ap){r-=p.aW;if(r<=0)return p;}return ap[ap.length-1];
 }
@@ -2632,8 +2654,10 @@ function _generateTicker(newLines,season,wdl){
     for(let i=0;i<gf;i++){
       // Nudge towards defender goals in the second half of the season
       const forceDefender=defBudget>0&&idx>19&&Math.random()<(defBudget/Math.max(1,fixtures.length-idx));
-      const defPool=pool.filter(p=>p.g==='DEF'&&p.gW>0);
-      const scorer=forceDefender&&defPool.length?_pickW(defPool):_pickW(pool.filter(p=>p.gW>0));
+      // Realism caps: no one tops MAX_GOALS in a season, no creator tops MAX_ASSISTS.
+      // Capped players drop out of the draw so the load redistributes to teammates.
+      const defPool=pool.filter(p=>p.g==='DEF'&&p.gW>0&&p.goals<MAX_GOALS);
+      const scorer=forceDefender&&defPool.length?_pickW(defPool):_pickW(pool.filter(p=>p.gW>0&&p.goals<MAX_GOALS));
       if(scorer){
         scorer.goals++;
         if(scorer.g==='DEF')defBudget--;
