@@ -675,7 +675,7 @@ const LEAGUE_CLUBS = {
     {id:'281',n:'Man City'},{id:'31',n:'Liverpool'},{id:'985',n:'Man Utd'},
     {id:'631',n:'Chelsea'},{id:'148',n:'Tottenham'},{id:'29',n:'Everton'},
     {id:'405',n:'Aston Villa'},{id:'379',n:'West Ham'},{id:'762',n:'Newcastle'},
-    {id:'1237',n:'Leicester'},{id:'289',n:'Sunderland'},{id:'931',n:'Fulham'},
+    {id:'1003',n:'Leicester'},{id:'289',n:'Sunderland'},{id:'931',n:'Fulham'},
   ]},
   LL:{label:'La Liga',flag:'🇪🇸',clubs:[
     {id:'418',n:'Real Madrid'},{id:'131',n:'Barcelona'},{id:'13',n:'Atlético'},
@@ -997,6 +997,247 @@ const HARD_RIVALS = ['Manchester United','Chelsea','Tottenham'];
 const SOFT_RIVALS = ['Liverpool','Manchester City'];
 const ALL_RIVALS  = [...HARD_RIVALS,...SOFT_RIVALS];
 
+// ── Club raids ─────────────────────────────────────────────────────────
+// You can take at most two players off any one club, and taking them has to cost that
+// club something. Every effect below comes from one number: the share of that club's era
+// squad value you actually walked off with. Gut Leicester's front two in 15/16 and their
+// ratings and their points both fall, so the title race you're running in is the one your
+// own window created rather than the one the history books recorded.
+const MAX_PER_CLUB    = 2;
+const RAID_MAX_SHARE  = 0.5;  // ceiling on how much of a club one window can strip out
+const RAID_MAX_PTS    = 14;   // ceiling on league points a raided club can shed
+const RAID_MAX_RATING = 10;   // ceiling on any single line/duel rating drop
+const RAID_SQUAD_SIZE = 18;   // "squad strength" = the 18 most valuable players, not the U21s
+
+// Era club names come from Transfermarkt ("Leicester City", "Manchester United") while the
+// season tables key off short names ("Leicester", "Man Utd"), so names are matched on
+// normalised tokens. Longer, more specific tokens sit above the entries they'd collide
+// with. `sim` is the club's name in the season tables (null = no Premier League presence
+// this era, so the raid still caps signings and still costs the club its ratings, it just
+// has no table row to fall down). `id` is the Transfermarkt id whose cached roster gives
+// the raid a real squad value to measure against.
+const CLUB_LOOKUP = [
+  {sim:'Man City',      id:'281',  tokens:['manchestercity','mancity']},
+  {sim:'Man Utd',       id:'985',  tokens:['manchesterunited','manchesterutd','manutd']},
+  {sim:'West Brom',     id:'',     tokens:['westbromwich','westbrom']},
+  {sim:'West Ham',      id:'379',  tokens:['westham']},
+  {sim:'Tottenham',     id:'148',  tokens:['tottenham','spurs']},
+  {sim:'Leicester',     id:'1003', tokens:['leicester']},
+  {sim:'Liverpool',     id:'31',   tokens:['liverpool']},
+  {sim:'Chelsea',       id:'631',  tokens:['chelsea']},
+  {sim:'Everton',       id:'29',   tokens:['everton']},
+  {sim:'Arsenal',       id:'11',   tokens:['arsenal']},
+  {sim:'Aston Villa',   id:'405',  tokens:['astonvilla']},
+  {sim:'Newcastle',     id:'762',  tokens:['newcastle']},
+  {sim:'Sunderland',    id:'289',  tokens:['sunderland']},
+  {sim:'Fulham',        id:'931',  tokens:['fulham']},
+  {sim:'Southampton',   id:'',     tokens:['southampton']},
+  {sim:'Crystal Palace',id:'',     tokens:['crystalpalace']},
+  {sim:'Bournemouth',   id:'',     tokens:['bournemouth']},
+  {sim:'Wolves',        id:'',     tokens:['wolverhampton','wolves']},
+  {sim:'QPR',           id:'',     tokens:['queensparkrangers','qpr']},
+  {sim:'Hull City',     id:'',     tokens:['hullcity']},
+  {sim:'Stoke',         id:'',     tokens:['stoke']},
+  {sim:'Swansea',       id:'',     tokens:['swansea']},
+  {sim:'Norwich',       id:'',     tokens:['norwich']},
+  {sim:'Watford',       id:'',     tokens:['watford']},
+  {sim:'Burnley',       id:'',     tokens:['burnley']},
+  {sim:'Wigan',         id:'',     tokens:['wigan']},
+  {sim:'Bolton',        id:'',     tokens:['bolton']},
+  {sim:'Blackburn',     id:'',     tokens:['blackburn']},
+  {sim:'Blackpool',     id:'',     tokens:['blackpool']},
+  {sim:'Birmingham',    id:'',     tokens:['birmingham']},
+  {sim:'Reading',       id:'',     tokens:['reading']},
+  {sim:'Cardiff',       id:'',     tokens:['cardiff']},
+  {sim:'Portsmouth',    id:'',     tokens:['portsmouth']},
+  // Abroad: no table row, but the cached rosters let the two-per-club cap and the raid
+  // share measure against a real squad rather than a guess.
+  {sim:null, id:'418',  tokens:['realmadrid']},
+  {sim:null, id:'131',  tokens:['barcelona']},
+  {sim:null, id:'13',   tokens:['atleticodemadrid','atleticomadrid']},
+  {sim:null, id:'368',  tokens:['sevilla']},
+  {sim:null, id:'1049', tokens:['valencia']},
+  {sim:null, id:'1050', tokens:['villarreal']},
+  {sim:null, id:'621',  tokens:['athleticbilbao','athleticclub']},
+  {sim:null, id:'2197', tokens:['realsociedad']},
+  {sim:null, id:'27',   tokens:['bayern']},
+  {sim:null, id:'16',   tokens:['borussiadortmund']},
+  {sim:null, id:'15',   tokens:['leverkusen']},
+  {sim:null, id:'33',   tokens:['schalke']},
+  {sim:null, id:'18',   tokens:['gladbach']},
+  {sim:null, id:'86',   tokens:['werderbremen']},
+  {sim:null, id:'41',   tokens:['hamburger']},
+  {sim:null, id:'26',   tokens:['vfbstuttgart']},
+  {sim:null, id:'506',  tokens:['juventus']},
+  {sim:null, id:'46',   tokens:['intermailand','internazionale','intermilan']},
+  {sim:null, id:'5',    tokens:['acmailand','acmilan']},
+  {sim:null, id:'6195', tokens:['napoli']},
+  {sim:null, id:'12',   tokens:['asroma']},
+  {sim:null, id:'398',  tokens:['lazio']},
+  {sim:null, id:'430',  tokens:['fiorentina']},
+  {sim:null, id:'583',  tokens:['parissaintgermain','parissg']},
+  {sim:null, id:'1041', tokens:['olympiquelyon','lyon']},
+  {sim:null, id:'244',  tokens:['olympiquemarseille','marseille']},
+  {sim:null, id:'162',  tokens:['asmonaco','monaco']},
+  {sim:null, id:'1082', tokens:['lille']},
+  {sim:null, id:'417',  tokens:['ognice']},
+  {sim:null, id:'3911', tokens:['bordeaux']},
+];
+// A line's damage spreads to the duels that line actually contests.
+const LINE_DUELS  = {def:['lb','rb','cb'], mid:['cm'], att:['lw','rw','st']};
+const LINE_OF_GRP = {GK:'def', DEF:'def', MID:'mid', ATT:'att'};
+const DUEL_OF_POS = {CB:'cb',LB:'lb',RB:'rb',LW:'lw',RW:'rw',LM:'lw',RM:'rw',CM:'cm',DM:'cm',CAM:'cm',ST:'st'};
+
+function clubKey(name){
+  return (name||'').normalize('NFD').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+// Resolves an era club name to a stable key (so "Leicester" and "Leicester City" count as
+// one club against the cap), plus its table name and roster id where we know them.
+function resolveClub(name){
+  const k=clubKey(name);
+  if(!k)return null;
+  const hit=CLUB_LOOKUP.find(c=>c.tokens.some(t=>k.includes(t)));
+  return hit?{key:hit.tokens[0],name,sim:hit.sim,id:hit.id}:{key:k,name,sim:null,id:''};
+}
+function clubSignCount(name){
+  const club=resolveClub(name);
+  if(!club)return 0;
+  return S.bought.filter(p=>resolveClub(p.club)?.key===club.key).length;
+}
+function clubRoster(club,season){
+  return (club.id?PLAYER_CACHE.squads?.[`${club.id}-${season}`]:null)||null;
+}
+// The denominator every raid is measured against. A cached roster gives the real figure;
+// without one, where the club actually finished that season is the only strength signal
+// available.
+function clubSquadValue(roster,club,season){
+  if(roster?.length){
+    const v=roster.map(p=>p.market_value||0).sort((a,b)=>b-a)
+      .slice(0,RAID_SQUAD_SIZE).reduce((s,x)=>s+x,0);
+    if(v>0)return v;
+  }
+  const pts=club.sim?(SEASON_OPPONENTS[season]||[]).find(o=>o.n===club.sim)?.pts:0;
+  if(pts)return Math.max(40e6,(pts-15)*3.2e6);
+  return 120e6; // an unknown side abroad, assume a solid mid-table European squad
+}
+// What a departure is worth to the club losing it. The fee you pay averages a player's
+// value with the following season's (a striker on the way up costs what he's about to be
+// worth), so paying it against a snapshot-valued squad would overstate the damage. Where
+// the roster lists the player, use the club's own era valuation of him instead.
+function raidValueOf(player,roster){
+  const onBooks=roster?.find(x=>String(x.id)===String(player.id))?.market_value;
+  return onBooks||player.marketValue||0;
+}
+// Half the damage is felt everywhere (a gutted club is a worse club in every phase); the
+// rest lands on the line and the specific matchup the departing player used to hold, which
+// is what makes taking Leicester's striker read differently from taking their keeper.
+function raidRatingDrops(raid){
+  const base=raid.share*RAID_MAX_RATING*0.5;
+  const d={def:base,mid:base,att:base,lb:base,rb:base,cb:base,lw:base,rw:base,cm:base,st:base};
+  for(const{p,val}of raid.players){
+    const w=raid.squadValue>0?Math.min(RAID_MAX_SHARE,val/raid.squadValue):0;
+    const line=LINE_OF_GRP[p._group||grp(p.position)];
+    if(line){d[line]+=w*16;LINE_DUELS[line].forEach(k=>{d[k]+=w*8;});}
+    const duel=DUEL_OF_POS[specificPos(p.position)];
+    if(duel)d[duel]+=w*14;
+  }
+  for(const k in d)d[k]=Math.min(RAID_MAX_RATING,Math.round(d[k]*10)/10);
+  return d;
+}
+// Raids are derived from S.bought rather than stored, so unsigning a player or switching
+// season puts the league back exactly as it was, with no bookkeeping to unwind.
+let _raidCache={sig:null,byKey:new Map(),bySim:new Map()};
+function _raidSig(){return S.season+'|'+S.bought.map(p=>`${p.id}:${p.marketValue}:${p.club||''}`).join(',');}
+function getClubRaids(){
+  const sig=_raidSig();
+  if(_raidCache.sig===sig)return _raidCache;
+  const byKey=new Map();
+  for(const p of S.bought){
+    const club=resolveClub(p.club);
+    if(!club||club.sim==='Arsenal')continue; // your own club is never the one being raided
+    let r=byKey.get(club.key);
+    if(!r){
+      const roster=clubRoster(club,S.season);
+      r={...club,roster,players:[],takenValue:0,squadValue:clubSquadValue(roster,club,S.season),share:0};
+      byKey.set(club.key,r);
+    }
+    const val=raidValueOf(p,r.roster);
+    r.players.push({p,val});
+    r.takenValue+=val;
+  }
+  const bySim=new Map();
+  for(const r of byKey.values()){
+    r.share=Math.min(RAID_MAX_SHARE,r.squadValue>0?r.takenValue/r.squadValue:0);
+    r.ptsDrop=Math.round(Math.min(RAID_MAX_PTS,r.share*42));
+    r.drops=raidRatingDrops(r);
+    if(r.sim)bySim.set(r.sim,r);
+  }
+  _raidCache={sig,byKey,bySim};
+  return _raidCache;
+}
+function raidFor(clubName){
+  const club=resolveClub(clubName);
+  return club?getClubRaids().byKey.get(club.key)||null:null;
+}
+// The raided league. Every consumer of the season tables reads through these, so a
+// weakened club is weaker consistently: in the duels, in the run-in, and in the standings.
+function weakenedTable(season){
+  const base=ACTUAL_TABLE[season]||[];
+  if(season!==S.season)return base;
+  const raids=getClubRaids().bySim;
+  return base.map(r=>{const d=raids.get(r.club)?.ptsDrop||0;return d?{...r,pts:Math.max(20,r.pts-d)}:r;});
+}
+function weakenedOpponents(season){
+  const base=SEASON_OPPONENTS[season]||[];
+  if(season!==S.season)return base;
+  const raids=getClubRaids().bySim;
+  return base.map(o=>{const d=raids.get(o.n)?.ptsDrop||0;return d?{...o,pts:Math.max(20,o.pts-d)}:o;});
+}
+function weakenedRivals(season){
+  const base=RIVAL_STRENGTH[season]||{};
+  if(season!==S.season)return base;
+  const raids=getClubRaids().bySim;
+  if(!raids.size)return base;
+  const out={};
+  for(const[club,r]of Object.entries(base)){
+    const drops=raids.get(club)?.drops;
+    if(!drops){out[club]=r;continue;}
+    const copy={...r};
+    for(const k in copy)if(drops[k])copy[k]=Math.max(50,Math.round(copy[k]-drops[k]));
+    out[club]=copy;
+  }
+  return out;
+}
+function weakenedBenchmark(season){
+  const base=LEAGUE_BENCHMARK[season];
+  if(!base||season!==S.season)return base;
+  const raids=getClubRaids().bySim;
+  if(!raids.size)return base;
+  return {...base,teams:base.teams.map(t=>{
+    const drops=raids.get(t.club)?.drops;
+    if(!drops)return t;
+    // gk/def/mid/fwd are the benchmark's own line names; a keeper feels half the defensive
+    // damage, since what actually thinned out is the back line in front of them.
+    const lineDrop={gk:drops.def*0.5,def:drops.def,mid:drops.mid,fwd:drops.att};
+    const copy={...t};
+    for(const k in copy){
+      const drop=k in lineDrop?lineDrop[k]:drops[k];
+      if(typeof copy[k]==='number'&&drop)copy[k]=Math.max(50,Math.round(copy[k]-drop));
+    }
+    return copy;
+  })};
+}
+// One line for the result card: what your window did to the rest of the division.
+function raidSummaryText(){
+  const raids=[...getClubRaids().byKey.values()].filter(r=>r.sim&&r.ptsDrop>0)
+    .sort((a,b)=>b.ptsDrop-a.ptsDrop);
+  if(!raids.length)return '';
+  return raids.map(r=>{
+    const names=r.players.map(e=>e.p.name.split(' ').pop()).join(' and ');
+    return `${r.sim} lost ${names} to you, around ${r.ptsDrop} points off their season.`;
+  }).join(' ');
+}
+
 // ── State ──────────────────────────────────────────────────────────────
 const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
   difficulty: (['difficult','fun'].includes(localStorage.getItem('arsenalRebuildDifficulty'))) ? localStorage.getItem('arsenalRebuildDifficulty') : 'normal',
@@ -1044,7 +1285,7 @@ function scoreBalance(ar) {
   return Math.max(5, Math.min(35, Math.round(s)));
 }
 function scoreVsTop4(ar, xi, season) {
-  const bench=LEAGUE_BENCHMARK[season]; if (!bench?.teams?.length) return 15;
+  const bench=weakenedBenchmark(season); if (!bench?.teams?.length) return 15;
   // Overall line comparison vs top rival
   const r=bench.teams[0];
   const mine=(ar.gk+ar.def*1.5+ar.mid*1.5+ar.fwd)/5;
@@ -1198,7 +1439,7 @@ function getBudgetIQ() {
 
 // ── Simulation table builder ───────────────────────────────────────────
 function buildSimTable(simPts, season) {
-  const actual = ACTUAL_TABLE[season]||[];
+  const actual = weakenedTable(season);
   const table = actual.map(r => r.club==='Arsenal' ? {...r,pts:simPts,yours:true} : {...r});
   if (!table.find(r=>r.yours)) table.push({club:'Arsenal',pts:simPts,yours:true});
   table.sort((a,b)=>b.pts-a.pts);
@@ -1756,7 +1997,7 @@ function renderSignings(){
     // so players learn what "good" looks like without being told what's wrong.
     const rateHtml=rate==='good'?`<span class="sig-rate sig-rate-good" title="${SIGNING_RATE_LABEL.good}" aria-label="${SIGNING_RATE_LABEL.good}">${SIGNING_RATE_ICON.good}</span>`:'';
     return `
-    <div class="signing-card">
+    <div class="signing-card" title="${esc(p.name)}${p.club?' &middot; from '+esc(p.club):''}">
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
       <div>
         <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
@@ -2005,6 +2246,14 @@ async function _resolveCandidate(p,yr,budget,inSquad){
     if(isRetired)return{p,inSquad:false,blocked:true,noData:true,badgeTxt:'Retired by then',badgeClr:'#374151',value:0,growth:1,hardRival:false,softRival:false,eraClub:'',club:currClub};
     return{p,inSquad:false,blocked:false,noData:true,badgeTxt:'No era data',badgeClr:'#374151',value:0,growth:1,hardRival:false,softRival:false,eraClub:'',club:currClub};
   }
+  const eraClubName=hist.club||currClub;
+  // Already took two off them: show it up front rather than letting the click fail.
+  if(clubSignCount(eraClubName)>=MAX_PER_CLUB){
+    return{p,inSquad:false,blocked:true,noData:false,clubFull:true,
+      badgeTxt:`${MAX_PER_CLUB} signed from here`,badgeClr:'#fbbf24',
+      value:hist.value||0,growth:hist.growth||1,hardRival:false,softRival:false,
+      eraClub:eraClubName,club:eraClubName};
+  }
   const eraHardRival=HARD_RIVALS.some(rv=>(hist.club||'').includes(rv));
   const eraSoftRival=!eraHardRival&&SOFT_RIVALS.some(rv=>(hist.club||'').includes(rv));
   const remaining=budget-S.spent+S.sales;
@@ -2017,7 +2266,7 @@ async function _resolveCandidate(p,yr,budget,inSquad){
   };
 }
 // Affordable + available candidates first, then over-budget, then in-squad/no-data last.
-function _candidateRank(r){return r.inSquad?3:r.noData?4:r.tooExp?2:1;}
+function _candidateRank(r){return r.inSquad||r.clubFull?3:r.noData?4:r.tooExp?2:1;}
 function _candidateCard(r){
   const p=r.p;
   const clubPart=r.club?' · '+r.club:'';
@@ -2076,6 +2325,14 @@ async function doSearch(q){
 function handleCardClick(card,name,position,currClub){
   const ec=card.dataset.eraClub||currClub;
   const lastName=name.split(' ').pop();
+
+  // Two per club, hard cap. No club lets one rival dismantle it inside a single window,
+  // and without this the "raid" below would let you buy an entire title-winning spine.
+  if(clubSignCount(ec)>=MAX_PER_CLUB){
+    const clubLabel=resolveClub(ec)?.sim||ec||'That club';
+    showToast(`${clubLabel} will not sell you a third player this window. ${MAX_PER_CLUB} from any one club is the limit.`,4200);
+    return;
+  }
 
   // Hard rival: refuses almost every time, but not literally always, a shock move
   // happens roughly 1 in 10 tries so it's never a guaranteed dead end
@@ -2137,8 +2394,16 @@ function handleCardClick(card,name,position,currClub){
   const fallbackPos={'GK':'Goalkeeper','DEF':'Centre-Back','MID':'Central Midfield','ATT':'Centre-Forward'};
   const finalPos=cleanPos||(fallbackPos[posGroup]||'');
   const growth=parseFloat(card.dataset.growth)||1;
-  S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value,growth});S.spent+=value;
+  S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value,growth,club:ec});S.spent+=value;
   checkEliteSquadCap(finalPos,card.dataset.id);
+  // Only report the damage if the signing survived the squad-cap check above, which can
+  // collapse the deal and refund it.
+  if(S.bought.some(p=>p.id===card.dataset.id)){
+    const raid=raidFor(ec);
+    if(raid?.sim&&raid.ptsDrop>=3){
+      setTimeout(()=>showToast(`${raid.sim} are weaker without ${lastName}, worth around ${raid.ptsDrop} points off their season.`,4200),900);
+    }
+  }
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
 }
@@ -2260,7 +2525,7 @@ function runSimulation(){
   const historicalPts=historicalRow?.pts||68;
 
   // vs Top 4 rivals: positional duel improvement vs each rival (2 games each)
-  const rivals=RIVAL_STRENGTH[S.season]||{};
+  const rivals=weakenedRivals(S.season);
   const newArDuels=arDuelRatings(scoringXI);
   const baseArDuels=arDuelRatings(baseXI);
   let vsTop4Delta=0;
@@ -2293,7 +2558,7 @@ function runSimulation(){
   // mode run regardless of squad quality, uses the historical-realism odds below, where
   // even a squad that's clearly better than the champion still slips fairly often.
   if(arsenalPos===1){
-    const titleRivals=ACTUAL_TABLE[S.season]?.filter(r=>r.club!=='Arsenal')||[];
+    const titleRivals=weakenedTable(S.season).filter(r=>r.club!=='Arsenal');
     const topRival=titleRivals.sort((a,b)=>b.pts-a.pts)[0];
     if(topRival){
       let dropChance;
@@ -2303,7 +2568,7 @@ function runSimulation(){
         dropChance=0.70; // earned it: still only a 3-in-10 shot, not a guarantee
       }else{
         dropChance=0.45; // base: slightly-better-than-even Arsenal still slip sometimes
-        const bench=LEAGUE_BENCHMARK[S.season]?.teams[0];
+        const bench=weakenedBenchmark(S.season)?.teams[0];
         if(bench){
           // How much better is Arsenal's squad overall vs the historical champion?
           const arAvg=(ar.gk+ar.def*1.5+ar.mid*1.5+ar.fwd)/5;
@@ -2343,7 +2608,7 @@ function runSimulation(){
   const scorer=topScorerP?{name:topScorerP.lastName,goals:topScorerP.goals}:predictTopScorer(scoringXI);
   const assister=topAssistP?{name:topAssistP.lastName,assists:topAssistP.assists}:predictTopAssister(scoringXI);
   const verdict=rebuildVerdict(total);
-  const topRival=LEAGUE_BENCHMARK[S.season]?.teams[0];
+  const topRival=weakenedBenchmark(S.season)?.teams[0];
 
   _lastSimData={ar,topRival,f1,f2,f3,f4,total,season:S.season,newLines,simPts,wdl,fixtures,scorerPool};
 
@@ -2361,7 +2626,10 @@ function runSimulation(){
   document.getElementById('simPts').textContent=`~${simPts} pts · ${S.season}/${String(S.season+1).slice(-2)}`;
   document.getElementById('simSeasonLabel').textContent=`${S.season}/${String(S.season+1).slice(-2)} rebuild`;
   const ctxEl=document.getElementById('simSeasonContext');
-  if(ctxEl)ctxEl.textContent=SEASON_SUMMARY[S.season]||'No historical context available for this season.';
+  if(ctxEl){
+    const raidNote=raidSummaryText();
+    ctxEl.textContent=(SEASON_SUMMARY[S.season]||'No historical context available for this season.')+(raidNote?' '+raidNote:'');
+  }
 
   // Top 4 table
   document.getElementById('simTable').innerHTML=table.map(row=>{
@@ -2546,7 +2814,7 @@ function _revealSimResult(){
 
 // ── Match ticker ───────────────────────────────────────────────────────
 function _opponentStr(teamName,finalPts,season){
-  const rv=RIVAL_STRENGTH[season]||{};
+  const rv=weakenedRivals(season);
   if(rv[teamName]){const r=rv[teamName];return Math.round((r.def+r.mid+r.att)/3);}
   return Math.round(67+Math.max(0,finalPts-30)*0.37);
 }
@@ -2632,7 +2900,7 @@ function _generateTicker(newLines,season,wdl){
   const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
   const starterIds=new Set(getAutoXI(allActive).map(p=>p.id));
   const pool=_buildScorerPool(allActive,starterIds);
-  const fixtures=_buildFixtures(SEASON_OPPONENTS[season]||[],season);
+  const fixtures=_buildFixtures(weakenedOpponents(season),season);
   const arOvr=newLines.def*0.35+newLines.mid*0.30+newLines.att*0.35;
   let cum=0;
   const remaining={W:wdl.W,D:wdl.D,L:wdl.L};
@@ -2883,6 +3151,7 @@ function toggleDifficulty(){
   renderDifficulty();
   showToast((DIFFICULTY_META[S.difficulty]||DIFFICULTY_META.normal).toast,3000);
 }
+
 renderDifficulty();
 
 document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));

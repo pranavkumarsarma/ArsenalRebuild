@@ -44,7 +44,7 @@ LEAGUE_CLUBS = {
     "281":"Man City",    "31":"Liverpool",    "985":"Man Utd",
     "631":"Chelsea",    "148":"Tottenham",    "29":"Everton",
     "405":"Aston Villa","379":"West Ham",     "762":"Newcastle",
-    "1237":"Leicester", "289":"Sunderland",   "931":"Fulham",
+    "1003":"Leicester", "289":"Sunderland",   "931":"Fulham",
     # La Liga
     "418":"Real Madrid","131":"Barcelona",    "13":"Atlético",
     "368":"Sevilla",    "1049":"Valencia",    "1050":"Villarreal",
