@@ -1340,7 +1340,7 @@ function scoreLegacy(bought) {
   for (const p of bought) {
     const last=p.name.split(' ').pop();
     for (const [key,val] of Object.entries(LEGACY_SCORE)) {
-      if (key.toLowerCase()===last.toLowerCase()){total+=val;break;}
+      if (surnameMatches(last,key)){total+=val;break;}
     }
   }
   return Math.max(0, Math.min(15, Math.round(total)));
@@ -1533,6 +1533,30 @@ function specificPos(pos){
   return null;
 }
 const SPOS_LBL={GK:'goalkeepers',CB:'centre-backs',LB:'left-backs',RB:'right-backs',DM:'defensive midfielders',CM:'central midfielders',CAM:'attacking midfielders',RM:'right midfielders',LM:'left midfielders',LW:'left wingers',RW:'right wingers',ST:'strikers'};
+// Player names reach us spelled several ways at once: accented ("Denílson" where the rule
+// says "Denilson"), reversed ("Chu-young Park" for Park Chu-Young), differently cased, and
+// occasionally carrying an invisible formatting character (Transfermarkt ships a
+// left-to-right mark inside "Vidic\u200e"). Every rule that keyed on a plain .includes()
+// quietly stopped firing whenever one of those didn't line up, with nothing to notice.
+function normName(s){
+  return (s||'').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')     // combining accents
+    .replace(/[^\p{L}\p{N} ]+/gu,' ')   // hyphens, punctuation, control and format chars
+    .toLowerCase().trim().replace(/\s+/g,' ');
+}
+// Substring first, then "every word of the needle appears in the name", which is what
+// catches the reversed-order spellings.
+function nameMatches(name,needle){
+  const a=normName(name), b=normName(needle);
+  if(!a||!b) return false;
+  if(a.includes(b)) return true;
+  const words=new Set(a.split(' '));
+  return b.split(' ').every(w=>words.has(w));
+}
+// Surnames compare as surnames, so "Silva" can't be claimed by a longer name containing it.
+function surnameMatches(name,needle){
+  return normName(name).split(' ').pop()===normName(needle).split(' ').pop();
+}
 function esc(s){return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function ordinal(n){return n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th';}
 function showToast(msg,ms=3500){
@@ -1785,7 +1809,7 @@ function sellPlayer(id,val){
 
   // Board veto: unsellable personalities
   const vetoed=UNSELLABLE[S.season]||[];
-  if(vetoed.some(n=>player.name.includes(n))){
+  if(vetoed.some(n=>nameMatches(player.name,n))){
     let msg;
     if(player.name.includes('Welbeck')||player.name.includes('Debuchy'))msg=`Transfer blocked. ${lastName} failed the medical at the buying club.`;
     else if(player.name.includes('Bendtner'))msg=`Bendtner refuses to leave. He doesn't want to go.`;
@@ -1797,7 +1821,7 @@ function sellPlayer(id,val){
 
   // Board veto: players signed this summer, can't immediately flip them
   const locked=LOCKED_SIGNINGS[S.season]||[];
-  if(locked.some(n=>player.name.includes(n))){
+  if(locked.some(n=>nameMatches(player.name,n))){
     showToast(`The board won't sanction selling ${lastName}. He only just arrived this window.`,3500);return;
   }
 
@@ -2082,7 +2106,7 @@ async function loadSeason(yr){
   try {
     // Cache-first: use pre-fetched squad if available
     const _excl=SQUAD_EXCLUSIONS[yr]||[];
-    const _filterSquad=ps=>ps.filter(p=>p.name&&!_excl.some(n=>p.name.includes(n)));
+    const _filterSquad=ps=>ps.filter(p=>p.name&&!_excl.some(n=>nameMatches(p.name,n)));
     const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
     let players;
     if(cachedSquad?.length){
@@ -2890,7 +2914,7 @@ function _buildScorerPool(allActive,starterIds){
     else{gW=r*0.4;aW=r*1.0;}
     const isStarter=starterIds.has(p.id);
     if(!isStarter){gW*=BENCH_FACTOR;aW*=BENCH_FACTOR;}
-    const isFringe=FRINGE_FINISHERS.some(n=>p.name.includes(n));
+    const isFringe=FRINGE_FINISHERS.some(n=>nameMatches(p.name,n));
     if(isFringe){gW*=0.4;aW*=0.4;}
     return {id:p.id,lastName:p.name.split(' ').pop(),g,sp,isStarter,isFringe,gW:Math.max(0,gW),aW:Math.max(0,aW),goals:0,assists:0};
   });
