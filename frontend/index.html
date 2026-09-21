@@ -14,7 +14,7 @@
     .pos-mid{background:#3a2a1a;color:#fb923c;} .pos-att{background:#3a1a1a;color:#f87171;}
     .crow{display:flex;align-items:flex-start;gap:5px;padding:4px 7px;border-radius:5px;transition:background .1s;cursor:default;}
     .crow:hover{background:#1a2535;} .crow.sold{opacity:.3;}
-    .sell-btn{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #2d3748;color:#4b5563;cursor:pointer;font-size:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;line-height:1;}
+    .sell-btn{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #2d3748;color:#4b5563;cursor:pointer;font-size:9.4px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;line-height:1;}
     .sell-btn:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
     .add-btn{width:17px;height:17px;border-radius:50%;border:1px solid #374151;background:transparent;color:#6b7280;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;flex-shrink:0;}
     .add-btn:hover{border-color:#EF0107;color:#EF0107;}
@@ -42,7 +42,7 @@
     .modal-bg.open{display:flex;}
     #toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#1f2937;border:1px solid #374151;border-radius:9px;padding:9px 16px;font-size:11px;font-weight:500;z-index:200;display:none;max-width:340px;text-align:center;line-height:1.4;}
     .signing-card{background:#0f2a1a;border:1px solid #166534;border-radius:8px;padding:5px 8px;display:flex;align-items:center;gap:6px;flex-shrink:0;}
-    .signing-card .unsign{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #166534;color:#4ade80;cursor:pointer;font-size:7px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+    .signing-card .unsign{width:14px;height:14px;border-radius:50%;background:transparent;border:1px solid #166534;color:#4ade80;cursor:pointer;font-size:9.4px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
     .signing-card .unsign:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
     .sig-rate{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;}
     .sig-rate-good{background:rgba(74,222,128,.18);}
@@ -54,7 +54,7 @@
     .score-bar-track{height:4px;background:#1f2937;border-radius:4px;overflow:hidden;margin-top:3px;}
     .score-bar-fill{height:100%;border-radius:4px;transition:width .4s;}
     .modal-inner{background:#111827;border:1px solid #1f2937;border-radius:12px;width:100%;margin:16px;}
-    .ghost-btn{background:#1f2937;border:1px solid #374151;border-radius:6px;padding:3px 10px;font-size:8px;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .15s;}
+    .ghost-btn{background:#1f2937;border:1px solid #374151;border-radius:6px;padding:3px 10px;font-size:9.6px;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .15s;}
     .ghost-btn:hover{border-color:#6b7280;color:#fff;}
     .table-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;}
     .table-row.yours{background:linear-gradient(90deg,#1a0d0d,#200d0d);border:1px solid #7f1d1d;}
@@ -90,7 +90,7 @@
       header{padding:0 8px!important;}
       #headerControls{gap:5px!important;}
       #simCountBlock,#difficultyHeaderLabel,#seasonHeaderLabel,.header-divider{display:none!important;}
-      #difficultyBtn{padding:4px 9px!important;font-size:9px!important;}
+      #difficultyBtn{padding:4px 9px!important;font-size:9.8px!important;}
       #seasonSelect{padding:3px 6px!important;font-size:10px!important;}
     }
   </style>
@@ -100,16 +100,16 @@
 <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
 <header style="height:42px;background:#0d1b2f;border-bottom:1px solid #1f2937;display:flex;align-items:center;padding:0 14px;justify-content:space-between;flex-shrink:0;">
   <div style="display:flex;align-items:center;gap:9px;">
-    <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#EF0107,#c0000a);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:7px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
+    <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#EF0107,#c0000a);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9.4px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
     <div>
       <div style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;">Arsenal Rebuild</div>
-      <div style="font-size:8px;color:#d1d5db;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
+      <div style="font-size:9.6px;color:#d1d5db;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
     </div>
     <button onclick="openHowToPlay()" title="How to play" style="width:24px;height:24px;border-radius:50%;background:#111827;border:1px solid #374151;color:#9ca3af;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">?</button>
   </div>
   <div id="headerControls" style="display:flex;align-items:center;gap:10px;">
     <div id="simCountBlock" style="text-align:right;">
-      <div style="font-size:7px;color:#374151;line-height:1;margin-bottom:1px;">SIMULATIONS</div>
+      <div style="font-size:9.4px;color:#374151;line-height:1;margin-bottom:1px;">SIMULATIONS</div>
       <div id="simCountDisplay" style="font-size:14px;font-weight:900;color:#EF0107;line-height:1;">0</div>
     </div>
     <div class="header-divider" style="width:1px;height:20px;background:#1f2937;"></div>
@@ -140,11 +140,11 @@
     <div id="loadingState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;background:#0c1a2e;z-index:5;">
       <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
       <div id="loadingLabel" style="font-size:12px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading squad</div>
-      <div style="font-size:9px;color:#4b5563;">Fetching squad data…</div>
+      <div style="font-size:9.8px;color:#4b5563;">Fetching squad data…</div>
     </div>
     <div id="squadGrid" style="display:none;flex:1;min-height:0;grid-template-columns:repeat(4,1fr);overflow:hidden;"></div>
     <div id="signingsArea" style="display:none;border-top:2px solid #166534;background:#091a12;flex-shrink:0;padding:5px 12px 7px;">
-      <div style="font-size:7px;color:#4ade80;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">New Signings</div>
+      <div style="font-size:9.4px;color:#4ade80;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">New Signings</div>
       <div id="signingsStrip" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;"></div>
     </div>
   </div>
@@ -156,26 +156,26 @@
     <div style="flex-shrink:0;padding:10px 12px 9px;background:#0d1b2f;border-bottom:1px solid #1f2937;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div>
-          <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;font-weight:700;">Left to spend&nbsp;</span>
+          <span style="font-size:9.8px;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;font-weight:700;">Left to spend&nbsp;</span>
           <span style="font-size:22px;font-weight:900;color:#EF0107;letter-spacing:-.02em;" id="budgetAmt">—</span>
-          <div id="budgetOf" style="font-size:9px;color:#6b7280;margin-top:1px;">&nbsp;</div>
+          <div id="budgetOf" style="font-size:9.8px;color:#6b7280;margin-top:1px;">&nbsp;</div>
         </div>
-        <span id="budgetIQ" style="font-size:8px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
+        <span id="budgetIQ" style="font-size:9.6px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
       </div>
 
       <!-- Transfer Target -->
       <div style="background:#111827;border-radius:8px;padding:10px 12px;margin-bottom:7px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
-          <div style="font-size:7.5px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Wenger's Window</div>
-          <div style="font-size:7px;color:#374151;font-style:italic;">A. Wenger · 2009–16</div>
+          <div style="font-size:9.5px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Wenger's Window</div>
+          <div style="font-size:9.4px;color:#374151;font-style:italic;">A. Wenger · 2009–16</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:9px;">
           <div>
-            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Wenger's net spend</div>
+            <div style="font-size:9.4px;color:#4b5563;margin-bottom:2px;">Wenger's net spend</div>
             <div style="font-size:20px;font-weight:900;line-height:1;color:#e5e7eb;" id="arsenalNetTarget">—</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:7px;color:#4b5563;margin-bottom:2px;">Your net spend</div>
+            <div style="font-size:9.4px;color:#4b5563;margin-bottom:2px;">Your net spend</div>
             <div style="font-size:20px;font-weight:900;line-height:1;" id="netSpend">€0</div>
           </div>
         </div>
@@ -184,11 +184,11 @@
 
       <div style="display:flex;gap:5px;">
         <div class="sb-mini-card">
-          <div style="font-size:6px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Spent</div>
+          <div style="font-size:9.2px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Spent</div>
           <div style="font-size:11px;font-weight:700;color:#f87171;margin-top:1px;" id="spentAmt">€0</div>
         </div>
         <div class="sb-mini-card">
-          <div style="font-size:6px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Sales</div>
+          <div style="font-size:9.2px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;">Sales</div>
           <div style="font-size:11px;font-weight:700;color:#4ade80;margin-top:1px;" id="salesAmt">+€0</div>
         </div>
         <div id="squadValStr" style="display:none;"></div>
@@ -198,10 +198,10 @@
     <!-- Signings row -->
     <div style="flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid #1f2937;">
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:7px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">Signings</span>
+        <span style="font-size:9.4px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;font-weight:600;">Signings</span>
         <div id="slotDots" style="display:flex;gap:3px;"></div>
       </div>
-      <span style="font-size:9px;font-weight:700;" id="slotsLabel">6 left</span>
+      <span style="font-size:9.8px;font-weight:700;" id="slotsLabel">6 left</span>
     </div>
 
     <!-- View Lineup button -->
@@ -212,10 +212,10 @@
         onmouseout="this.style.borderColor='#374151';this.style.background='#111827'">
         <div style="display:flex;align-items:center;gap:7px;">
           <span style="font-size:11px;font-weight:700;color:#e5e7eb;">Lineup</span>
-          <span class="lineup-count-badge" style="font-size:7px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:1px 6px;color:#6b7280;">0/11</span>
-          <span style="font-size:7px;color:#374151;">optional</span>
+          <span class="lineup-count-badge" style="font-size:9.4px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:1px 6px;color:#6b7280;">0/11</span>
+          <span style="font-size:9.4px;color:#374151;">optional</span>
         </div>
-        <span style="font-size:9px;color:#374151;">View →</span>
+        <span style="font-size:9.8px;color:#374151;">View →</span>
       </button>
     </div>
 
@@ -223,21 +223,21 @@
     <div style="flex-shrink:0;padding:0 12px 8px;">
       <div style="background:#111827;border-radius:8px;padding:9px 11px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
-          <span style="font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#e5e7eb;">Your Record</span>
-          <span style="font-size:8px;color:#6b7280;" id="sessionSimCount">0 simulations</span>
+          <span style="font-size:9.8px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#e5e7eb;">Your Record</span>
+          <span style="font-size:9.6px;color:#6b7280;" id="sessionSimCount">0 simulations</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
           <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
             <div style="font-size:19px;font-weight:900;line-height:1;color:#fbbf24;" id="sessionTitles">0</div>
-            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Titles</div>
+            <div style="font-size:9.3px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Titles</div>
           </div>
           <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
             <div style="font-size:19px;font-weight:900;line-height:1;color:#d1d5db;" id="sessionTop2">0</div>
-            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 2</div>
+            <div style="font-size:9.3px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 2</div>
           </div>
           <div style="background:#0d1b2f;border-radius:6px;padding:7px 4px;text-align:center;">
             <div style="font-size:19px;font-weight:900;line-height:1;color:#60a5fa;" id="sessionTop4">0</div>
-            <div style="font-size:6.5px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 4</div>
+            <div style="font-size:9.3px;color:#4b5563;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;">Top 4</div>
           </div>
         </div>
       </div>
@@ -249,18 +249,18 @@
     <!-- Bottom -->
     <div style="flex-shrink:0;padding:8px 12px 10px;border-top:1px solid #1f2937;background:#0d1b2f;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
-        <div style="font-size:8px;color:#374151;" id="actualNote"></div>
-        <div style="font-size:8px;color:#374151;" id="actualResult"></div>
+        <div style="font-size:9.6px;color:#374151;" id="actualNote"></div>
+        <div style="font-size:9.6px;color:#374151;" id="actualResult"></div>
       </div>
-      <button onclick="resetAll()" style="width:100%;background:none;border:1px solid #1f2937;border-radius:8px;padding:6px;font-size:9px;font-weight:700;color:#374151;cursor:pointer;margin-bottom:6px;transition:all .15s;"
+      <button onclick="resetAll()" style="width:100%;background:none;border:1px solid #1f2937;border-radius:8px;padding:6px;font-size:9.8px;font-weight:700;color:#374151;cursor:pointer;margin-bottom:6px;transition:all .15s;"
         onmouseover="this.style.borderColor='#4b5563';this.style.color='#6b7280'"
         onmouseout="this.style.borderColor='#1f2937';this.style.color='#374151'">↺ Reset All Transfers</button>
       <button id="simBtn" onclick="runSimulation()" class="sim-btn" style="width:100%;padding:10px;border-radius:8px;font-weight:900;font-size:12px;letter-spacing:.02em;" disabled>
         Run Simulation →
       </button>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #111827;text-align:center;">
-        <div style="font-size:7px;color:#9ca3af;line-height:1.5;">Fan-made project. Not affiliated with Arsenal FC or the Premier League. Club names and trademarks belong to their respective owners. Player data sourced from public records for educational use.</div>
-        <div style="font-size:7px;color:#e5e7eb;margin-top:2px;">Made by Pranav Kumar Sarma · <a href="https://x.com/Wilsharma" target="_blank" rel="noopener" style="color:#EF0107;font-weight:900;text-decoration:none;">@wilsharma</a> · <a href="https://www.linkedin.com/in/pranav-kumar-sarma/" target="_blank" rel="noopener" style="color:#EF0107;font-weight:900;text-decoration:none;">LinkedIn</a></div>
+        <div style="font-size:9.4px;color:#9ca3af;line-height:1.5;">Fan-made project. Not affiliated with Arsenal FC or the Premier League. Club names and trademarks belong to their respective owners. Player data sourced from public records for educational use.</div>
+        <div style="font-size:9.4px;color:#e5e7eb;margin-top:2px;">Made by Pranav Kumar Sarma · <a href="https://x.com/Wilsharma" target="_blank" rel="noopener" style="color:#EF0107;font-weight:900;text-decoration:none;">@wilsharma</a> · <a href="https://www.linkedin.com/in/pranav-kumar-sarma/" target="_blank" rel="noopener" style="color:#EF0107;font-weight:900;text-decoration:none;">LinkedIn</a></div>
       </div>
     </div>
   </div>
@@ -269,15 +269,15 @@
 <!-- ══ MOBILE BOTTOM BAR ═══════════════════════════════════════════════ -->
 <div id="mobileBar" style="display:none;position:fixed;bottom:0;left:0;right:0;height:54px;background:#0d1b2f;border-top:1px solid #1f2937;padding:7px 12px;z-index:40;align-items:center;gap:8px;">
   <div style="flex:1;min-width:0;">
-    <div style="font-size:6px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">To spend</div>
+    <div style="font-size:9.2px;color:#4b5563;text-transform:uppercase;letter-spacing:.04em;">To spend</div>
     <div id="mobileSpend" style="font-size:15px;font-weight:900;color:#4ade80;line-height:1;white-space:nowrap;">—</div>
   </div>
   <div style="flex-shrink:0;display:flex;flex-direction:column;gap:1px;padding:0 4px;">
-    <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Buy <span id="mobileBuy" style="color:#f87171;font-weight:700;">€0</span></div>
-    <div style="font-size:8px;color:#6b7280;white-space:nowrap;">Sell <span id="mobileSell" style="color:#4ade80;font-weight:700;">€0</span></div>
+    <div style="font-size:9.6px;color:#6b7280;white-space:nowrap;">Buy <span id="mobileBuy" style="color:#f87171;font-weight:700;">€0</span></div>
+    <div style="font-size:9.6px;color:#6b7280;white-space:nowrap;">Sell <span id="mobileSell" style="color:#4ade80;font-weight:700;">€0</span></div>
   </div>
   <button onclick="openLineupModal()" title="Optional: for display only. The simulation always picks your strongest XI automatically." style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700;color:#e5e7eb;cursor:pointer;flex-shrink:0;white-space:nowrap;">
-    Lineup <span id="mobileLineupBadge" style="font-size:8px;color:#6b7280;">0/11</span>
+    Lineup <span id="mobileLineupBadge" style="font-size:9.6px;color:#6b7280;">0/11</span>
   </button>
   <button id="mobileSimBtn" onclick="runSimulation()" class="sim-btn" style="border-radius:8px;padding:7px 14px;font-weight:900;font-size:11px;flex-shrink:0;white-space:nowrap;" disabled>Sim →</button>
 </div>
@@ -288,11 +288,11 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-weight:700;font-size:13px;">Your Lineup</span>
-        <span class="lineup-count-badge" style="font-size:8px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 7px;color:#6b7280;">0/11</span>
+        <span class="lineup-count-badge" style="font-size:9.6px;font-weight:700;background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 7px;color:#6b7280;">0/11</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <select id="formationSelect" onchange="changeFormation(this.value)"
-          style="background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:6px;padding:3px 6px;font-size:9px;font-weight:700;cursor:pointer;outline:none;">
+          style="background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:6px;padding:3px 6px;font-size:9.8px;font-weight:700;cursor:pointer;outline:none;">
           <option value="4-3-3">4-3-3</option>
           <option value="4-2-3-1">4-2-3-1</option>
           <option value="4-4-2">4-4-2</option>
@@ -314,7 +314,7 @@
 
     <!-- Bench -->
     <div style="flex-shrink:0;padding:8px 2px 2px;">
-      <div style="font-size:7px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Bench</div>
+      <div style="font-size:9.4px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Bench</div>
       <div id="lmBenchRow" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;"></div>
     </div>
   </div>
@@ -326,7 +326,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
       <div>
         <div style="font-weight:700;font-size:12px;" id="modalTitle">Sign a Player</div>
-        <div style="font-size:9px;color:#6b7280;margin-top:1px;" id="modalSub"></div>
+        <div style="font-size:9.8px;color:#6b7280;margin-top:1px;" id="modalSub"></div>
       </div>
       <button onclick="closeModal()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;line-height:1;">✕</button>
     </div>
@@ -334,12 +334,12 @@
       style="width:100%;background:#0c1a2e;border:1px solid #374151;border-radius:7px;padding:7px 11px;font-size:11px;color:#fff;outline:none;margin-bottom:6px;"
       oninput="debounce(this.value)" />
     <div id="targetChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;"></div>
-    <button id="browseToggle" onclick="toggleBrowse()" style="background:none;border:none;color:#4b5563;font-size:8px;font-weight:700;cursor:pointer;padding:0 0 6px;letter-spacing:.05em;text-transform:uppercase;display:block;">Browse by club +</button>
+    <button id="browseToggle" onclick="toggleBrowse()" style="background:none;border:none;color:#4b5563;font-size:9.6px;font-weight:700;cursor:pointer;padding:0 0 6px;letter-spacing:.05em;text-transform:uppercase;display:block;">Browse by club +</button>
     <div id="browsePanel" style="display:none;margin-bottom:8px;">
       <div id="browseLeagues" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;"></div>
       <div id="browseClubs" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
     </div>
-    <div style="font-size:9px;color:#6b7280;margin-bottom:5px;" id="searchHint">Type to search players active in this era</div>
+    <div style="font-size:9.8px;color:#6b7280;margin-bottom:5px;" id="searchHint">Type to search players active in this era</div>
     <div id="searchResults" style="max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
   </div>
 </div>
@@ -377,23 +377,23 @@
     <div id="shareCard" class="share-card-glow" style="background:#0a1628;border-radius:10px;padding:14px;margin-bottom:10px;">
       <!-- Position hero -->
       <div id="resultHeroSection" style="text-align:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #1f2937;">
-        <div style="font-size:8px;color:#EF0107;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Arsenal Rebuild Simulator</div>
+        <div style="font-size:9.6px;color:#EF0107;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Arsenal Rebuild Simulator</div>
         <div style="font-size:30px;margin-bottom:4px;" id="simEmoji">⚽</div>
         <div class="result-pos-glow" style="font-size:42px;font-weight:900;line-height:1;letter-spacing:-.03em;" id="simPosition">—</div>
         <div style="font-size:12px;font-weight:700;color:#e5e7eb;margin-top:3px;" id="simTitle">—</div>
-        <div style="font-size:9px;color:#6b7280;margin-top:2px;" id="simPts">—</div>
+        <div style="font-size:9.8px;color:#6b7280;margin-top:2px;" id="simPts">—</div>
       </div>
       <!-- Top 4 Table -->
       <div>
-        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Final Table · <span id="simSeasonLabel"></span></div>
+        <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Final Table · <span id="simSeasonLabel"></span></div>
         <div id="simTable" style="display:flex;flex-direction:column;gap:3px;"></div>
       </div>
       <!-- Transfer window summary (signings + sales), part of the shared card -->
       <div id="simTransferSummary" style="margin-top:10px;padding-top:9px;border-top:1px solid #1f2937;"></div>
       <!-- Share attribution (always visible in screenshot) -->
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:8px;color:#4b5563;font-weight:600;">Arsenal Rebuild Simulator</span>
-        <span style="font-size:8px;font-weight:700;color:#EF0107;">@wilsharma</span>
+        <span style="font-size:9.6px;color:#4b5563;font-weight:600;">Arsenal Rebuild Simulator</span>
+        <span style="font-size:9.6px;font-weight:700;color:#EF0107;">@wilsharma</span>
       </div>
     </div>
 
@@ -404,35 +404,35 @@
 
     <!-- Season Context -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Actually Happened</div>
-      <div id="simSeasonContext" style="font-size:9px;color:#6b7280;line-height:1.6;font-style:italic;">—</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Actually Happened</div>
+      <div id="simSeasonContext" style="font-size:9.8px;color:#6b7280;line-height:1.6;font-style:italic;">—</div>
     </div>
 
     <!-- W/D/L -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;">
       <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
         <div style="font-size:24px;font-weight:900;color:#4ade80;line-height:1;" id="simW">—</div>
-        <div style="font-size:7px;color:#4b5563;margin-top:1px;">WINS</div>
+        <div style="font-size:9.4px;color:#4b5563;margin-top:1px;">WINS</div>
       </div>
       <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
         <div style="font-size:24px;font-weight:900;color:#fbbf24;line-height:1;" id="simD">—</div>
-        <div style="font-size:7px;color:#4b5563;margin-top:1px;">DRAWS</div>
+        <div style="font-size:9.4px;color:#4b5563;margin-top:1px;">DRAWS</div>
       </div>
       <div style="background:#0c1a2e;border-radius:7px;padding:7px 4px;text-align:center;">
         <div style="font-size:24px;font-weight:900;color:#f87171;line-height:1;" id="simL">—</div>
-        <div style="font-size:7px;color:#4b5563;margin-top:1px;">LOSSES</div>
+        <div style="font-size:9.4px;color:#4b5563;margin-top:1px;">LOSSES</div>
       </div>
     </div>
 
     <!-- Top scorer / assister -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
       <div style="background:#0c1a2e;border-radius:8px;padding:8px 10px;">
-        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Scorer</div>
+        <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Scorer</div>
         <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="simTopScorer">—</div>
         <div style="font-size:13px;font-weight:900;color:#f87171;margin-top:2px;" id="simTopScorerGoals">—</div>
       </div>
       <div style="background:#0c1a2e;border-radius:8px;padding:8px 10px;">
-        <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Assister</div>
+        <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">Top Assister</div>
         <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="simTopAssist">—</div>
         <div style="font-size:13px;font-weight:900;color:#60a5fa;margin-top:2px;" id="simTopAssistNum">—</div>
       </div>
@@ -440,7 +440,7 @@
 
     <!-- Season Events -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px 10px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Season Events</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Season Events</div>
       <div id="simEvents" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
 
@@ -449,7 +449,7 @@
 
     <!-- Budget IQ row -->
     <div style="display:flex;justify-content:space-between;align-items:center;background:#0c1a2e;border-radius:8px;padding:7px 10px;margin-bottom:10px;">
-      <span style="font-size:9px;color:#6b7280;">Transfer Discipline</span>
+      <span style="font-size:9.8px;color:#6b7280;">Transfer Discipline</span>
       <span id="simBudgetIQ" style="font-size:10px;font-weight:700;">—</span>
     </div>
 
@@ -469,7 +469,7 @@
 
     <!-- Hidden debug panel (secret: triple-tap AFC logo) -->
     <div id="debugPanel" style="display:none;background:#0a1628;border:1px solid #2d3748;border-radius:8px;padding:10px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">🔒 Debug · Rebuild Score</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">🔒 Debug · Rebuild Score</div>
       <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px;">
         <span style="font-size:36px;font-weight:900;line-height:1;" id="dbgScore">—</span>
         <span style="font-size:14px;color:#4b5563;">/100</span>
@@ -480,11 +480,11 @@
 
     <!-- Attribution -->
     <div style="text-align:center;padding-top:4px;margin-bottom:8px;">
-      <span style="font-size:8px;color:#374151;">Made by Pranav Kumar Sarma</span>
-      <span style="font-size:8px;color:#374151;"> · </span>
-      <a href="https://x.com/Wilsharma" target="_blank" rel="noopener" style="font-size:8px;color:#EF0107;text-decoration:none;">@wilsharma</a>
-      <span style="font-size:8px;color:#374151;"> · </span>
-      <a href="https://www.linkedin.com/in/pranav-kumar-sarma/" target="_blank" rel="noopener" style="font-size:8px;color:#EF0107;text-decoration:none;">LinkedIn</a>
+      <span style="font-size:9.6px;color:#374151;">Made by Pranav Kumar Sarma</span>
+      <span style="font-size:9.6px;color:#374151;"> · </span>
+      <a href="https://x.com/Wilsharma" target="_blank" rel="noopener" style="font-size:9.6px;color:#EF0107;text-decoration:none;">@wilsharma</a>
+      <span style="font-size:9.6px;color:#374151;"> · </span>
+      <a href="https://www.linkedin.com/in/pranav-kumar-sarma/" target="_blank" rel="noopener" style="font-size:9.6px;color:#EF0107;text-decoration:none;">LinkedIn</a>
     </div>
 
     <div style="display:flex;gap:6px;">
@@ -506,21 +506,21 @@
 
     <div style="display:flex;flex-direction:column;gap:12px;font-size:11px;color:#9ca3af;line-height:1.6;">
       <div>
-        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">The idea</div>
+        <div style="font-size:9.6px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">The idea</div>
         Pick a season, then rebuild that summer's Arsenal squad with the actual budget Wenger had to work with. Search for players, sign the ones you think fix the squad's real weaknesses, and sell if you need the room. Then run the simulation and see how your version of that season plays out against what actually happened.
       </div>
       <div>
-        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Budgets are tiny on purpose</div>
+        <div style="font-size:9.6px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Budgets are tiny on purpose</div>
         The transfer budgets and net spend limits are historically accurate, which means they're small. That's the actual challenge: finding real value instead of chasing big names you can't afford. Browsing other leagues often turns up better deals than the obvious targets.
       </div>
       <div>
-        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Difficulty modes</div>
+        <div style="font-size:9.6px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Difficulty modes</div>
         <div style="margin-bottom:6px;"><b style="color:#f87171;">🔥 Difficult</b>, fully historically realistic. A title win stays genuinely rare no matter how good your transfer window is.</div>
         <div style="margin-bottom:6px;"><b style="color:#4ade80;">⚖️ Normal</b>, a genuinely sharp transfer window (not just a big-spending one) earns better odds of a strong finish.</div>
         <div><b style="color:#c084fc;">🎉 Fun</b>, actually fix the squad's real weakness and clearly outperform the top sides, and you'll taste title glory far more often. Built for when you just want to see the club win.</div>
       </div>
       <div>
-        <div style="font-size:8px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Play it again</div>
+        <div style="font-size:9.6px;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Play it again</div>
         Every squad plays out differently each time you simulate, so a mediocre result doesn't mean a bad window, and a great one doesn't mean you nailed it forever. Hit Try Again, tweak the squad, or try a different season entirely.
       </div>
     </div>
@@ -537,20 +537,20 @@
 
     <!-- Position ratings vs champion -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Position Ratings vs League Winner</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Position Ratings vs League Winner</div>
       <div id="saRatingsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;"></div>
     </div>
 
     <!-- Season context / what went wrong -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px;margin-bottom:10px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Went Wrong</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">What Went Wrong</div>
       <div style="font-size:10px;color:#9ca3af;line-height:1.6;" id="saWeaknessDesc">—</div>
       <div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;" id="saGapChips"></div>
     </div>
 
     <!-- Signing assessment -->
     <div style="background:#0c1a2e;border-radius:8px;padding:9px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your Signings · Gap Analysis</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your Signings · Gap Analysis</div>
       <div id="saSignings" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
   </div>
@@ -564,7 +564,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
         <div>
           <div style="font-weight:800;font-size:13px;" id="mmTitle">Season Ticker</div>
-          <div style="font-size:8px;color:#6b7280;margin-top:1px;" id="mmSub">Match-by-match simulation · 38 games</div>
+          <div style="font-size:9.6px;color:#6b7280;margin-top:1px;" id="mmSub">Match-by-match simulation · 38 games</div>
         </div>
         <button onclick="closeMatchModal()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:16px;line-height:1;padding:0 2px;">✕</button>
       </div>
@@ -572,23 +572,23 @@
       <div style="display:flex;gap:5px;">
         <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
           <div style="font-size:17px;font-weight:900;color:#4ade80;line-height:1;" id="mmW">—</div>
-          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">WINS</div>
+          <div style="font-size:9.2px;color:#374151;margin-top:2px;font-weight:700;">WINS</div>
         </div>
         <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
           <div style="font-size:17px;font-weight:900;color:#fbbf24;line-height:1;" id="mmD">—</div>
-          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">DRAWS</div>
+          <div style="font-size:9.2px;color:#374151;margin-top:2px;font-weight:700;">DRAWS</div>
         </div>
         <div style="flex:1;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
           <div style="font-size:17px;font-weight:900;color:#f87171;line-height:1;" id="mmL">—</div>
-          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">LOSSES</div>
+          <div style="font-size:9.2px;color:#374151;margin-top:2px;font-weight:700;">LOSSES</div>
         </div>
         <div style="flex:2;background:#111827;border:1px solid #374151;border-radius:6px;padding:5px 4px;text-align:center;">
           <div style="font-size:17px;font-weight:900;color:#EF0107;line-height:1;" id="mmPts">—</div>
-          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">POINTS</div>
+          <div style="font-size:9.2px;color:#374151;margin-top:2px;font-weight:700;">POINTS</div>
         </div>
         <div style="flex:1.5;background:#0c1a2e;border-radius:6px;padding:5px 4px;text-align:center;">
           <div style="font-size:17px;font-weight:900;color:#e5e7eb;line-height:1;" id="mmPos">—</div>
-          <div style="font-size:6px;color:#374151;margin-top:2px;font-weight:700;">FINISH</div>
+          <div style="font-size:9.2px;color:#374151;margin-top:2px;font-weight:700;">FINISH</div>
         </div>
       </div>
     </div>
@@ -1686,7 +1686,7 @@ function pitchSlotHTML(id){
         onmouseover="this.style.borderColor='rgba(255,255,255,.55)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">
         <span style="color:rgba(255,255,255,.22);font-size:10px;">+</span>
       </div>
-      <span style="font-size:6px;color:rgba(255,255,255,.22);font-weight:700;margin-top:2px;">${cfg.lbl}</span>
+      <span style="font-size:9.2px;color:rgba(255,255,255,.22);font-weight:700;margin-top:2px;">${cfg.lbl}</span>
     </div>`;
   const parts=p.name.trim().split(' ');
   const last=parts[parts.length-1];
@@ -1697,9 +1697,9 @@ function pitchSlotHTML(id){
   return `
     <div class="pslot" onclick="openSlotPicker('${id}')">
       <div style="width:20px;height:20px;border-radius:50%;background:${dotClr};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        <span style="font-size:5px;font-weight:800;color:rgba(0,0,0,.65);">${cfg.lbl}</span>
+        <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.65);">${cfg.lbl}</span>
       </div>
-      <span style="font-size:8px;color:#fff;font-weight:600;max-width:76px;text-align:center;margin-top:2px;line-height:1.25;word-break:break-word;">${label}</span>
+      <span style="font-size:9.6px;color:#fff;font-weight:600;max-width:76px;text-align:center;margin-top:2px;line-height:1.25;word-break:break-word;">${label}</span>
     </div>`;
 }
 
@@ -1709,9 +1709,9 @@ function benchSlotHTML(id){
   if(!p) return `
     <div class="pslot" onclick="openSlotPicker('${id}')">
       <div style="width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.2);border:1px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;">
-        <span style="color:rgba(255,255,255,.14);font-size:8px;">+</span>
+        <span style="color:rgba(255,255,255,.14);font-size:9.6px;">+</span>
       </div>
-      <span style="font-size:5px;color:rgba(255,255,255,.17);">SUB</span>
+      <span style="font-size:9px;color:rgba(255,255,255,.17);">SUB</span>
     </div>`;
   const parts=p.name.trim().split(' ');
   const last=parts[parts.length-1];
@@ -1720,7 +1720,7 @@ function benchSlotHTML(id){
   return `
     <div class="pslot" onclick="openSlotPicker('${id}')">
       <div style="width:16px;height:16px;border-radius:50%;background:${dotClr};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;"></div>
-      <span style="font-size:6.5px;color:rgba(255,255,255,.82);font-weight:600;max-width:44px;text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</span>
+      <span style="font-size:9.3px;color:rgba(255,255,255,.82);font-weight:600;max-width:44px;text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</span>
     </div>`;
 }
 
@@ -1793,12 +1793,12 @@ function openSlotPicker(slotId){
     return `<div onclick="assignSlot('${p.id}')" style="background:#0c1a2e;border-radius:7px;padding:7px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;${isNew?'border-left:2px solid #166534;':''}"
       onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${isNew?' <span style="font-size:7px;color:#4ade80;">★ new</span>':''}</div>
-        <div style="font-size:8px;color:#6b7280;">${p.position||''}</div>
+        <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}${isNew?' <span style="font-size:9.4px;color:#4ade80;">★ new</span>':''}</div>
+        <div style="font-size:9.6px;color:#6b7280;">${p.position||''}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;">
         <div style="font-size:20px;font-weight:900;color:${clr};line-height:1;">${r}</div>
-        <div style="font-size:8px;color:#4b5563;">${fmt(p.marketValue)}</div>
+        <div style="font-size:9.6px;color:#4b5563;">${fmt(p.marketValue)}</div>
       </div>
     </div>`;
   }).join('')||'<div style="text-align:center;color:#6b7280;font-size:11px;padding:12px;">No available players</div>';
@@ -1880,7 +1880,7 @@ function sellPlayer(id,val){
 
   // Undo toast
   const t=document.getElementById('toast');
-  t.innerHTML=`Sold ${lastName}. <button onclick="undoSell()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:9px;font-weight:700;text-decoration:underline;padding:0 0 0 4px;">Undo</button>`;
+  t.innerHTML=`Sold ${lastName}. <button onclick="undoSell()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:9.8px;font-weight:700;text-decoration:underline;padding:0 0 0 4px;">Undo</button>`;
   t.style.display='block';
   clearTimeout(t._t);
   t._t=setTimeout(()=>t.style.display='none',5000);
@@ -2041,8 +2041,8 @@ function render(){
         <div class="col-hdr">
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="badge ${GRP_CSS[g]}">${g}</span>
-            <span style="font-size:9px;color:#6b7280;">${GRP_LBL[g]}</span>
-            <span style="font-size:8px;color:#374151;">${active}</span>
+            <span style="font-size:9.8px;color:#6b7280;">${GRP_LBL[g]}</span>
+            <span style="font-size:9.6px;color:#374151;">${active}</span>
           </div>
           <button class="add-btn" onclick="openModal('${g}')" title="Sign a player">+</button>
         </div>
@@ -2061,7 +2061,7 @@ function playerCell(p){
       <div style="width:3px;align-self:stretch;min-height:14px;border-radius:1px;background:${c};flex-shrink:0;margin-top:1px;"></div>
       <span style="flex:1;min-width:0;font-size:10px;font-weight:600;line-height:1.4;word-break:break-word;">${p.name}</span>
       ${sold
-        ? `<button onclick="unsellById('${p.id}')" title="Undo this sale" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:7px;font-weight:700;text-decoration:underline;flex-shrink:0;padding:2px 0 0;white-space:nowrap;">undo sale</button>`
+        ? `<button onclick="unsellById('${p.id}')" title="Undo this sale" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:9.4px;font-weight:700;text-decoration:underline;flex-shrink:0;padding:2px 0 0;white-space:nowrap;">undo sale</button>`
         : `<button class="sell-btn" style="margin-top:1px;" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
     </div>`;
 }
@@ -2084,7 +2084,7 @@ function renderSignings(){
       <span class="badge ${GRP_CSS[pg]||'pos-mid'}">${lbl}</span>
       <div>
         <div style="font-size:10px;font-weight:700;color:#e5e7eb;white-space:nowrap;">${p.name}</div>
-        <div style="font-size:8px;color:#4ade80;">${fmt(p.marketValue)}</div>
+        <div style="font-size:9.6px;color:#4ade80;">${fmt(p.marketValue)}</div>
       </div>
       ${rateHtml}
       <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
@@ -2114,7 +2114,7 @@ async function loadSeason(yr){
   loadEl.innerHTML=`
     <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
     <div style="font-size:13px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading ${seasonLabel}</div>
-    <div style="font-size:9px;color:#4b5563;">Fetching squad data…</div>`;
+    <div style="font-size:9.8px;color:#4b5563;">Fetching squad data…</div>`;
   document.getElementById('squadGrid').style.display='none';
   document.getElementById('signingsArea').style.display='none';
   document.getElementById('lineupModal').classList.remove('open');
@@ -2146,7 +2146,7 @@ async function loadSeason(yr){
     if(token!==_loadSeasonToken)return;
     loadEl.innerHTML=`
       <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:5px;">Couldn't load the squad</div>
-      <div style="font-size:9px;color:#4b5563;">Check your connection and try picking the season again.</div>`;
+      <div style="font-size:9.8px;color:#4b5563;">Check your connection and try picking the season again.</div>`;
   } finally {
     // Only the most recent call re-enables the dropdown, a stale call finishing after a
     // newer one started must not re-enable a select whose fetch is still in flight.
@@ -2178,8 +2178,8 @@ function openModal(g){
   const chips=document.getElementById('targetChips');
   if(targets.length){
     chips.style.display='flex';
-    chips.innerHTML=`<span style="font-size:8px;color:#4b5563;font-weight:600;text-transform:uppercase;letter-spacing:.05em;align-self:center;white-space:nowrap;">Rumoured:</span>`
-      +targets.map(name=>`<button onclick="searchTarget('${esc(name)}')" style="background:#1a2535;border:1px solid #374151;border-radius:9999px;padding:3px 9px;font-size:9px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
+    chips.innerHTML=`<span style="font-size:9.6px;color:#4b5563;font-weight:600;text-transform:uppercase;letter-spacing:.05em;align-self:center;white-space:nowrap;">Rumoured:</span>`
+      +targets.map(name=>`<button onclick="searchTarget('${esc(name)}')" style="background:#1a2535;border:1px solid #374151;border-radius:9999px;padding:3px 9px;font-size:9.8px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
         onmouseover="this.style.borderColor='#EF0107';this.style.color='#EF0107'"
         onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">${name}</button>`).join('');
   } else {chips.style.display='none';chips.innerHTML='';}
@@ -2207,7 +2207,7 @@ function renderBrowseLeagues(){
   document.getElementById('browseLeagues').innerHTML=Object.entries(LEAGUE_CLUBS).map(([k,lg])=>
     `<button onclick="selectLeague('${k}')"
       style="background:${_browseLeague===k?'#EF0107':'#1a2535'};border:1px solid ${_browseLeague===k?'#EF0107':'#374151'};
-      border-radius:9999px;padding:3px 9px;font-size:9px;font-weight:600;white-space:nowrap;
+      border-radius:9999px;padding:3px 9px;font-size:9.8px;font-weight:600;white-space:nowrap;
       color:${_browseLeague===k?'#fff':'#9ca3af'};cursor:pointer;">${lg.flag} ${lg.label}</button>`
   ).join('');
   renderBrowseClubs();
@@ -2219,7 +2219,7 @@ function renderBrowseClubs(){
   el.innerHTML=LEAGUE_CLUBS[_browseLeague].clubs.map(c=>
     `<button onclick="selectClub('${c.id}','${esc(c.n)}')"
       style="background:#1a2535;border:1px solid #374151;border-radius:9999px;padding:3px 9px;
-      font-size:9px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
+      font-size:9.8px;font-weight:600;color:#9ca3af;cursor:pointer;transition:all .15s;white-space:nowrap;"
       onmouseover="this.style.borderColor='#EF0107';this.style.color='#EF0107'"
       onmouseout="this.style.borderColor='#374151';this.style.color='#9ca3af'">${c.n}</button>`
   ).join('');
@@ -2361,11 +2361,11 @@ function _candidateCard(r){
       onmouseover="this.style.background='#1a2535'" onmouseout="this.style.background='#0c1a2e'">
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-        <div style="font-size:8px;color:#6b7280;">${p.position||''}${clubPart}</div>
+        <div style="font-size:9.6px;color:#6b7280;">${p.position||''}${clubPart}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;">
         <div style="font-size:10px;font-weight:700;color:${r.value?'#fff':'#374151'};margin-bottom:2px;">${r.value?fmt(r.value):'—'}</div>
-        <span style="font-size:9px;color:${r.badgeClr};">${r.badgeTxt}</span>
+        <span style="font-size:9.8px;color:${r.badgeClr};">${r.badgeTxt}</span>
       </div>
     </div>`;
 }
@@ -2738,21 +2738,21 @@ function runSimulation(){
 
   // Transfer window summary (signings + sales), shown on the shared result card
   (function(){
-    const row=(name,val,valClr)=>`<div style="display:flex;justify-content:space-between;gap:6px;font-size:9px;padding:2px 0;">
+    const row=(name,val,valClr)=>`<div style="display:flex;justify-content:space-between;gap:6px;font-size:9.8px;padding:2px 0;">
       <span style="color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</span>
       <span style="color:${valClr};font-weight:700;flex-shrink:0;">${fmt(val)}</span>
     </div>`;
-    const signingsHtml=S.bought.length?S.bought.map(p=>row(p.name,p.marketValue,'#4ade80')).join(''):'<div style="font-size:9px;color:#374151;">None</div>';
-    const salesHtml=S.sellHistory.length?S.sellHistory.map(s=>row(s.name,s.val,'#f87171')).join(''):'<div style="font-size:9px;color:#374151;">None</div>';
+    const signingsHtml=S.bought.length?S.bought.map(p=>row(p.name,p.marketValue,'#4ade80')).join(''):'<div style="font-size:9.8px;color:#374151;">None</div>';
+    const salesHtml=S.sellHistory.length?S.sellHistory.map(s=>row(s.name,s.val,'#f87171')).join(''):'<div style="font-size:9.8px;color:#374151;">None</div>';
     document.getElementById('simTransferSummary').innerHTML=`
-      <div style="font-size:7px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Transfer Window</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Transfer Window</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <div style="font-size:7px;color:#4ade80;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SIGNINGS (${S.bought.length})</div>
+          <div style="font-size:9.4px;color:#4ade80;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SIGNINGS (${S.bought.length})</div>
           ${signingsHtml}
         </div>
         <div>
-          <div style="font-size:7px;color:#f87171;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SALES (${S.sellHistory.length})</div>
+          <div style="font-size:9.4px;color:#f87171;font-weight:700;letter-spacing:.04em;margin-bottom:3px;">SALES (${S.sellHistory.length})</div>
           ${salesHtml}
         </div>
       </div>`;
@@ -2775,11 +2775,11 @@ function runSimulation(){
       const modTxt=e.mod>0?`+${e.mod} pts`:`${e.mod} pts`;
       return `<div style="display:flex;align-items:flex-start;gap:7px;padding:5px 7px;background:#111827;border-radius:6px;">
         <span style="font-size:13px;flex-shrink:0;line-height:1.3;">${e.icon}</span>
-        <span style="flex:1;font-size:9px;color:#9ca3af;line-height:1.5;">${e.text}</span>
-        <span style="font-size:8px;font-weight:700;color:${modClr};flex-shrink:0;white-space:nowrap;">${modTxt}</span>
+        <span style="flex:1;font-size:9.8px;color:#9ca3af;line-height:1.5;">${e.text}</span>
+        <span style="font-size:9.6px;font-weight:700;color:${modClr};flex-shrink:0;white-space:nowrap;">${modTxt}</span>
       </div>`;
     }).join('')
-    :'<div style="font-size:9px;color:#374151;padding:4px 7px;">A clean, uneventful season. Somehow.</div>';
+    :'<div style="font-size:9.8px;color:#374151;padding:4px 7px;">A clean, uneventful season. Somehow.</div>';
 
   // Budget IQ
   const biqEl=document.getElementById('simBudgetIQ');
@@ -2844,7 +2844,7 @@ function runSimulation(){
     if(whyEl)whyEl.innerHTML=whyLines.slice(0,4).map(l=>`
       <div style="display:flex;align-items:flex-start;gap:7px;padding:5px 7px;background:#111827;border-radius:6px;">
         <span style="font-size:13px;flex-shrink:0;line-height:1.3;">${l.icon}</span>
-        <span style="flex:1;font-size:9px;color:#9ca3af;line-height:1.5;">${l.text}</span>
+        <span style="flex:1;font-size:9.8px;color:#9ca3af;line-height:1.5;">${l.text}</span>
       </div>`).join('');
   })();
 
@@ -2863,8 +2863,8 @@ function runSimulation(){
     const pct=Math.round(b.score/b.max*100);
     const c=pct>=70?'#4ade80':pct>=45?'#60a5fa':'#9ca3af';
     return `<div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-      <span style="font-size:8px;color:#4b5563;">${b.label}</span>
-      <span style="font-size:8px;font-weight:700;color:${c};">${b.score}/${b.max}</span>
+      <span style="font-size:9.6px;color:#4b5563;">${b.label}</span>
+      <span style="font-size:9.6px;font-weight:700;color:${c};">${b.score}/${b.max}</span>
     </div>`;
   }).join('');
 
@@ -3051,39 +3051,39 @@ function openMatchModal(){
       const rc=g.res==='W'?'#4ade80':g.res==='D'?'#fbbf24':'#f87171';
       const ha=g.home?'H':'A';
       const scorerTxt=g.scorers.length
-        ?`<span style="font-size:7.5px;color:#6b7280;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;">${g.scorers.join(', ')}</span>`:'';
+        ?`<span style="font-size:9.5px;color:#6b7280;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;">${g.scorers.join(', ')}</span>`:'';
       return `<div style="display:flex;align-items:center;gap:5px;padding:3px 5px;border-radius:4px;"
         onmouseover="this.style.background='#111827'" onmouseout="this.style.background='transparent'">
-        <span style="width:18px;height:18px;border-radius:4px;background:${rc}22;color:${rc};font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${g.res}</span>
+        <span style="width:18px;height:18px;border-radius:4px;background:${rc}22;color:${rc};font-size:9.6px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${g.res}</span>
         <span style="font-size:10px;font-weight:600;color:#e5e7eb;white-space:nowrap;min-width:80px;">${g.opp}</span>
-        <span style="font-size:8px;color:#4b5563;flex-shrink:0;">(${ha})</span>
+        <span style="font-size:9.6px;color:#4b5563;flex-shrink:0;">(${ha})</span>
         <span style="flex:1;">${scorerTxt}</span>
-        <span style="font-size:9px;font-weight:700;color:#d1d5db;flex-shrink:0;min-width:26px;text-align:right;">${g.gf}–${g.ga}</span>
-        <span style="font-size:7px;color:#374151;flex-shrink:0;min-width:29px;text-align:right;">${g.cum}pts</span>
+        <span style="font-size:9.8px;font-weight:700;color:#d1d5db;flex-shrink:0;min-width:26px;text-align:right;">${g.gf}–${g.ga}</span>
+        <span style="font-size:9.4px;color:#374151;flex-shrink:0;min-width:29px;text-align:right;">${g.cum}pts</span>
       </div>`;
     }).join('');
     return `<div style="margin-bottom:4px;">
-      <div style="font-size:7px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 5px 2px;">${m}</div>
+      <div style="font-size:9.4px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 5px 2px;">${m}</div>
       ${rows}</div>`;
   }).join('');
   // Season stats: top scorers + assisters
   const topScorers=[...pool].sort((a,b)=>b.goals-a.goals).filter(p=>p.goals>0).slice(0,5);
   const topAssists=[...pool].sort((a,b)=>b.assists-a.assists).filter(p=>p.assists>0).slice(0,4);
   const statsHTML=`<div style="border-top:1px solid #1f2937;padding:10px 5px 6px;margin-top:4px;">
-    <div style="font-size:7px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;">Season Stats</div>
+    <div style="font-size:9.4px;color:#4b5563;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;">Season Stats</div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;">
-        <div style="font-size:7px;color:#374151;font-weight:700;margin-bottom:4px;">GOALS</div>
+        <div style="font-size:9.4px;color:#374151;font-weight:700;margin-bottom:4px;">GOALS</div>
         ${topScorers.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">
-          <span style="font-size:9px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
+          <span style="font-size:9.8px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
           <span style="font-size:10px;font-weight:800;color:${i===0?'#f87171':'#6b7280'};">${p.goals}</span>
         </div>`).join('')}
       </div>
       <div style="width:1px;background:#1f2937;"></div>
       <div style="flex:1;">
-        <div style="font-size:7px;color:#374151;font-weight:700;margin-bottom:4px;">ASSISTS</div>
+        <div style="font-size:9.4px;color:#374151;font-weight:700;margin-bottom:4px;">ASSISTS</div>
         ${topAssists.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">
-          <span style="font-size:9px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
+          <span style="font-size:9.8px;color:${i===0?'#e5e7eb':'#9ca3af'};">${p.lastName}</span>
           <span style="font-size:10px;font-weight:800;color:${i===0?'#60a5fa':'#6b7280'};">${p.assists}</span>
         </div>`).join('')}
       </div>
@@ -3163,8 +3163,8 @@ function openSquadAnalysis(){
       const dc=diff===null?'':(diff>=0?'#4ade80':'#f87171');
       return `<div style="background:#111827;border-radius:7px;padding:8px 5px;text-align:center;">
         <div style="font-size:22px;font-weight:900;color:${ratingColor(r)};line-height:1;">${r}</div>
-        <div style="font-size:6.5px;color:#4b5563;margin:2px 0 3px;font-weight:700;">${lbl}</div>
-        ${rival!=null?`<div style="font-size:8px;font-weight:700;color:${dc};">${dt} vs ${(topRival.club||'').split(' ').pop()}</div>`:''}
+        <div style="font-size:9.3px;color:#4b5563;margin:2px 0 3px;font-weight:700;">${lbl}</div>
+        ${rival!=null?`<div style="font-size:9.6px;font-weight:700;color:${dc};">${dt} vs ${(topRival.club||'').split(' ').pop()}</div>`:''}
       </div>`;
     }).join('');
 
@@ -3172,7 +3172,7 @@ function openSquadAnalysis(){
   const w=SEASON_WEAKNESSES[season]||{};
   document.getElementById('saWeaknessDesc').textContent=w.desc||'No data for this season.';
   document.getElementById('saGapChips').innerHTML=(w.gaps||[]).map(g=>`
-    <span style="background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 9px;font-size:8px;font-weight:700;color:${GRP_COL[g]||'#9ca3af'};">
+    <span style="background:#1f2937;border:1px solid #374151;border-radius:9999px;padding:2px 9px;font-size:9.6px;font-weight:700;color:${GRP_COL[g]||'#9ca3af'};">
       ${GRP_LBL[g]||g} needed
     </span>`).join('');
 
@@ -3187,10 +3187,10 @@ function openSquadAnalysis(){
         <div style="width:3px;height:22px;border-radius:1px;background:${GRP_COL[pGrp]||'#6b7280'};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-          <div style="font-size:7.5px;color:#6b7280;">${p.position||''} · ${fmt(p.marketValue)}</div>
+          <div style="font-size:9.5px;color:#6b7280;">${p.position||''} · ${fmt(p.marketValue)}</div>
         </div>
         <div style="font-size:18px;font-weight:900;color:${clr};flex-shrink:0;min-width:24px;text-align:center;">${r}</div>
-        <span style="font-size:8px;font-weight:700;flex-shrink:0;${addressed?'color:#4ade80':'color:#374151'};">${addressed?'✓ Gap filled':'–'}</span>
+        <span style="font-size:9.6px;font-weight:700;flex-shrink:0;${addressed?'color:#4ade80':'color:#374151'};">${addressed?'✓ Gap filled':'–'}</span>
       </div>`;
     }).join('')
     :'<div style="text-align:center;color:#374151;font-size:10px;padding:10px;">No signings made</div>';
