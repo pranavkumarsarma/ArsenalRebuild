@@ -2460,6 +2460,15 @@ function handleCardClick(card,name,position,currClub){
 
   if(S.bought.length>=MAX_SIGNINGS){showToast('Transfer window full.');return;}
 
+  // Both result lists filter out players you've already signed, so this shouldn't be
+  // reachable from the UI. Guard it anyway: unsignPlayer filters by id and refunds a single
+  // fee, so a duplicate would strip both copies and strand the money for the other one.
+  if(S.bought.some(p=>p.id===card.dataset.id)){
+    showToast(`${lastName} has already signed for you this window.`);
+    document.getElementById('addModal').classList.remove('open');
+    return;
+  }
+
   // Specific position stacking check
   if(position){
     const sd=checkSpecificPositionDepth(position);
