@@ -256,6 +256,13 @@
       <button onclick="resetAll()" style="width:100%;background:none;border:1px solid #1f2937;border-radius:8px;padding:6px;font-size:9.8px;font-weight:700;color:#374151;cursor:pointer;margin-bottom:6px;transition:all .15s;"
         onmouseover="this.style.borderColor='#4b5563';this.style.color='#6b7280'"
         onmouseout="this.style.borderColor='#1f2937';this.style.color='#374151'">↺ Reset All Transfers</button>
+      <label id="janToggleRow" for="janToggle" style="display:flex;align-items:center;gap:7px;padding:7px 9px;margin-bottom:6px;background:#111827;border:1px solid #1f2937;border-radius:8px;cursor:pointer;">
+        <input type="checkbox" id="janToggle" onchange="toggleJanWindow(this.checked)" style="width:13px;height:13px;accent-color:#EF0107;cursor:pointer;flex-shrink:0;margin:0;">
+        <span style="flex:1;min-width:0;">
+          <span style="display:block;font-size:10px;font-weight:700;color:#e5e7eb;line-height:1.2;">Play a January window</span>
+          <span id="janToggleHint" style="display:block;font-size:9px;color:#6b7280;line-height:1.3;margin-top:1px;">Stop at the winter break and sign again</span>
+        </span>
+      </label>
       <button id="simBtn" onclick="runSimulation()" class="sim-btn" style="width:100%;padding:10px;border-radius:8px;font-weight:900;font-size:12px;letter-spacing:.02em;" disabled>
         Run Simulation →
       </button>
@@ -366,6 +373,34 @@
 </div>
 
 <!-- ══ SIMULATION RESULT MODAL ════════════════════════════════════════ -->
+<!-- ══ JANUARY BREAK ═══════════════════════════════════════════════════ -->
+<div id="janModal" class="modal-bg">
+  <div class="modal-inner" style="max-width:380px;padding:18px;" onclick="event.stopPropagation()">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:30px;line-height:1;">❄️</div>
+      <div style="font-size:14px;font-weight:900;margin-top:6px;">The Winter Break</div>
+      <div id="janSub" style="font-size:9.4px;color:#6b7280;margin-top:2px;">20 games played</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
+      <div style="background:#0d1b2f;border-radius:7px;padding:9px 4px;text-align:center;">
+        <div id="janPts" style="font-size:20px;font-weight:900;line-height:1;color:#e5e7eb;">0</div>
+        <div style="font-size:9px;color:#4b5563;margin-top:3px;">POINTS</div>
+      </div>
+      <div style="background:#0d1b2f;border-radius:7px;padding:9px 4px;text-align:center;">
+        <div id="janPos" style="font-size:20px;font-weight:900;line-height:1;color:#60a5fa;">—</div>
+        <div style="font-size:9px;color:#4b5563;margin-top:3px;">POSITION</div>
+      </div>
+      <div style="background:#0d1b2f;border-radius:7px;padding:9px 4px;text-align:center;">
+        <div id="janRec" style="font-size:20px;font-weight:900;line-height:1;color:#9ca3af;">—</div>
+        <div style="font-size:9px;color:#4b5563;margin-top:3px;">W-D-L</div>
+      </div>
+    </div>
+    <div id="janVerdict" style="font-size:10.5px;color:#9ca3af;line-height:1.6;background:#0d1b2f;border-radius:7px;padding:10px 12px;margin-bottom:12px;"></div>
+    <div id="janBudget" style="font-size:9.6px;color:#6b7280;line-height:1.5;margin-bottom:12px;"></div>
+    <button onclick="closeJanBreak()" class="sim-btn" style="width:100%;padding:10px;border-radius:8px;font-weight:900;font-size:11.5px;">Into the January market →</button>
+  </div>
+</div>
+
 <div id="resultModal" class="modal-bg">
   <div class="modal-inner" style="max-width:400px;padding:18px;max-height:94vh;overflow-y:auto;">
 
@@ -616,6 +651,9 @@ let PLAYER_CACHE = {squads:{}, history:{}};
   }catch(e){}
 })();
 const MAX_SIGNINGS = 6;
+// August to December is 20 of the 38 games (see MATCH_MONTHS), so the break falls there.
+const JAN_BREAK_GAME = 20;
+const MAX_JAN_SIGNINGS = 2;
 const CURRENT_YEAR = 2026;
 
 // ── Season data ────────────────────────────────────────────────────────
@@ -1279,7 +1317,13 @@ function saveRecord(){
 // ── State ──────────────────────────────────────────────────────────────
 const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
   difficulty: (['difficult','fun'].includes(lsGet('arsenalRebuildDifficulty'))) ? lsGet('arsenalRebuildDifficulty') : 'normal',
-  sessionRecord: loadRecord() };
+  sessionRecord: loadRecord(),
+  // The January window. 'summer' is the pre-season window every game starts in; with the
+  // window switched on, simulating stops at the winter break and the phase becomes
+  // 'january' until the season is played out.
+  janWindow: lsGet('arsenalRebuildJanWindow')==='1',
+  phase: 'summer',
+  half: null };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -1490,12 +1534,18 @@ function buildSimTable(simPts, season) {
 
 // ── W/D/L ──────────────────────────────────────────────────────────────
 // Always returns a W/D/L that sums to exactly 38 games and W*3+D === pts.
-function wdlFromPts(pts) {
-  pts=Math.max(0,pts);
-  const seed=Math.max(2,Math.round(2+Math.random()*8));
-  let W=Math.max(0,Math.floor((pts-seed)/3)), D=pts-W*3;
-  while(W+D>38){W++;D=pts-W*3;}
-  return {W, D, L:38-W-D};
+function wdlFromPts(pts, games=38) {
+  pts=Math.max(0,Math.min(pts,games*3));
+  // W wins and D draws must fit in `games`: D = pts-3W >= 0 gives an upper bound on W, and
+  // W+D = pts-2W <= games gives a lower one. Totals like 3*games-1 satisfy neither (they
+  // need one more game than exists), so step down to the nearest total that can be made.
+  const lo=p=>Math.ceil((p-games)/2), hi=p=>Math.floor(p/3);
+  while(pts>0&&lo(pts)>hi(pts))pts--;
+  // Draws scale with the number of games, so a 20-game half doesn't get a full season's worth.
+  const seed=Math.max(1,Math.round((2+Math.random()*8)*games/38));
+  const W=Math.min(hi(pts),Math.max(lo(pts),0,Math.floor((pts-seed)/3)));
+  const D=pts-W*3;
+  return {W, D, L:games-W-D};
 }
 
 // ── Top performer predictions ──────────────────────────────────────────
@@ -1909,6 +1959,7 @@ function undoSell(){
   if(last)unsellById(last.id);
 }
 function resetAll(){
+  S.phase='summer';S.half=null;S.boughtSummer=0;
   S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;
   S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   render();updateSidebar();updateLineupCountBadges();
@@ -1977,7 +2028,7 @@ function updateSidebar(){
   const iqEl=document.getElementById('budgetIQ');
   iqEl.textContent=iq.label;iqEl.style.color=iq.color;
 
-  const used=S.bought.length, left=MAX_SIGNINGS-used;
+  const used=S.bought.length, left=S.phase==='january'?janSlotsLeft():MAX_SIGNINGS-used;
   document.getElementById('slotsLabel').textContent=`${left} left`;
   document.getElementById('slotsLabel').style.color=left===0?'#f87171':'#e5e7eb';
   document.getElementById('slotDots').innerHTML=
@@ -1986,9 +2037,15 @@ function updateSidebar(){
   const _simActual=SEASONS[S.season]?.netSpend||0;
   const _overBy=net-_simActual;
   const _tooOver=_overBy>0;
-  const _noSignings=used===0;
+  const _noSignings=used===0&&S.phase!=='january';
   const blocked=_noSignings||_tooOver;
   const btn=document.getElementById('simBtn');
+  const _simLabel=S.phase==='january'?'Play out the season →'
+    :(S.janWindow?'Play to January →':'Run Simulation →');
+  if(btn&&btn.textContent.trim()!==_simLabel)btn.textContent=_simLabel;
+  const _mSim=document.getElementById('mobileSimBtn');
+  if(_mSim){const t=S.phase==='january'?'Finish →':(S.janWindow?'To Jan →':'Sim →');if(_mSim.textContent.trim()!==t)_mSim.textContent=t;}
+  renderJanToggle();
   if(btn){
     btn.disabled=false;
     btn.style.opacity=blocked?'0.38':'1';
@@ -2100,7 +2157,7 @@ function renderSignings(){
 let _loadSeasonToken=0;
 async function loadSeason(yr){
   const token=++_loadSeasonToken;
-  S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
+  S.season=yr;S.phase='summer';S.half=null;S.boughtSummer=0;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   const m=SEASONS[yr]||{};
   document.getElementById('budgetAmt').textContent=fmt(m.budget); // provisional, updateSidebar owns it from here
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
@@ -2160,10 +2217,15 @@ async function loadSeason(yr){
 // ── Sign modal ─────────────────────────────────────────────────────────
 let _grp=null,_timer=null;
 function openModal(g){
-  if(S.bought.length>=MAX_SIGNINGS){showToast(`Transfer window full. ${MAX_SIGNINGS} signings already made.`);return;}
+  if(S.phase==='january'){
+    if(janSlotsLeft()<=0){showToast(`The January window is limited to ${MAX_JAN_SIGNINGS} signings.`);return;}
+  }else if(S.bought.length>=MAX_SIGNINGS){
+    showToast(`Transfer window full. ${MAX_SIGNINGS} signings already made.`);return;
+  }
   _grp=g;
   document.getElementById('modalTitle').textContent=`Sign a ${GRP_LBL[g].slice(0,-1)}`;
-  document.getElementById('modalSub').textContent=`${S.season}/${String(S.season+1).slice(-2)} · ${MAX_SIGNINGS-S.bought.length} slot${MAX_SIGNINGS-S.bought.length===1?'':'s'} left`;
+  const _slots=S.phase==='january'?janSlotsLeft():MAX_SIGNINGS-S.bought.length;
+  document.getElementById('modalSub').textContent=`${S.phase==='january'?'January window':`${S.season}/${String(S.season+1).slice(-2)}`} · ${_slots} slot${_slots===1?'':'s'} left`;
   document.getElementById('searchInput').value='';
   document.getElementById('searchResults').innerHTML='';
   document.getElementById('searchHint').textContent=`Type to search. ${S.season}/${String(S.season+1).slice(-2)} era.`;
@@ -2453,13 +2515,33 @@ function handleCardClick(card,name,position,currClub){
     }
   }
 
+  // January: nobody sells their best player halfway through a season. Refusal scales with
+  // the fee, so squad players and bargains are gettable while anyone genuinely good almost
+  // always says no. Rerolling is allowed, as with the rival clubs above, but the odds on a
+  // marquee name are bad enough that it stops being worth the clicking.
+  if(S.phase==='january'){
+    if(janSlotsLeft()<=0){
+      showToast(`The January window is limited to ${MAX_JAN_SIGNINGS} signings.`);
+      document.getElementById('addModal').classList.remove('open');
+      return;
+    }
+    const refuse=Math.max(0,Math.min(0.93,(value-6e6)/38e6));
+    if(Math.random()<refuse){
+      const msg=value>=35e6
+        ? `${lastName}'s club will not even discuss it in January. Try again in the summer.`
+        : `${lastName}'s club want to keep him for the run-in. No deal.`;
+      showToast(msg,3600);
+      return;
+    }
+  }
+
   // Over budget check
   if(value>remaining){
     showToast(`Cannot sign ${lastName}, exceeds your remaining budget of ${fmt(Math.max(0,remaining))}.`);
     return;
   }
 
-  if(S.bought.length>=MAX_SIGNINGS){showToast('Transfer window full.');return;}
+  if(S.phase!=='january'&&S.bought.length>=MAX_SIGNINGS){showToast('Transfer window full.');return;}
 
   // Both result lists filter out players you've already signed, so this shouldn't be
   // reachable from the UI. Guard it anyway: unsignPlayer filters by id and refunds a single
@@ -2638,6 +2720,30 @@ function runSimulation(){
   const totalDelta=vsTop4Delta+vsRestDelta+Math.round(iq.bonus*0.3)+Math.round((Math.random()-.5)*4)+ptsMod;
   let simPts=Math.max(30,Math.min(99,historicalPts+totalDelta));
 
+  // ── The January break ────────────────────────────────────────────────
+  // simPts is this squad's rate over a full season. With the window on, the first 20 games
+  // are played at the summer squad's rate and banked, then the rest of the season is played
+  // at whatever rate the January squad earns, so a good winter window genuinely rescues a
+  // bad first half and a bad one throws away a good start.
+  if(S.janWindow&&S.phase==='summer'){
+    const h1Pts=Math.round(simPts*JAN_BREAK_GAME/38);
+    const h1Wdl=wdlFromPts(h1Pts,JAN_BREAK_GAME);
+    const pool=_scorerPoolNow(null);
+    const fixtures=_buildFixtures(weakenedOpponents(S.season),S.season);
+    const {cum,defBudget}=_playFixtures(fixtures,0,JAN_BREAK_GAME,h1Wdl,pool,newLines,0,5+Math.floor(Math.random()*2));
+    S.half={pts:cum,wdl:h1Wdl,fixtures,pool,defBudget,summerPts:simPts,events,ptsMod};
+    S.phase='january';
+    S.spentSummer=S.spent;
+    _revealJanuaryBreak();
+    return;
+  }
+  let janNote=null;
+  if(S.phase==='january'&&S.half){
+    const h2Pts=Math.round(simPts*(38-JAN_BREAK_GAME)/38);
+    janNote={before:S.half.summerPts,after:simPts,h1:S.half.pts,h2:h2Pts};
+    simPts=Math.max(0,Math.min(114,S.half.pts+h2Pts));
+  }
+
   // Build table, find Arsenal position
   let table=buildSimTable(simPts,S.season);
   // The row carries its true rank in the full league; its index in this array is only the
@@ -2697,7 +2803,18 @@ function runSimulation(){
   // Simulate the season match-by-match once here. The result modal and the Match
   // Ticker both read this single simulation, so points/W-D-L/top scorer stay consistent
   // between the two views and don't reshuffle if the ticker is reopened.
-  const {fixtures,pool:scorerPool}=_generateTicker(newLines,S.season,wdl);
+  let fixtures,scorerPool;
+  if(S.phase==='january'&&S.half){
+    // Resume: the first 20 games already happened, so only the run-in is played, and it is
+    // played by the squad as it stands now.
+    fixtures=S.half.fixtures;
+    scorerPool=_scorerPoolNow(S.half.pool);
+    const h2Wdl=wdlFromPts(Math.max(0,simPts-S.half.pts),38-JAN_BREAK_GAME);
+    _playFixtures(fixtures,JAN_BREAK_GAME,38,h2Wdl,scorerPool,newLines,S.half.pts,S.half.defBudget);
+    S.phase='done';S.half=null;
+  }else{
+    ({fixtures,pool:scorerPool}=_generateTicker(newLines,S.season,wdl));
+  }
   // Fringe finishers can still pick up the odd goal (see FRINGE_FINISHERS above) but are
   // never eligible to be crowned Top Scorer or Top Assister, no matter how the draw lands.
   const topScorerP=[...scorerPool].sort((a,b)=>b.goals-a.goals).find(p=>p.goals>0&&!p.isFringe);
@@ -2899,6 +3016,80 @@ function _startSimLoading(){
     monthEl.textContent=MATCH_MONTHS[i].m;
   },140);
 }
+// ── The January window ─────────────────────────────────────────────────
+function toggleJanWindow(on){
+  if(S.phase!=='summer'){
+    showToast('The season is already under way. Reset to change this.',3200);
+    renderJanToggle();return;
+  }
+  S.janWindow=!!on;
+  lsSet('arsenalRebuildJanWindow',S.janWindow?'1':'0');
+  renderJanToggle();updateSidebar();
+  if(S.janWindow)showToast('January window on. The season will stop at the winter break so you can sign again.',4200);
+}
+function renderJanToggle(){
+  const box=document.getElementById('janToggle');
+  if(box)box.checked=S.janWindow;
+  const row=document.getElementById('janToggleRow');
+  if(row){
+    row.style.borderColor=S.janWindow?'#1d4ed8':'#1f2937';
+    row.style.background=S.janWindow?'rgba(29,78,216,.12)':'#111827';
+  }
+  const hint=document.getElementById('janToggleHint');
+  if(hint){
+    hint.textContent=S.phase==='january'
+      ? `January market open · ${MAX_JAN_SIGNINGS-(S.bought.length-(S.boughtSummer||0))} signing${MAX_JAN_SIGNINGS-(S.bought.length-(S.boughtSummer||0))===1?'':'s'} left`
+      : 'Stop at the winter break and sign again';
+    hint.style.color=S.phase==='january'?'#93c5fd':'#6b7280';
+  }
+  if(box)box.disabled=S.phase!=='summer';
+}
+// How many of the current signings were made in the January window.
+function janSignings(){return Math.max(0,S.bought.length-(S.boughtSummer||0));}
+function janSlotsLeft(){return MAX_JAN_SIGNINGS-janSignings();}
+
+function _revealJanuaryBreak(){
+  const h=S.half;
+  const token=_simRevealToken;
+  setTimeout(()=>{
+    if(token!==_simRevealToken)return;
+    clearInterval(_simLoadingTimer);
+    document.getElementById('simLoadingOverlay').classList.remove('open');
+    // Where the first half leaves you, measured against where everyone else would be at
+    // the same point in their season.
+    const paceTable=weakenedTable(S.season)
+      .map(r=>r.club==='Arsenal'?{club:'Arsenal',pts:h.pts,yours:true}:{club:r.club,pts:Math.round(r.pts*JAN_BREAK_GAME/38)})
+      .sort((a,b)=>b.pts-a.pts);
+    const pos=paceTable.findIndex(r=>r.yours)+1;
+    S.boughtSummer=S.bought.length;
+    document.getElementById('janSub').textContent=`${JAN_BREAK_GAME} games played · ${S.season}/${String(S.season+1).slice(-2)}`;
+    document.getElementById('janPts').textContent=h.pts;
+    document.getElementById('janPos').textContent=ordinal(pos);
+    document.getElementById('janPos').style.color=pos===1?'#fbbf24':pos<=4?'#60a5fa':pos<=6?'#fb923c':'#f87171';
+    document.getElementById('janRec').textContent=`${h.wdl.W}-${h.wdl.D}-${h.wdl.L}`;
+    const top=[...h.pool].sort((a,b)=>b.goals-a.goals).find(p=>p.goals>0&&!p.isFringe);
+    const lead=paceTable[0];
+    const gap=lead.yours?0:lead.pts-h.pts;
+    let verdict;
+    if(pos===1)verdict=`Top of the league at the break. ${gap===0?'':''}Nobody expected this. The job now is not to throw it away.`;
+    else if(pos<=4)verdict=`In the Champions League places, ${gap} point${gap===1?'':'s'} behind ${lead.club}. Still very much in it.`;
+    else if(pos<=6)verdict=`Outside the top four and ${gap} points off the top. The second half has to be better.`;
+    else verdict=`${ordinal(pos)} at the break and ${gap} points adrift. This is a rescue job.`;
+    if(top)verdict+=` ${top.lastName} leads the scoring with ${top.goals}.`;
+    document.getElementById('janVerdict').textContent=verdict;
+    const left=(SEASONS[S.season]?.budget||0)-S.spent+S.sales;
+    document.getElementById('janBudget').textContent=left>0
+      ? `You held back ${fmt(left)} for January, and can make up to ${MAX_JAN_SIGNINGS} signings. Clubs rarely sell their best players mid-season, so expect to be turned down.`
+      : `You have nothing left to spend. Sell someone to fund a January move, or play the rest of the season as you are.`;
+    document.getElementById('janModal').classList.add('open');
+    renderJanToggle();render();updateSidebar();
+  },1400);
+}
+function closeJanBreak(){
+  document.getElementById('janModal').classList.remove('open');
+  showToast('January window open. Sign, sell, then play out the season.',4000);
+}
+
 function _revealSimResult(){
   const token=_simRevealToken;
   setTimeout(()=>{
@@ -2999,23 +3190,23 @@ function _buildFixtures(opps,season){
 // Draws results from the exact {W,D,L} tally (matches the result modal's W/D/L and points
 // by construction) while still weighting each pick by matchup strength so tougher fixtures
 // are more likely to draw from the remaining losses/draws.
-function _generateTicker(newLines,season,wdl){
-  const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
-  const starterIds=new Set(getAutoXI(allActive).map(p=>p.id));
-  const pool=_buildScorerPool(allActive,starterIds);
-  const fixtures=_buildFixtures(weakenedOpponents(season),season);
-  const arOvr=newLines.def*0.35+newLines.mid*0.30+newLines.att*0.35;
-  let cum=0;
+// Plays a slice of the fixture list, so a season can be run in one go or stopped at the
+// January break and resumed with a different squad. Mutates the fixtures and the scorer
+// pool in place; returns the running totals the next slice needs to carry on from.
+function _playFixtures(fixtures,from,to,wdl,pool,lines,startCum,defBudget){
+  const arOvr=lines.def*0.35+lines.mid*0.30+lines.att*0.35;
+  let cum=startCum;
   const remaining={W:wdl.W,D:wdl.D,L:wdl.L};
-  let defBudget=5+Math.floor(Math.random()*2); // 5–6 defender goals across the season
-  fixtures.forEach((g,idx)=>{
+  for(let idx=from;idx<to;idx++){
+    const g=fixtures[idx];
     const adv=arOvr-g.str+(g.home?2.5:-1.5);
     const wScore=remaining.W>0?Math.max(0.02,0.5+adv*0.035):0;
     const dScore=remaining.D>0?0.30:0;
     const lScore=remaining.L>0?Math.max(0.02,0.5-adv*0.035):0;
     const scoreTotal=wScore+dScore+lScore;
     let r=Math.random()*scoreTotal,res;
-    if((r-=wScore)<=0)res='W';else if((r-=dScore)<=0)res='D';else res='L';
+    if((r-=wScore)<=0&&wScore>0)res='W';else if((r-=dScore)<=0&&dScore>0)res='D';
+    else res=lScore>0?'L':(dScore>0?'D':'W');
     remaining[res]--;
     let gf,ga;
     if(res==='W'){gf=1+Math.floor(Math.random()*3);ga=Math.floor(Math.random()*gf);}
@@ -3038,7 +3229,27 @@ function _generateTicker(newLines,season,wdl){
     }
     g.res=res;g.gf=gf;g.ga=ga;g.scorers=scorers;
     cum+=res==='W'?3:res==='D'?1:0;g.cum=cum;
-  });
+  }
+  return {cum,defBudget};
+}
+// The scorer pool for whoever is in the squad right now. Carries over goals and assists
+// already banked by players who are still here, so a January arrival starts on zero while
+// the man who scored twelve before Christmas keeps them.
+function _scorerPoolNow(previous){
+  const allActive=[...S.players.filter(p=>!S.sold.has(p.id)),...S.bought];
+  const pool=_buildScorerPool(allActive,new Set(getAutoXI(allActive).map(p=>p.id)));
+  if(previous){
+    const had=new Map(previous.map(p=>[p.id,p]));
+    pool.forEach(p=>{const old=had.get(p.id);if(old){p.goals=old.goals;p.assists=old.assists;}});
+    // Someone sold in January keeps what he scored before he left.
+    previous.forEach(old=>{if(!pool.some(p=>p.id===old.id)&&(old.goals||old.assists))pool.push({...old,gW:0,aW:0});});
+  }
+  return pool;
+}
+function _generateTicker(newLines,season,wdl){
+  const pool=_scorerPoolNow(null);
+  const fixtures=_buildFixtures(weakenedOpponents(season),season);
+  _playFixtures(fixtures,0,fixtures.length,wdl,pool,newLines,0,5+Math.floor(Math.random()*2));
   return {fixtures,pool};
 }
 function openMatchModal(){
