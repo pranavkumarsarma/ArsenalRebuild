@@ -156,8 +156,9 @@
     <div style="flex-shrink:0;padding:10px 12px 9px;background:#0d1b2f;border-bottom:1px solid #1f2937;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div>
-          <span style="font-size:7px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;font-weight:700;">Budget&nbsp;</span>
+          <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;font-weight:700;">Left to spend&nbsp;</span>
           <span style="font-size:22px;font-weight:900;color:#EF0107;letter-spacing:-.02em;" id="budgetAmt">—</span>
+          <div id="budgetOf" style="font-size:9px;color:#6b7280;margin-top:1px;">&nbsp;</div>
         </div>
         <span id="budgetIQ" style="font-size:8px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
       </div>
@@ -1851,7 +1852,12 @@ function unsellById(id){
   if(entry.posGrp&&S.salesByGrp[entry.posGrp]>0)S.salesByGrp[entry.posGrp]--;
   document.getElementById('toast').style.display='none';
   render();updateSidebar();updateLineupCountBadges();
-  showToast(`${entry.name.split(' ').pop()} sale cancelled.`,2500);
+  // Taking a sale back also takes the money back, which can leave the window overdrawn if
+  // it's already been spent. That used to happen silently; say what it cost instead.
+  const left=(SEASONS[S.season]?.budget||0)-S.spent+S.sales;
+  const last=entry.name.split(' ').pop();
+  if(left<0)showToast(`${last} is back in the squad, but that was ${fmt(entry.val)} you had already spent. You are now ${fmt(-left)} overdrawn, unsign someone to clear it.`,5000);
+  else showToast(`${last} sale cancelled.`,2500);
 }
 function undoSell(){
   const last=S.sellHistory[S.sellHistory.length-1];
@@ -1883,6 +1889,23 @@ function unsignPlayer(id,val){
 function updateSidebar(){
   const curVal=S.players.filter(p=>!S.sold.has(p.id)).reduce((a,p)=>a+(p.marketValue||0),0)
               +S.bought.reduce((a,p)=>a+(p.marketValue||0),0);
+  // The headline figure is what you can still spend, recomputed every time the window
+  // changes. It used to be written once in loadSeason and then sat at the season's opening
+  // budget all game, so the only place a player ever saw their real remaining budget was
+  // the toast refusing a signing they'd already tried to make.
+  const budget=SEASONS[S.season]?.budget||0, budgetLeft=budget-S.spent+S.sales;
+  const leftEl=document.getElementById('budgetAmt');
+  if(leftEl){
+    leftEl.textContent=fmt(budgetLeft);
+    leftEl.style.color=budgetLeft<0?'#f87171':budgetLeft<5e6?'#fbbf24':'#EF0107';
+  }
+  const ofEl=document.getElementById('budgetOf');
+  if(ofEl){
+    ofEl.textContent=budgetLeft<0
+      ? `${fmt(-budgetLeft)} overdrawn · sell or unsign to clear it`
+      : `of ${fmt(budget)} budget${S.sales?` + ${fmt(S.sales)} raised`:''}`;
+    ofEl.style.color=budgetLeft<0?'#f87171':'#6b7280';
+  }
   document.getElementById('spentAmt').textContent=fmt(S.spent);
   document.getElementById('salesAmt').textContent='+'+fmt(S.sales);
   document.getElementById('squadValStr').textContent=fmt(curVal);
@@ -2034,7 +2057,7 @@ async function loadSeason(yr){
   const token=++_loadSeasonToken;
   S.season=yr;S.sold=new Set();S.bought=[];S.spent=0;S.sales=0;S.lineup={};S.sellHistory=[];S.youthSold=0;S.salesByGrp={GK:0,DEF:0,MID:0,ATT:0};
   const m=SEASONS[yr]||{};
-  document.getElementById('budgetAmt').textContent=fmt(m.budget);
+  document.getElementById('budgetAmt').textContent=fmt(m.budget); // provisional, updateSidebar owns it from here
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
   const mSpend2=document.getElementById('mobileSpend');if(mSpend2){mSpend2.textContent=fmt(m.netSpend||0);mSpend2.style.color='#4ade80';}
   document.getElementById('actualNote').textContent=m.note||'';
