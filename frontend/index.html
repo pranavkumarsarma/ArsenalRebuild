@@ -77,6 +77,13 @@
       #sidebarCol{display:none!important;}
       #mobileBar{display:flex!important;}
       #signingsArea{order:-1;border-top:none;border-bottom:2px solid #166534;}
+      #mobilePanel{display:flex!important;order:-2;}
+      /* Touch targets: the sign "+", sell/unsign "X" and modal close buttons were 12-19px,
+         under the 24px minimum. The glyphs stay small; the tappable box grows. */
+      .add-btn{width:32px!important;height:32px!important;font-size:14px!important;}
+      .sell-btn,.unsign{min-width:30px;min-height:30px;}
+      .sell-btn{width:30px!important;height:30px!important;border-color:transparent!important;}
+      .modal-inner button[onclick^="close"]:not(.sim-btn){min-width:36px;min-height:36px;}
       #squadGrid{order:0;}
       .crow{padding:6px 8px!important;}
       .crow span{font-size:11px!important;}
@@ -142,6 +149,17 @@
       <div class="spin" style="width:22px;height:22px;border:2.5px solid #1f2937;border-top-color:#EF0107;border-radius:50%;margin-bottom:12px;"></div>
       <div id="loadingLabel" style="font-size:12px;font-weight:700;color:#e5e7eb;margin-bottom:4px;">Loading squad</div>
       <div style="font-size:9.8px;color:#4b5563;">Fetching squad data…</div>
+    </div>
+    <div id="mobilePanel" style="display:none;align-items:center;gap:8px;padding:8px 10px;background:#0d1b2f;border-bottom:1px solid #1f2937;flex-wrap:wrap;">
+      <label for="janToggleM" style="display:flex;align-items:center;gap:7px;flex:1;min-width:150px;min-height:32px;cursor:pointer;">
+        <input type="checkbox" id="janToggleM" onchange="toggleJanWindow(this.checked)" style="width:18px;height:18px;accent-color:#EF0107;margin:0;flex-shrink:0;">
+        <span style="min-width:0;">
+          <span style="display:block;font-size:11px;font-weight:700;color:#e5e7eb;line-height:1.2;">January window</span>
+          <span id="janToggleHintM" style="display:block;font-size:9.6px;color:#6b7280;line-height:1.25;">Stop at the winter break and sign again</span>
+        </span>
+      </label>
+      <span title="Your record" style="font-size:10px;color:#9ca3af;white-space:nowrap;">🏆 <b id="mTitles" style="color:#fbbf24;">0</b> · Top 4 <b id="mTop4" style="color:#60a5fa;">0</b></span>
+      <button onclick="resetAll()" aria-label="Reset all transfers" style="min-height:32px;background:none;border:1px solid #1f2937;border-radius:7px;padding:0 10px;font-size:10px;font-weight:700;color:#9ca3af;cursor:pointer;white-space:nowrap;">↺ Reset</button>
     </div>
     <div id="squadGrid" style="display:none;flex:1;min-height:0;grid-template-columns:repeat(4,1fr);overflow:hidden;"></div>
     <div id="signingsArea" style="display:none;border-top:2px solid #166534;background:#091a12;flex-shrink:0;padding:5px 12px 7px;">
@@ -2076,13 +2094,14 @@ function updateSidebar(){
   // Sync mobile bottom bar
   const mSpend=document.getElementById('mobileSpend');
   if(mSpend){
-    const actual2=SEASONS[S.season]?.netSpend||0,diff2=net-actual2;
-    if(diff2<=0){
-      const room=Math.abs(diff2);
-      mSpend.textContent=room<1e6?'On budget':fmt(room);
+    // Same rule as the sidebar headline. This bar used to show only net-spend room, which
+    // is the looser limit in 2011/12 (EUR49m shown against a real EUR13m).
+    const mLeft=spendRoom().left;
+    if(mLeft>=0){
+      mSpend.textContent=mLeft<1e6?'On budget':fmt(mLeft);
       mSpend.style.color='#4ade80';
     }else{
-      mSpend.textContent=fmt(diff2)+' over';
+      mSpend.textContent=fmt(-mLeft)+' over';
       mSpend.style.color='#f87171';
     }
     const mBuy=document.getElementById('mobileBuy');
@@ -2101,6 +2120,8 @@ function updateSessionRecord(){
   const titlesEl=document.getElementById('sessionTitles');if(titlesEl)titlesEl.textContent=r.titles;
   const top2El=document.getElementById('sessionTop2');if(top2El)top2El.textContent=r.top2;
   const top4El=document.getElementById('sessionTop4');if(top4El)top4El.textContent=r.top4;
+  const mT=document.getElementById('mTitles');if(mT)mT.textContent=r.titles;
+  const m4=document.getElementById('mTop4');if(m4)m4.textContent=r.top4;
 }
 
 // ── Squad render ───────────────────────────────────────────────────────
@@ -3052,6 +3073,8 @@ function toggleJanWindow(on){
 function renderJanToggle(){
   const box=document.getElementById('janToggle');
   if(box)box.checked=S.janWindow;
+  const boxM=document.getElementById('janToggleM');
+  if(boxM){boxM.checked=S.janWindow;boxM.disabled=S.phase!=='summer';}
   const row=document.getElementById('janToggleRow');
   if(row){
     row.style.borderColor=S.janWindow?'#1d4ed8':'#1f2937';
@@ -3063,6 +3086,8 @@ function renderJanToggle(){
       ? `January market open · ${MAX_JAN_SIGNINGS-(S.bought.length-(S.boughtSummer||0))} signing${MAX_JAN_SIGNINGS-(S.bought.length-(S.boughtSummer||0))===1?'':'s'} left`
       : 'Stop at the winter break and sign again';
     hint.style.color=S.phase==='january'?'#93c5fd':'#6b7280';
+    const hintM=document.getElementById('janToggleHintM');
+    if(hintM){hintM.textContent=hint.textContent;hintM.style.color=hint.style.color;}
   }
   if(box)box.disabled=S.phase!=='summer';
 }
@@ -3298,9 +3323,9 @@ function openMatchModal(){
       return `<div style="display:flex;align-items:center;gap:5px;padding:3px 5px;border-radius:4px;"
         onmouseover="this.style.background='#111827'" onmouseout="this.style.background='transparent'">
         <span style="width:18px;height:18px;border-radius:4px;background:${rc}22;color:${rc};font-size:9.6px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${g.res}</span>
-        <span style="font-size:10px;font-weight:600;color:#e5e7eb;white-space:nowrap;min-width:80px;">${g.opp}</span>
+        <span style="font-size:10px;font-weight:600;color:#e5e7eb;white-space:nowrap;min-width:0;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;max-width:96px;">${g.opp}</span>
         <span style="font-size:9.6px;color:#4b5563;flex-shrink:0;">(${ha})</span>
-        <span style="flex:1;">${scorerTxt}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;">${scorerTxt}</span>
         <span style="font-size:9.8px;font-weight:700;color:#d1d5db;flex-shrink:0;min-width:26px;text-align:right;">${g.gf}–${g.ga}</span>
         <span style="font-size:9.4px;color:#374151;flex-shrink:0;min-width:29px;text-align:right;">${g.cum}pts</span>
       </div>`;
@@ -3496,6 +3521,9 @@ function toggleDifficulty(){
 }
 
 renderDifficulty();
+// Show the saved record straight away; it was only ever drawn after a simulation, so a
+// reload displayed zeros until you played again even though the record had been kept.
+updateSessionRecord();
 
 document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));
 loadSeason(2010).then(maybeShowIntro);
