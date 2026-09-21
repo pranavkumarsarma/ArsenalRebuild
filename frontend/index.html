@@ -18,6 +18,7 @@
     .sell-btn:hover{background:#7f1d1d;border-color:#7f1d1d;color:#fca5a5;}
     .add-btn{width:17px;height:17px;border-radius:50%;border:1px solid #374151;background:transparent;color:#6b7280;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;flex-shrink:0;}
     .add-btn:hover{border-color:#EF0107;color:#EF0107;}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .col-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 6px;border-bottom:1px solid #1f2937;background:#0d1b2f;flex-shrink:0;}
     .sim-btn{background:linear-gradient(135deg,#EF0107,#c0000a);border:none;cursor:pointer;transition:all .2s;color:#fff;}
     .sim-btn:hover{box-shadow:0 0 20px rgba(239,1,7,.4);transform:scale(1.02);}
@@ -102,10 +103,10 @@
   <div style="display:flex;align-items:center;gap:9px;">
     <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#EF0107,#c0000a);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9.4px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
     <div>
-      <div style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;">Arsenal Rebuild</div>
+      <h1 style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;margin:0;">Arsenal Rebuild</h1>
       <div style="font-size:9.6px;color:#d1d5db;line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
     </div>
-    <button onclick="openHowToPlay()" title="How to play" style="width:24px;height:24px;border-radius:50%;background:#111827;border:1px solid #374151;color:#9ca3af;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">?</button>
+    <button onclick="openHowToPlay()" title="How to play" aria-label="How to play" style="width:24px;height:24px;border-radius:50%;background:#111827;border:1px solid #374151;color:#9ca3af;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">?</button>
   </div>
   <div id="headerControls" style="display:flex;align-items:center;gap:10px;">
     <div id="simCountBlock" style="text-align:right;">
@@ -2037,14 +2038,14 @@ function render(){
   el.innerHTML=GROUPS.map(g=>{
     const ps=groups[g], active=ps.filter(p=>!S.sold.has(p.id)).length;
     return `
-      <div class="squad-col-wrap" style="display:flex;flex-direction:column;border-right:1px solid #1f2937;overflow:hidden;">
+      <div class="squad-col-wrap" role="region" aria-label="${GRP_LBL[g]}" style="display:flex;flex-direction:column;border-right:1px solid #1f2937;overflow:hidden;">
         <div class="col-hdr">
           <div style="display:flex;align-items:center;gap:5px;">
-            <span class="badge ${GRP_CSS[g]}">${g}</span>
-            <span style="font-size:9.8px;color:#6b7280;">${GRP_LBL[g]}</span>
-            <span style="font-size:9.6px;color:#374151;">${active}</span>
+            <span class="badge ${GRP_CSS[g]}" aria-hidden="true">${g}</span>
+            <h2 style="font-size:9.8px;color:#6b7280;margin:0;font-weight:600;">${GRP_LBL[g]}</h2>
+            <span style="font-size:9.6px;color:#374151;"><span class="sr-only">Available: </span>${active}</span>
           </div>
-          <button class="add-btn" onclick="openModal('${g}')" title="Sign a player">+</button>
+          <button class="add-btn" onclick="openModal('${g}')" title="Sign a ${GRP_LBL[g].slice(0,-1).toLowerCase()}" aria-label="Sign a ${GRP_LBL[g].slice(0,-1).toLowerCase()}">+</button>
         </div>
         <div class="squad-col-list" style="flex:1;overflow-y:auto;padding:3px 4px 6px;">
           ${ps.map(p=>playerCell(p)).join('')}
@@ -2062,7 +2063,7 @@ function playerCell(p){
       <span style="flex:1;min-width:0;font-size:10px;font-weight:600;line-height:1.4;word-break:break-word;">${p.name}</span>
       ${sold
         ? `<button onclick="unsellById('${p.id}')" title="Undo this sale" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:9.4px;font-weight:700;text-decoration:underline;flex-shrink:0;padding:2px 0 0;white-space:nowrap;">undo sale</button>`
-        : `<button class="sell-btn" style="margin-top:1px;" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
+        : `<button class="sell-btn" style="margin-top:1px;" title="Sell ${esc(p.name)}" aria-label="Sell ${esc(p.name)}" onclick="sellPlayer('${p.id}',${p.marketValue||0})">✕</button>`}
     </div>`;
 }
 const SIGNING_RATE_ICON={good:'👍',medium:'✋',bad:'👎'};
@@ -2087,7 +2088,7 @@ function renderSignings(){
         <div style="font-size:9.6px;color:#4ade80;">${fmt(p.marketValue)}</div>
       </div>
       ${rateHtml}
-      <button class="unsign" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
+      <button class="unsign" title="Cancel the signing of ${esc(p.name)}" aria-label="Cancel the signing of ${esc(p.name)}" onclick="unsignPlayer('${p.id}',${p.marketValue||0})">✕</button>
     </div>`;
   }).join('');
 }
@@ -3266,14 +3267,47 @@ renderDifficulty();
 document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));
 loadSeason(2010).then(maybeShowIntro);
 
-// Escape closes whichever modal is open, and Enter runs the search. Every modal was
-// mouse-only: there was no keyboard path to close one.
+// Escape closes whichever modal is open. Every modal was mouse-only: there was no keyboard
+// path to close one.
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     const open=document.querySelector('.modal-bg.open');
     if(open){open.classList.remove('open');e.preventDefault();}
   }
 });
+
+// Modals announced nothing and left focus on the page behind them. Eight different
+// functions open them, so rather than patch each one this watches the class that actually
+// drives visibility: focus moves in on open and returns to whatever opened it on close.
+// (Focus is moved, not trapped -- Tab can still reach the page behind.)
+(function(){
+  let lastFocused=null;
+  document.querySelectorAll('.modal-bg').forEach(m=>{
+    if(m.id==='simLoadingOverlay'){          // a spinner, not a dialog
+      m.setAttribute('role','status');
+      m.setAttribute('aria-live','polite');
+      return;
+    }
+    m.setAttribute('role','dialog');
+    m.setAttribute('aria-modal','true');
+    const inner=m.querySelector('.modal-inner');
+    if(inner&&!inner.hasAttribute('tabindex'))inner.setAttribute('tabindex','-1');
+    m._wasOpen=m.classList.contains('open');
+    new MutationObserver(()=>{
+      const open=m.classList.contains('open');
+      if(open===m._wasOpen)return;
+      m._wasOpen=open;
+      try{
+        if(open){
+          lastFocused=document.activeElement;
+          (m.querySelector('input,select,textarea,button')||inner||m).focus({preventScroll:true});
+        }else if(lastFocused&&lastFocused.focus){
+          lastFocused.focus({preventScroll:true});
+        }
+      }catch(e){}
+    }).observe(m,{attributes:true,attributeFilter:['class']});
+  });
+})();
 </script>
 </body>
 </html>
