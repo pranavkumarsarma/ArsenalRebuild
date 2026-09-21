@@ -641,7 +641,12 @@ const API = 'https://arsenalrebuild.onrender.com';
 
 // ── Player cache (pre-fetched static data, avoids runtime API calls) ───────
 let PLAYER_CACHE = {squads:{}, history:{}};
-(async()=>{
+// Everything that reads the cache awaits this first. The page used to fire the fetch and
+// move on, so the opening season (loaded synchronously at startup) always ran before a
+// 2 MB file had arrived, found no squad, and fell back to the live API on every first
+// visit -- which currently returns 2010/11 Arsenal with no strikers. It also never
+// resolves to an error: a missing or unreadable cache just means the API path, as before.
+const cacheReady=(async()=>{
   try{
     const r=await fetch('./player_cache.json');
     if(r.ok){
@@ -2183,6 +2188,8 @@ async function loadSeason(yr){
   selEls.forEach(el=>{el.disabled=true;el.style.opacity='.5';el.style.cursor='not-allowed';});
   try {
     // Cache-first: use pre-fetched squad if available
+    await cacheReady;
+    if(token!==_loadSeasonToken)return; // a newer season load started while we waited
     const _excl=SQUAD_EXCLUSIONS[yr]||[];
     const _filterSquad=ps=>ps.filter(p=>p.name&&!_excl.some(n=>nameMatches(p.name,n)));
     const cachedSquad=PLAYER_CACHE.squads?.[`11-${yr}`];
@@ -2293,6 +2300,7 @@ async function selectClub(clubId,clubName){
   box.innerHTML=_skeletonCards(4);
   try{
     // Cache-first: use pre-fetched roster if available
+    await cacheReady;
     let rawPlayers;
     const cacheKey=`${clubId}-${S.season}`;
     const cachedRoster=PLAYER_CACHE.squads?.[cacheKey];
@@ -2342,6 +2350,7 @@ function _closestEntry(entries, yr){
   return best;
 }
 async function fetchHistoricalValue(pid,yr){
+  await cacheReady;
   let entries;
   const cached=PLAYER_CACHE.history?.[String(pid)];
   if(cached){
