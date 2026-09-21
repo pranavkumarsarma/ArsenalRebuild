@@ -161,7 +161,7 @@
           <span style="font-size:22px;font-weight:900;color:#EF0107;letter-spacing:-.02em;" id="budgetAmt">—</span>
           <div id="budgetOf" style="font-size:9.8px;color:#6b7280;margin-top:1px;">&nbsp;</div>
         </div>
-        <span id="budgetIQ" style="font-size:9.6px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
+        <span id="budgetIQ" style="white-space:nowrap;flex-shrink:0;font-size:9.6px;font-weight:700;padding:3px 9px;border-radius:9999px;background:#111827;border:1px solid #1f2937;color:#6b7280;">—</span>
       </div>
 
       <!-- Transfer Target -->
@@ -1299,6 +1299,17 @@ function raidSummaryText(){
   }).join(' ');
 }
 
+// What you can actually still spend. Two limits apply at once: the transfer budget (what a
+// signing is checked against) and Wenger's net spend (what the simulation is gated on).
+// Buying and selling move both by the same amount, so whichever starts tighter stays
+// tighter -- the net-spend limit in six of the seven seasons. Showing the budget alone
+// offered money you could not use: sign up to it and the simulation locked you out.
+function spendRoom(){
+  const budgetLeft=(SEASONS[S.season]?.budget||0)-S.spent+S.sales;
+  const netLeft=(SEASONS[S.season]?.netSpend||0)-(S.spent-S.sales);
+  return {left:Math.min(budgetLeft,netLeft),budgetLeft,netLeft,byNet:netLeft<budgetLeft};
+}
+
 // ── Saved state ────────────────────────────────────────────────────────
 // localStorage throws outright in a few embedded and privacy-hardened contexts, and none
 // of what's kept here is worth failing to start over, so every access is guarded.
@@ -1994,18 +2005,20 @@ function updateSidebar(){
   // changes. It used to be written once in loadSeason and then sat at the season's opening
   // budget all game, so the only place a player ever saw their real remaining budget was
   // the toast refusing a signing they'd already tried to make.
-  const budget=SEASONS[S.season]?.budget||0, budgetLeft=budget-S.spent+S.sales;
+  const budget=SEASONS[S.season]?.budget||0, room=spendRoom(), spendLeft=room.left;
   const leftEl=document.getElementById('budgetAmt');
   if(leftEl){
-    leftEl.textContent=fmt(budgetLeft);
-    leftEl.style.color=budgetLeft<0?'#f87171':budgetLeft<5e6?'#fbbf24':'#EF0107';
+    leftEl.textContent=fmt(spendLeft);
+    leftEl.style.color=spendLeft<0?'#f87171':spendLeft<5e6?'#fbbf24':'#EF0107';
   }
   const ofEl=document.getElementById('budgetOf');
   if(ofEl){
-    ofEl.textContent=budgetLeft<0
-      ? `${fmt(-budgetLeft)} overdrawn · sell or unsign to clear it`
-      : `of ${fmt(budget)} budget${S.sales?` + ${fmt(S.sales)} raised`:''}`;
-    ofEl.style.color=budgetLeft<0?'#f87171':'#6b7280';
+    ofEl.textContent=spendLeft<0
+      ? (room.byNet?`${fmt(-spendLeft)} over net-spend cap · sell first`
+                   :`${fmt(-spendLeft)} overdrawn · sell or unsign`)
+      : (room.byNet?`net-spend cap · budget ${fmt(room.budgetLeft)}`
+                   :`of ${fmt(budget)} budget${S.sales?` + ${fmt(S.sales)} raised`:''}`);
+    ofEl.style.color=spendLeft<0?'#f87171':'#6b7280';
   }
   document.getElementById('spentAmt').textContent=fmt(S.spent);
   document.getElementById('salesAmt').textContent='+'+fmt(S.sales);
@@ -3086,7 +3099,7 @@ function _revealJanuaryBreak(){
     else verdict=`${ordinal(pos)} at the break and ${gap} points adrift. This is a rescue job.`;
     if(top)verdict+=` ${top.lastName} leads the scoring with ${top.goals}.`;
     document.getElementById('janVerdict').textContent=verdict;
-    const left=(SEASONS[S.season]?.budget||0)-S.spent+S.sales;
+    const left=spendRoom().left;
     document.getElementById('janBudget').textContent=left>0
       ? `You held back ${fmt(left)} for January, and can make up to ${MAX_JAN_SIGNINGS} signings. Clubs rarely sell their best players mid-season, so expect to be turned down.`
       : `You have nothing left to spend. Sell someone to fund a January move, or play the rest of the season as you are.`;
