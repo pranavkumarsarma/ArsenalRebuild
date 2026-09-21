@@ -223,7 +223,7 @@
     <div style="flex-shrink:0;padding:0 12px 8px;">
       <div style="background:#111827;border-radius:8px;padding:9px 11px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
-          <span style="font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#e5e7eb;">This Session</span>
+          <span style="font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#e5e7eb;">Your Record</span>
           <span style="font-size:8px;color:#6b7280;" id="sessionSimCount">0 simulations</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
@@ -1255,10 +1255,30 @@ function raidSummaryText(){
   }).join(' ');
 }
 
+// ── Saved state ────────────────────────────────────────────────────────
+// localStorage throws outright in a few embedded and privacy-hardened contexts, and none
+// of what's kept here is worth failing to start over, so every access is guarded.
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function loadRecord(){
+  try{
+    const r=JSON.parse(lsGet('arsenalRebuildRecord')||'null');
+    if(r&&typeof r==='object'){
+      const n=v=>Number.isFinite(+v)&&+v>=0?Math.floor(+v):0;
+      return {titles:n(r.titles),top2:n(r.top2),top4:n(r.top4),sims:n(r.sims)};
+    }
+  }catch(e){}
+  return {titles:0,top2:0,top4:0,sims:0};
+}
+function saveRecord(){
+  const r=S.sessionRecord;
+  lsSet('arsenalRebuildRecord',JSON.stringify({titles:r.titles,top2:r.top2,top4:r.top4,sims:r.sims}));
+}
+
 // ── State ──────────────────────────────────────────────────────────────
 const S = { season:2010, players:[], sold:new Set(), bought:[], spent:0, sales:0, lineup:{}, simCount:0, sellHistory:[], formation:'4-3-3', youthSold:0, salesByGrp:{GK:0,DEF:0,MID:0,ATT:0},
-  difficulty: (['difficult','fun'].includes(localStorage.getItem('arsenalRebuildDifficulty'))) ? localStorage.getItem('arsenalRebuildDifficulty') : 'normal',
-  sessionRecord: {titles:0, top2:0, top4:0} };
+  difficulty: (['difficult','fun'].includes(lsGet('arsenalRebuildDifficulty'))) ? lsGet('arsenalRebuildDifficulty') : 'normal',
+  sessionRecord: loadRecord() };
 let _lastSimData = null;
 
 // ── Ratings ────────────────────────────────────────────────────────────
@@ -2001,7 +2021,7 @@ function updateSidebar(){
 function updateSessionRecord(){
   const r=S.sessionRecord;
   const simEl=document.getElementById('sessionSimCount');
-  if(simEl)simEl.textContent=`${S.simCount} simulation${S.simCount===1?'':'s'}`;
+  if(simEl)simEl.textContent=`${r.sims} simulation${r.sims===1?'':'s'}`;
   const titlesEl=document.getElementById('sessionTitles');if(titlesEl)titlesEl.textContent=r.titles;
   const top2El=document.getElementById('sessionTop2');if(top2El)top2El.textContent=r.top2;
   const top4El=document.getElementById('sessionTop4');if(top4El)top4El.textContent=r.top4;
@@ -2656,9 +2676,11 @@ function runSimulation(){
   }
 
   // This Session record: a title also counts as a top-2 and top-4 finish
+  S.sessionRecord.sims++;
   if(arsenalPos===1)S.sessionRecord.titles++;
   if(arsenalPos<=2)S.sessionRecord.top2++;
   if(arsenalPos<=4)S.sessionRecord.top4++;
+  saveRecord();
   updateSessionRecord();
 
   const wdl=wdlFromPts(simPts);
@@ -3171,6 +3193,13 @@ function openSquadAnalysis(){
 }
 function closeSquadAnalysis(){document.getElementById('squadAnalysisModal').classList.remove('open');}
 function openHowToPlay(){document.getElementById('howToPlayModal').classList.add('open');}
+// A first-time player landed straight in a four-column squad grid with no idea what any of
+// it was for, and the explanation sat behind a 24px "?" in the corner. Show it once.
+function maybeShowIntro(){
+  if(lsGet('arsenalRebuildSeenIntro'))return;
+  lsSet('arsenalRebuildSeenIntro','1');
+  openHowToPlay();
+}
 function closeHowToPlay(e){
   if(e&&e.target!==document.getElementById('howToPlayModal'))return;
   document.getElementById('howToPlayModal').classList.remove('open');
@@ -3212,7 +3241,7 @@ function renderDifficulty(){
 function toggleDifficulty(){
   const idx=DIFFICULTY_ORDER.indexOf(S.difficulty);
   S.difficulty=DIFFICULTY_ORDER[(idx+1)%DIFFICULTY_ORDER.length];
-  localStorage.setItem('arsenalRebuildDifficulty',S.difficulty);
+  lsSet('arsenalRebuildDifficulty',S.difficulty);
   renderDifficulty();
   showToast((DIFFICULTY_META[S.difficulty]||DIFFICULTY_META.normal).toast,3000);
 }
@@ -3220,7 +3249,16 @@ function toggleDifficulty(){
 renderDifficulty();
 
 document.getElementById('seasonSelect').addEventListener('change',e=>loadSeason(+e.target.value));
-loadSeason(2010);
+loadSeason(2010).then(maybeShowIntro);
+
+// Escape closes whichever modal is open, and Enter runs the search. Every modal was
+// mouse-only: there was no keyboard path to close one.
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    const open=document.querySelector('.modal-bg.open');
+    if(open){open.classList.remove('open');e.preventDefault();}
+  }
+});
 </script>
 </body>
 </html>
