@@ -2911,6 +2911,12 @@ function _opponentStr(teamName,finalPts,season){
 // scoring charts, which reads as a broken result rather than a fun quirk. Excluded from
 // the "main striker/creator" boost below and hard-blocked from ever being crowned the
 // season's Top Scorer or Top Assister.
+// How much the designated main striker and main creator outweigh everyone else. At 2.8x
+// and 2.4x the outcome was a formality: across 250 simulated seasons the same player took
+// the Golden Boot 100% of the time in every one of the seven seasons, so the result card
+// named the same two men on every run. Lower, they are still clear favourites and still
+// usually win it, but a strong season from someone else can now actually beat them.
+const SPEARHEAD_BOOST=1.6, CREATOR_BOOST=1.5;
 const FRINGE_FINISHERS=['Park Chu-Young','Wellington Silva','Bendtner','Akpom','Miyaichi','Chamakh'];
 // Realism ceilings for a single player's season tally (a Golden Boot year tops out low 30s;
 // even a Cazorla/Özil creative peak sits around 20 assists).
@@ -2947,9 +2953,9 @@ function _buildScorerPool(allActive,starterIds){
   // to chip in, just not an equal one.
   const starters=pool.filter(p=>p.isStarter&&!p.isFringe);
   const topScorer=starters.reduce((best,p)=>p.gW>(best?.gW||0)?p:best,null);
-  if(topScorer)topScorer.gW*=2.8;
+  if(topScorer)topScorer.gW*=SPEARHEAD_BOOST;
   const topCreator=starters.reduce((best,p)=>p.aW>(best?.aW||0)?p:best,null);
-  if(topCreator)topCreator.aW*=2.4;
+  if(topCreator)topCreator.aW*=CREATOR_BOOST;
   return pool;
 }
 function _pickW(pool){
