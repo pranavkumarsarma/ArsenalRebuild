@@ -1179,10 +1179,26 @@ function raidFor(clubName){
   const club=resolveClub(clubName);
   return club?getClubRaids().byKey.get(club.key)||null:null;
 }
+// The full 20-club league, derived rather than stored: SEASON_OPPONENTS already holds all
+// 19 opponents and their real final points, and ACTUAL_TABLE holds Arsenal's own row, so
+// the whole table falls out of data that's already here and already cross-checked.
+// Ranking against four clubs meant a 30-point season still "finished 4th" and the Europa
+// and Wenger Out result screens could never render; against twenty, a bad window is a bad
+// season and the league position means what it says.
+const _fullTable={};
+function fullLeagueTable(season){
+  if(_fullTable[season])return _fullTable[season];
+  const rows=(SEASON_OPPONENTS[season]||[]).map(o=>({club:o.n,pts:o.pts}));
+  const arsenal=(ACTUAL_TABLE[season]||[]).find(r=>r.club==='Arsenal');
+  if(arsenal)rows.push({club:'Arsenal',pts:arsenal.pts});
+  rows.sort((a,b)=>b.pts-a.pts);
+  _fullTable[season]=rows;
+  return rows;
+}
 // The raided league. Every consumer of the season tables reads through these, so a
 // weakened club is weaker consistently: in the duels, in the run-in, and in the standings.
 function weakenedTable(season){
-  const base=ACTUAL_TABLE[season]||[];
+  const base=fullLeagueTable(season);
   if(season!==S.season)return base;
   const raids=getClubRaids().bySim;
   return base.map(r=>{const d=raids.get(r.club)?.ptsDrop||0;return d?{...r,pts:Math.max(20,r.pts-d)}:r;});
@@ -2547,7 +2563,9 @@ function runSimulation(){
 
   // Build table, find Arsenal position
   let table=buildSimTable(simPts,S.season);
-  let arsenalPos=table.findIndex(r=>r.yours)+1;
+  // The row carries its true rank in the full league; its index in this array is only the
+  // position within the handful of rows the result card shows.
+  let arsenalPos=table.find(r=>r.yours)?.pos||table.length;
 
   // Title cap: reaching 1st on points doesn't automatically mean keeping it.
   // Fun mode: gap filled AND a considerable improvement against the top 4 (vsTop4Delta>=5)
@@ -2585,7 +2603,7 @@ function runSimulation(){
       if(Math.random()<dropChance){
         simPts=Math.min(topRival.pts-1,simPts-3);
         table=buildSimTable(simPts,S.season);
-        arsenalPos=table.findIndex(r=>r.yours)+1;
+        arsenalPos=table.find(r=>r.yours)?.pos||table.length;
       }
     }
   }
