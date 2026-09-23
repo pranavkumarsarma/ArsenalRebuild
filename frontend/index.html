@@ -1442,10 +1442,6 @@ function getClubRaids(){
   _raidCache={sig,byKey,bySim};
   return _raidCache;
 }
-function raidFor(clubName){
-  const club=resolveClub(clubName);
-  return club?getClubRaids().byKey.get(club.key)||null:null;
-}
 // The full 20-club league, derived rather than stored: SEASON_OPPONENTS already holds all
 // 19 opponents and their real final points, and ACTUAL_TABLE holds Arsenal's own row, so
 // the whole table falls out of data that's already here and already cross-checked.
@@ -2683,42 +2679,117 @@ function _candidateCard(r){
       </div>
     </div>`;
 }
-async function doSearch(q){
-  const hint=document.getElementById('searchHint'),box=document.getElementById('searchResults');
-  hint.textContent='Searching…';
-  box.innerHTML=_skeletonCards(4);
-  try{
-    const r=await fetch(`${API}/players/search/${encodeURIComponent(q)}`);
-    const d=await r.json();
-    const squadIds=new Set(S.players.map(p=>p.id)), boughtIds=new Set(S.bought.map(p=>p.id));
-    // Drop players already in the squad or already signed this window before slicing, so a
-    // result like Sánchez (already at Arsenal that era) never takes up a suggestion slot.
-    // A sold squad player still belongs to you (use "undo sale", not a re-sign), so exclude
-    // them too.
-    const allResults=(d.results||[]).filter(p=>!squadIds.has(p.id)&&!boughtIds.has(p.id)).slice(0,14);
-    const budget=SEASONS[S.season]?.budget||0;
-    const eraFiltered=allResults.filter(p=>!eraCheck(p.age));
-    // Filter by position group when modal was opened from a position column
-    const posFiltered=_grp?eraFiltered.filter(p=>!p.position||grp(p.position)===_grp):eraFiltered;
-    const results=posFiltered.length>0?posFiltered:eraFiltered; // fall back to all if pos filter kills everything
-    const posFiltering=_grp&&posFiltered.length>0&&posFiltered.length<eraFiltered.length;
-    const hiddenByAge=allResults.length-eraFiltered.length;
-    if(!results.length){
-      hint.textContent=hiddenByAge?`${hiddenByAge} found but none active in ${S.season}/${String(S.season+1).slice(-2)}`:'No results';
-      box.innerHTML='<div style="text-align:center;color:var(--text-4);font-size:11px;padding:12px;">No players from this era matched</div>';
-      return;
+// ── Search ─────────────────────────────────────────────────────────────
+// The cache already holds every player in the browsable clubs for this era, with their
+// value history, so most searches never need the network: matches appear as you type and
+// their era values come straight from the cache. The API is still asked, in the background,
+// for anyone the cache doesn't know -- its results are merged in when they arrive.
+let _searchToken = 0;
+const _apiSearchCache = new Map();
+let _nameIdx = {};
+function nameIndex(season){
+  if(_nameIdx[season]) return _nameIdx[season];
+  const byId = new Map();
+  for(const [key, roster] of Object.entries(PLAYER_CACHE.squads||{})){
+    const i = key.lastIndexOf('-');
+    if(+key.slice(i+1) !== season || !Array.isArray(roster)) continue;
+    for(const pl of roster){
+      if(!pl.id || !pl.name || byId.has(String(pl.id))) continue;
+      byId.set(String(pl.id), {id:String(pl.id), name:pl.name, position:pl.position,
+        age:pl.age, norm:normName(pl.name), fromCache:true});
     }
-    const posLabel=posFiltering?` · ${GRP_LBL[_grp]?.toLowerCase()||_grp} only`:'';
-    hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · loading ${S.season} data…`;
-    box.innerHTML=_skeletonCards(results.length);
-    const yr=S.season,yrLabel=`${yr}/${String(yr+1).slice(-2)}`;
-    const resolved=await Promise.all(results.map(p=>_resolveCandidate(p,yr,budget,squadIds.has(p.id)||boughtIds.has(p.id))));
-    resolved.sort((a,b)=>_candidateRank(a)-_candidateRank(b));
-    hint.textContent=`${results.length} result${results.length===1?'':'s'}${posLabel} · ${yrLabel} values loaded`;
-    box.innerHTML=resolved.map(_candidateCard).join('');
-  }catch(e){hint.textContent='Search failed, check your connection and try again.';box.innerHTML='';}
+  }
+  _nameIdx[season] = [...byId.values()];
+  return _nameIdx[season];
 }
+// Surname first, then any word, then anywhere in the name: "kant" finds Kanté before
+// Kantari, and accents never get in the way because both sides are normalised.
+function localCandidates(q, season){
+  const needle = normName(q);
+  if(needle.length < 2) return [];
+  const out = [];
+  for(const e of nameIndex(season)){
+    const words = e.norm.split(' ');
+    const last = words[words.length-1];
+    let rank = -1;
+    if(last.startsWith(needle)) rank = 0;
+    else if(words.some(w => w.startsWith(needle))) rank = 1;
+    else if(e.norm.includes(needle)) rank = 2;
+    if(rank >= 0) out.push({e, rank});
+  }
+  out.sort((a,b) => a.rank - b.rank || a.e.name.length - b.e.name.length);
+  return out.slice(0, 14).map(x => x.e);
+}
+function _searchFilter(list){
+  const squadIds = new Set(S.players.map(p => String(p.id)));
+  const boughtIds = new Set(S.bought.map(p => String(p.id)));
+  // eraCheck takes the API's present-day age and works back to this season. Cache entries
+  // already carry the age the player was that season, so running them through it would age
+  // them a second time -- Mahrez at 25 in 2015/16 came out as 14 and "born too late".
+  const era = list.filter(p => !squadIds.has(String(p.id)) && !boughtIds.has(String(p.id))
+    && (p.fromCache || !eraCheck(p.age)));
+  const posed = _grp ? era.filter(p => !p.position || grp(p.position) === _grp) : era;
+  return {shown: posed.length ? posed : era, narrowed: _grp && posed.length && posed.length < era.length};
+}
+async function _renderCandidates(list, yr, hint, token){
+  const budget = SEASONS[S.season]?.budget || 0;
+  const resolved = await Promise.all(list.map(p => _resolveCandidate(p, yr, budget, false)));
+  if(token !== _searchToken) return;                     // a newer keystroke won this race
+  resolved.sort((a,b) => _candidateRank(a) - _candidateRank(b));
+  document.getElementById('searchResults').innerHTML = resolved.map(_candidateCard).join('');
+  document.getElementById('searchHint').textContent = hint;
+}
+async function doSearch(q){
+  const token = ++_searchToken;
+  const hint = document.getElementById('searchHint'), box = document.getElementById('searchResults');
+  const yr = S.season, yrLabel = `${yr}/${String(yr+1).slice(-2)}`;
+  const posLabel = g => g ? ` · ${(GRP_LBL[g]||'').toLowerCase()} only` : '';
 
+  const local = _searchFilter(localCandidates(q, yr));
+  let shownIds = new Set();
+  if(local.shown.length){
+    shownIds = new Set(local.shown.map(p => String(p.id)));
+    await _renderCandidates(local.shown, yr,
+      `${local.shown.length} result${local.shown.length===1?'':'s'}${posLabel(local.narrowed?_grp:null)} · ${yrLabel} · searching for more…`, token);
+  }else{
+    hint.textContent = 'Searching…';
+    box.innerHTML = _skeletonCards(4);
+  }
+  if(token !== _searchToken) return;
+
+  let apiResults;
+  try{
+    const key = q.toLowerCase();
+    if(_apiSearchCache.has(key)) apiResults = _apiSearchCache.get(key);
+    else{
+      const r = await fetch(`${API}/players/search/${encodeURIComponent(q)}`);
+      apiResults = (await r.json()).results || [];
+      _apiSearchCache.set(key, apiResults);
+    }
+  }catch(e){
+    if(token !== _searchToken) return;
+    // Offline or the API is asleep: the cache already answered, so say so rather than fail.
+    if(local.shown.length) hint.textContent = `${local.shown.length} result${local.shown.length===1?'':'s'}${posLabel(local.narrowed?_grp:null)} · ${yrLabel} values loaded`;
+    else{ hint.textContent = 'Search failed, check your connection and try again.'; box.innerHTML = ''; }
+    return;
+  }
+  if(token !== _searchToken) return;
+
+  const extra = _searchFilter(apiResults.filter(p => !shownIds.has(String(p.id))).slice(0, 14));
+  const merged = [...local.shown, ...extra.shown].slice(0, 14);
+  if(!merged.length){
+    const hiddenByAge = apiResults.length ? apiResults.length - extra.shown.length : 0;
+    hint.textContent = hiddenByAge ? `${hiddenByAge} found but none active in ${yrLabel}` : 'No results';
+    box.innerHTML = '<div style="text-align:center;color:var(--text-4);font-size:11px;padding:12px;">No players from this era matched</div>';
+    return;
+  }
+  if(extra.shown.length){
+    hint.textContent = `${merged.length} result${merged.length===1?'':'s'} · loading ${yr} data…`;
+    if(!local.shown.length) box.innerHTML = _skeletonCards(merged.length);
+  }
+  await _renderCandidates(merged, yr,
+    `${merged.length} result${merged.length===1?'':'s'}${posLabel((local.narrowed||extra.narrowed)?_grp:null)} · ${yrLabel} values loaded`, token);
+}
 function handleCardClick(card,name,position,currClub){
   const ec=card.dataset.eraClub||currClub;
   const lastName=name.split(' ').pop();
@@ -2822,14 +2893,6 @@ function handleCardClick(card,name,position,currClub){
   const growth=parseFloat(card.dataset.growth)||1;
   S.bought.push({id:card.dataset.id,name,position:finalPos,_group:posGroup,marketValue:value,growth,club:ec});S.spent+=value;
   checkEliteSquadCap(finalPos,card.dataset.id);
-  // Only report the damage if the signing survived the squad-cap check above, which can
-  // collapse the deal and refund it.
-  if(S.bought.some(p=>p.id===card.dataset.id)){
-    const raid=raidFor(ec);
-    if(raid?.sim&&raid.ptsDrop>=3){
-      setTimeout(()=>showToast(`${raid.sim} are weaker without ${lastName}, worth around ${raid.ptsDrop} points off their season.`,4200),900);
-    }
-  }
   document.getElementById('addModal').classList.remove('open');
   render();updateSidebar();updateLineupCountBadges();
 }
