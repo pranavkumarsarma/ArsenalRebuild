@@ -873,7 +873,7 @@ const cacheReady=(async()=>{
     const r=await fetch('./player_cache.json');
     if(r.ok){
       const d=await r.json();
-      PLAYER_CACHE={squads:d.squads||{},history:d.history||{}};
+      PLAYER_CACHE={squads:d.squads||{},history:d.history||{},clubs:d.clubs||[]};
     }
   }catch(e){}
 })();
@@ -2593,7 +2593,11 @@ async function fetchHistoricalValue(pid,yr){
   const cached=PLAYER_CACHE.history?.[String(pid)];
   if(cached){
     if(!cached.length)return null;
-    entries=cached;
+    // The cache stores each entry as [days-since-epoch, value, club index] against a shared
+    // club list, which is what keeps the shipped file small. Expanded per player, on demand.
+    entries=cached.map(e=>Array.isArray(e)
+      ?{date:e[0]*86400000,value:e[1],club:(PLAYER_CACHE.clubs||[])[e[2]]??null}
+      :e);
   }else{
     try{
       const r=await fetch(`${API}/players/${pid}/market_value`);
