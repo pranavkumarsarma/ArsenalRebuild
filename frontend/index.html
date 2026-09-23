@@ -18,7 +18,7 @@
       /* Text, strongest to faintest */
       --text-hi:#fff; --text:#e5e7eb; --text-2:#d1d5db; --text-3:#9ca3af; --text-4:#6b7280; --text-5:#4b5563; --text-6:#374151;
       /* Accent */
-      --accent:#ef0107; --accent-2:#c0000a; --accent-3:#b91c1c; --accent-4:#ff4444;
+      --accent:#ef0107; --on-accent:#fff; --accent-2:#c0000a; --accent-3:#b91c1c; --accent-4:#ff4444;
       /* Meaning: good / bad / warning / info */
       --good:#4ade80; --bad:#f87171; --warn:#fbbf24; --info:#60a5fa; --orange:#fb923c; --purple:#c084fc; --bad-soft:#fca5a5; --info-soft:#93c5fd; --info-deep:#1d4ed8; --purple-deep:#7e22ce;
       /* Tinted surfaces behind that meaning */
@@ -26,6 +26,29 @@
     }
     *,html,body{font-family:'Inter',sans-serif;margin:0;padding:0;box-sizing:border-box;}
     html,body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text-hi);}
+    body{background:transparent;}
+    /* Optional backdrop (pitch markings or the player's own image), behind everything. */
+    /* Appearance panel */
+    .ap-sec{margin-top:15px;}
+    .ap-h{font-size:9.6px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4);margin:0 0 7px;}
+    .ap-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px;}
+    .ap-theme{position:relative;display:flex;flex-direction:column;gap:5px;padding:6px;border:1.5px solid var(--line);border-radius:9px;cursor:pointer;background:var(--card);}
+    .ap-theme.on{border-color:var(--accent);}
+    .ap-theme input,.ap-seg input{position:absolute;opacity:0;width:1px;height:1px;}
+    .ap-theme:focus-within,.ap-seg label:focus-within{outline:2px solid var(--accent);outline-offset:2px;}
+    .ap-swatch{height:32px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-weight:900;font-size:13px;border:1px solid rgba(128,128,128,.25);}
+    .ap-dot{width:12px;height:12px;border-radius:50%;}
+    .ap-name{font-size:10.5px;font-weight:700;color:var(--text);line-height:1.2;}
+    .ap-note{font-size:9.4px;color:var(--text-4);}
+    .ap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft);}
+    .ap-row label{font-size:11px;color:var(--text-2);font-weight:600;}
+    .ap-row input[type=color]{width:46px;height:32px;border:1px solid var(--line-3);border-radius:6px;background:var(--card);padding:2px;cursor:pointer;}
+    .ap-seg{display:flex;gap:5px;flex-wrap:wrap;}
+    .ap-seg label{position:relative;flex:1;min-width:84px;min-height:34px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--line);border-radius:8px;font-size:10.5px;font-weight:700;color:var(--text-3);cursor:pointer;background:var(--card);}
+    .ap-seg label.on{border-color:var(--accent);color:var(--text-hi);}
+    .ap-note-box{font-size:9.8px;line-height:1.5;color:var(--text-3);margin-top:7px;}
+    .ap-contrast{font-size:10px;line-height:1.5;margin-top:8px;padding:7px 9px;border-radius:7px;background:var(--card);}
+    #bgLayer{position:fixed;inset:0;z-index:-1;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;}
     .badge{border-radius:9999px;font-size:9px;font-weight:700;padding:1px 5px;display:inline-block;letter-spacing:.03em;flex-shrink:0;}
     .pos-gk{background:var(--info-tint);color:var(--info);} .pos-def{background:var(--good-tint-3);color:var(--good);}
     .pos-mid{background:var(--warn-tint);color:var(--orange);} .pos-att{background:var(--bad-tint-5);color:var(--bad);}
@@ -37,14 +60,14 @@
     .add-btn:hover{border-color:var(--accent);color:var(--accent);}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .col-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 6px;border-bottom:1px solid var(--line);background:var(--panel);flex-shrink:0;}
-    .sim-btn{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;cursor:pointer;transition:all .2s;color:var(--text-hi);}
-    .sim-btn:hover{box-shadow:0 0 20px rgba(239,1,7,.4);transform:scale(1.02);}
+    .sim-btn{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;cursor:pointer;transition:all .2s;color:var(--on-accent);}
+    .sim-btn:hover{box-shadow:0 0 20px color-mix(in srgb,var(--accent) 40%,transparent);transform:scale(1.02);}
     .slot-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
     .slot-used{background:var(--accent);} .slot-free{background:var(--raise-2);}
     ::-webkit-scrollbar{width:2px;height:2px;} ::-webkit-scrollbar-thumb{background:var(--raise-2);border-radius:2px;}
     .spin{animation:spin .8s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
-    @keyframes badgeGlow{0%,100%{box-shadow:0 0 6px rgba(239,1,7,.35);}50%{box-shadow:0 0 14px rgba(239,1,7,.65),0 0 28px rgba(239,1,7,.2);}}
-    @keyframes simBtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,1,7,.5);}70%{box-shadow:0 0 0 8px rgba(239,1,7,0);}}
+    @keyframes badgeGlow{0%,100%{box-shadow:0 0 6px color-mix(in srgb,var(--accent) 35%,transparent);}50%{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 65%,transparent),0 0 28px color-mix(in srgb,var(--accent) 20%,transparent);}}
+    @keyframes simBtnPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 50%,transparent);}70%{box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 0%,transparent);}}
     @keyframes countPop{0%{transform:scale(1);}50%{transform:scale(1.5);color:var(--accent-4);}100%{transform:scale(1);}}
     @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
@@ -54,8 +77,8 @@
     .count-pop{animation:countPop .4s ease-out;}
     .modal-inner{animation:fadeUp .2s ease-out;}
     .table-row.yours{background:linear-gradient(90deg,var(--bad-tint-1),var(--bad-tint-2));border:1px solid var(--bad-line);}
-    .share-card-glow{box-shadow:0 0 0 1px var(--raise),0 8px 32px rgba(239,1,7,.12);}
-    .result-pos-glow{text-shadow:0 0 20px rgba(239,1,7,.4),0 0 40px rgba(239,1,7,.2);}
+    .share-card-glow{box-shadow:0 0 0 1px var(--raise),0 8px 32px color-mix(in srgb,var(--accent) 12%,transparent);}
+    .result-pos-glow{text-shadow:0 0 20px color-mix(in srgb,var(--accent) 40%,transparent),0 0 40px color-mix(in srgb,var(--accent) 20%,transparent);}
     .modal-bg{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);}
     .modal-bg.open{display:flex;}
     #toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:var(--raise);border:1px solid var(--line-3);border-radius:9px;padding:9px 16px;font-size:11px;font-weight:500;z-index:200;display:none;max-width:340px;text-align:center;line-height:1.4;}
@@ -108,6 +131,7 @@
       #addModal .modal-inner,#lineupModal .modal-inner{max-height:95svh!important;margin:6px!important;}
       #resultModal .modal-inner{max-height:98svh!important;margin:4px!important;padding:14px!important;}
       #squadAnalysisModal .modal-inner{max-height:97svh!important;margin:6px!important;}
+      #appearanceModal .modal-inner{max-height:94svh!important;margin:6px!important;padding:13px!important;}
       #howToPlayModal .modal-inner{max-height:90svh!important;margin:6px!important;padding:14px!important;}
       #matchModal .modal-inner{max-height:calc(100svh - 70px)!important;margin:6px 6px 60px!important;}
       .modal-inner{border-radius:14px!important;}
@@ -121,15 +145,133 @@
   </style>
 </head>
 <body>
+<div id="bgLayer" aria-hidden="true" style="display:none;"></div>
+<script>
+// ── Themes ─────────────────────────────────────────────────────────────
+// Runs before the page paints, so a saved theme never flashes the default first. Every
+// colour on the page is a CSS variable (see :root); a theme is just a set of overrides on
+// <html>. "Emirates Night" is the :root default itself, so it applies no overrides at all.
+const THEME_PRESETS = {
+  night:       {name:'Emirates Night',   note:'The original',             bg:'#0c1a2e', text:'#ffffff', accent:'#ef0107'},
+  highbury:    {name:'Highbury Day',     note:'Light',                    bg:'#f4f5f7', text:'#111827', accent:'#d4000a'},
+  invincibles: {name:'Invincibles Gold', note:'2003/04',                  bg:'#15120c', text:'#f5eedc', accent:'#d9ab35'},
+  pitch:       {name:'Pitch Green',      note:'Matchday grass',           bg:'#0c2016', text:'#f0f7f1', accent:'#ef0107'},
+  contrast:    {name:'High Contrast',    note:'Maximum legibility',       bg:'#000000', text:'#ffffff', accent:'#ffd400', strong:true},
+};
+const THEME_KEY='arsenalRebuildTheme', THEME_IMG_KEY='arsenalRebuildBgImage';
+
+const _hex=h=>{h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
+const _toHex=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+// Blend a toward b by t (0 = a, 1 = b).
+const mixHex=(a,b,t)=>{const A=_hex(a),B=_hex(b);return _toHex(A.map((v,i)=>v+(B[i]-v)*t));};
+const lumHex=h=>{const c=_hex(h).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);});return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];};
+const contrastHex=(a,b)=>{const[x,y]=[lumHex(a),lumHex(b)].sort((p,q)=>q-p);return(x+0.05)/(y+0.05);};
+// Whichever of near-black or white reads better on a colour.
+const inkFor=h=>contrastHex(h,'#ffffff')>=contrastHex(h,'#0b0f17')?'#ffffff':'#0b0f17';
+
+// Every variable, derived from three choices: background, text and accent. Surfaces, lines
+// and the fainter text steps are blends between background and text at the same ratios the
+// original design uses, so any pair of colours gets a coherent set rather than just two
+// recoloured elements. The good/bad/warning hues switch to deeper shades on light
+// backgrounds, where the originals (tuned for navy) would not be legible.
+function themeTokens(bg,text,accent,strong){
+  const light=lumHex(bg)>0.4;
+  const toText=t=>mixHex(bg,text,t), toBg=t=>mixHex(text,bg,t);
+  const sem=light
+    ?{good:'#14532d',bad:'#991b1b',warn:'#78350f',info:'#1e40af',orange:'#7c2d12',purple:'#6b21a8','bad-soft':'#7f1d1d','info-soft':'#1e3a8a','info-deep':'#1e40af','purple-deep':'#581c87'}
+    :{good:'#4ade80',bad:'#f87171',warn:'#fbbf24',info:'#60a5fa',orange:'#fb923c',purple:'#c084fc','bad-soft':'#fca5a5','info-soft':'#93c5fd','info-deep':'#1d4ed8','purple-deep':'#7e22ce'};
+  const tint=(c,t)=>mixHex(c,bg,t);
+  return {
+    'bg-deep':light?toText(0.04):mixHex(bg,'#000000',0.15), bg, panel:toText(light?0.02:0.01),
+    card:toText(light?0.05:0.03), 'card-hi':toText(light?0.09:0.07), raise:toText(light?0.11:0.09),
+    'raise-2':toText(0.18), 'raise-3':toText(0.38),
+    'line-soft':toText(light?0.07:0.03), line:toText(light?0.13:0.09), 'line-2':toText(light?0.17:0.13),
+    'line-3':toText(light?0.24:0.18), 'line-4':toText(0.3), 'line-5':toText(0.4),
+    'text-hi':text, text:toBg(strong?0.02:0.06), 'text-2':toBg(strong?0.04:0.12),
+    'text-3':toBg(strong?0.08:light?0.3:0.34), 'text-4':toBg(strong?0.12:light?0.42:0.48),
+    'text-5':toBg(strong?0.16:light?0.52:0.6), 'text-6':toBg(strong?0.2:light?0.6:0.72),
+    accent, 'accent-2':mixHex(accent,'#000000',0.2), 'accent-3':mixHex(accent,'#000000',0.25),
+    'accent-4':mixHex(accent,'#ffffff',0.25), 'on-accent':inkFor(accent),
+    ...sem,
+    'good-line':tint(sem.good,light?0.55:0.62), 'good-tint-1':tint(sem.good,0.93), 'good-tint-2':tint(sem.good,0.88),
+    'good-tint-3':tint(sem.good,0.8), 'good-tint-4':tint(sem.good,0.72), 'good-tint-5':tint(sem.good,0.62),
+    'good-tint-6':tint(sem.good,0.66),
+    'bad-line':tint(sem.bad,light?0.55:0.62), 'bad-tint-1':tint(sem.bad,0.93), 'bad-tint-2':tint(sem.bad,0.9),
+    'bad-tint-3':tint(sem.bad,0.94), 'bad-tint-4':tint(sem.bad,0.86), 'bad-tint-5':tint(sem.bad,0.8),
+    'info-tint':tint(sem.info,0.72), 'warn-tint':tint(sem.warn,0.82),
+  };
+}
+
+function loadThemeSettings(){
+  let t=null;try{t=JSON.parse(localStorage.getItem(THEME_KEY)||'null');}catch(e){}
+  const ok=h=>typeof h==='string'&&/^#[0-9a-f]{6}$/i.test(h);
+  const preset=t&&(t.preset==='custom'||THEME_PRESETS[t.preset])?t.preset:'night';
+  const base=THEME_PRESETS[preset]||THEME_PRESETS.night;
+  const c=t&&t.custom||{};
+  return {preset,
+    custom:{bg:ok(c.bg)?c.bg:base.bg, text:ok(c.text)?c.text:base.text, accent:ok(c.accent)?c.accent:base.accent},
+    backdrop:['none','pitch','image'].includes(t&&t.backdrop)?t.backdrop:'none',
+    // No saved theme (every first visit) means t is null; check it before reading dim.
+    dim:t&&Number.isFinite(+t.dim)&&t.dim!==null?Math.max(0.5,Math.min(0.95,+t.dim)):0.82};
+}
+function saveThemeSettings(s){try{localStorage.setItem(THEME_KEY,JSON.stringify(s));}catch(e){}}
+function themeColours(s){return s.preset==='custom'?s.custom:THEME_PRESETS[s.preset];}
+
+// An original drawing of a pitch -- no photograph, no crest -- stroked in the theme's text
+// colour at very low strength. Drawn upright on tall screens so a phone sees the whole thing.
+function pitchSVG(stroke,portrait){
+  const L=1050,W=680,g=`fill="none" stroke="${stroke}" stroke-opacity=".07" stroke-width="3"`;
+  const body=`<rect x="20" y="20" width="${L-40}" height="${W-40}" ${g}/>
+<line x1="${L/2}" y1="20" x2="${L/2}" y2="${W-20}" ${g}/><circle cx="${L/2}" cy="${W/2}" r="91.5" ${g}/>
+<circle cx="${L/2}" cy="${W/2}" r="4" fill="${stroke}" fill-opacity=".07"/>
+<rect x="20" y="${W/2-201.5}" width="165" height="403" ${g}/><rect x="${L-185}" y="${W/2-201.5}" width="165" height="403" ${g}/>
+<rect x="20" y="${W/2-91.5}" width="55" height="183" ${g}/><rect x="${L-75}" y="${W/2-91.5}" width="55" height="183" ${g}/>
+<path d="M185 ${W/2-73} A91.5 91.5 0 0 1 185 ${W/2+73}" ${g}/><path d="M${L-185} ${W/2-73} A91.5 91.5 0 0 0 ${L-185} ${W/2+73}" ${g}/>`;
+  const svg=portrait
+    ?`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${L}"><g transform="translate(${W} 0) rotate(90)">${body}</g></svg>`
+    :`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L} ${W}">${body}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+function applyTheme(s){
+  const root=document.documentElement;
+  const col=themeColours(s);
+  // Emirates Night is the :root default, so it clears every override rather than
+  // re-stating identical values.
+  const tok=s.preset==='night'?null:themeTokens(col.bg,col.text,col.accent,!!(THEME_PRESETS[s.preset]||{}).strong);
+  const names=Object.keys(themeTokens('#000000','#ffffff','#ff0000'));
+  names.forEach(n=>tok?root.style.setProperty('--'+n,tok[n]):root.style.removeProperty('--'+n));
+  // The default leaves color-scheme alone, as it always has: setting it recolours the
+  // browser's own scrollbars and form controls. Other themes set it so those match.
+  root.style.colorScheme=s.preset==='night'?'':(lumHex(col.bg)>0.4?'light':'dark');
+  let meta=document.querySelector('meta[name="theme-color"]');
+  if(!meta){meta=document.createElement('meta');meta.name='theme-color';document.head.appendChild(meta);}
+  meta.content=col.bg;
+  const layer=document.getElementById('bgLayer');
+  if(layer){
+    const [r,g,b]=_hex(col.bg);
+    let img=null;try{img=s.backdrop==='image'?localStorage.getItem(THEME_IMG_KEY):null;}catch(e){}
+    if(s.backdrop==='pitch')layer.style.backgroundImage=pitchSVG(col.text,innerHeight>innerWidth);
+    else if(img)layer.style.backgroundImage=`linear-gradient(rgba(${r},${g},${b},${s.dim}),rgba(${r},${g},${b},${s.dim})),url("${img}")`;
+    else layer.style.backgroundImage='none';
+    // Only exists while there is something to show: a fixed layer forces the page onto a
+    // separate compositing layer, which subtly changes how every line of text is smoothed.
+    layer.style.display=layer.style.backgroundImage==='none'?'none':'';
+  }
+}
+let THEME=loadThemeSettings();
+applyTheme(THEME);
+</script>
 
 <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
 <header style="height:42px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;justify-content:space-between;flex-shrink:0;">
   <div style="display:flex;align-items:center;gap:9px;">
-    <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9.4px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
+    <div id="afcBadge" onclick="secretTap()" class="afc-badge-anim" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9.4px;letter-spacing:-.5px;flex-shrink:0;cursor:pointer;">AFC</div>
     <div>
       <h1 style="font-weight:900;font-size:13px;line-height:1.1;letter-spacing:-.01em;margin:0;">Arsenal Rebuild</h1>
       <div style="font-size:9.6px;color:var(--text-2);line-height:1;">Banter Era Simulator · 09/10 – 15/16</div>
     </div>
+    <button onclick="openAppearance()" title="Appearance: theme, colours and background" aria-label="Appearance" style="width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line-3);color:var(--text-3);font-size:12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">🎨</button>
     <button onclick="openHowToPlay()" title="How to play" aria-label="How to play" style="width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line-3);color:var(--text-3);font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;">?</button>
   </div>
   <div id="headerControls" style="display:flex;align-items:center;gap:10px;">
@@ -469,7 +611,7 @@
     </div>
 
     <!-- Try Again, right under the reveal so it's visible without scrolling the whole breakdown -->
-    <button onclick="closeResult()" style="width:100%;background:linear-gradient(135deg,var(--accent),var(--accent-3));border:none;color:var(--text-hi);border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
+    <button onclick="closeResult()" style="width:100%;background:linear-gradient(135deg,var(--accent),var(--accent-3));border:none;color:var(--on-accent);border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
       <span>🔄</span><span>Try Again</span>
     </button>
 
@@ -560,7 +702,7 @@
 
     <div style="display:flex;gap:6px;">
       <button onclick="closeResult()" style="flex:1;background:var(--raise);border:none;color:var(--text-hi);border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;">Try Again</button>
-      <button onclick="shareResult()" style="flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-3));border:none;color:var(--text-hi);border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;" id="shareBtn">
+      <button onclick="shareResult()" style="flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-3));border:none;color:var(--on-accent);border-radius:7px;padding:9px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;" id="shareBtn">
         <span>📤</span><span>Share Result</span>
       </button>
     </div>
@@ -665,6 +807,51 @@
     </div>
     <!-- Scrollable match list -->
     <div id="mmList" style="flex:1;overflow-y:auto;padding:8px 10px;"></div>
+  </div>
+</div>
+
+<!-- ══ APPEARANCE ══════════════════════════════════════════════════════ -->
+<div id="appearanceModal" class="modal-bg" onclick="closeAppearance(event)">
+  <div class="modal-inner" style="max-width:430px;padding:16px;max-height:calc(100vh - 40px);overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h2 style="font-size:14px;font-weight:900;margin:0;">Appearance</h2>
+        <div style="font-size:9.6px;color:var(--text-4);margin-top:2px;">Saved in this browser</div>
+      </div>
+      <button onclick="closeAppearance()" aria-label="Close" style="background:none;border:none;color:var(--text-4);cursor:pointer;font-size:17px;line-height:1;padding:0 2px;">✕</button>
+    </div>
+    <div class="ap-sec">
+      <h3 class="ap-h">Theme</h3>
+      <div class="ap-themes" id="apThemes" role="radiogroup" aria-label="Theme"></div>
+    </div>
+    <div class="ap-sec">
+      <h3 class="ap-h">Colours</h3>
+      <div class="ap-row"><label for="apBg">Background</label><input type="color" id="apBg" oninput="setThemeColour('bg',this.value)"></div>
+      <div class="ap-row"><label for="apText">Text</label><input type="color" id="apText" oninput="setThemeColour('text',this.value)"></div>
+      <div class="ap-row" style="border-bottom:none;"><label for="apAccent">Accent</label><input type="color" id="apAccent" oninput="setThemeColour('accent',this.value)"></div>
+      <div class="ap-contrast" id="apContrast" aria-live="polite"></div>
+    </div>
+    <div class="ap-sec">
+      <h3 class="ap-h">Background</h3>
+      <div class="ap-seg" role="radiogroup" aria-label="Background">
+        <label id="apBdNone"><input type="radio" name="apBackdrop" value="none" onchange="setBackdrop('none')">Plain</label>
+        <label id="apBdPitch"><input type="radio" name="apBackdrop" value="pitch" onchange="setBackdrop('pitch')">Pitch markings</label>
+        <label id="apBdImage"><input type="radio" name="apBackdrop" value="image" onchange="setBackdrop('image')">Your image</label>
+      </div>
+      <div id="apImageOpts" style="display:none;margin-top:9px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button onclick="document.getElementById('apFile').click()" style="min-height:32px;background:var(--card);border:1px solid var(--line-3);border-radius:7px;padding:0 12px;font-size:10.5px;font-weight:700;color:var(--text-2);cursor:pointer;">Choose image…</button>
+          <span id="apImageName" style="font-size:9.8px;color:var(--text-4);"></span>
+          <input type="file" id="apFile" accept="image/*" style="display:none;" onchange="onBackdropImage(this.files[0]);this.value='';">
+        </div>
+        <div class="ap-row" style="border-bottom:none;"><label for="apDim">Dim the image</label>
+          <input type="range" id="apDim" min="50" max="95" step="1" oninput="setBackdropDim(this.value)" style="flex:1;max-width:190px;accent-color:var(--accent);"></div>
+      </div>
+      <div class="ap-note-box" id="apBackdropNote"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <button onclick="resetTheme()" style="min-height:32px;background:none;border:1px solid var(--line-3);border-radius:7px;padding:0 12px;font-size:10.5px;font-weight:700;color:var(--text-3);cursor:pointer;">Reset to default</button>
+    </div>
   </div>
 </div>
 
@@ -3483,6 +3670,106 @@ function openSquadAnalysis(){
   document.getElementById('squadAnalysisModal').classList.add('open');
 }
 function closeSquadAnalysis(){document.getElementById('squadAnalysisModal').classList.remove('open');}
+// ── Appearance panel ───────────────────────────────────────────────────
+function openAppearance(){renderAppearance();document.getElementById('appearanceModal').classList.add('open');}
+function closeAppearance(e){
+  if(e&&e.target!==document.getElementById('appearanceModal'))return;
+  document.getElementById('appearanceModal').classList.remove('open');
+}
+function commitTheme(){saveThemeSettings(THEME);applyTheme(THEME);renderAppearance();}
+function setThemePreset(key){
+  if(!THEME_PRESETS[key])return;
+  const p=THEME_PRESETS[key];
+  THEME.preset=key;THEME.custom={bg:p.bg,text:p.text,accent:p.accent};
+  commitTheme();
+}
+// Editing any colour turns the current theme into your own, starting from where it was.
+function setThemeColour(which,val){
+  if(!/^#[0-9a-f]{6}$/i.test(val))return;
+  THEME.custom={...themeColours(THEME),[which]:val};THEME.preset='custom';
+  commitTheme();
+}
+function fixTextContrast(){
+  const col={...themeColours(THEME)};col.text=inkFor(col.bg);
+  THEME.custom=col;THEME.preset='custom';commitTheme();
+}
+function setBackdrop(kind){
+  let has=false;try{has=!!localStorage.getItem(THEME_IMG_KEY);}catch(e){}
+  if(kind==='image'&&!has){
+    // Nothing to show yet: open the picker and leave the current backdrop until one is chosen.
+    renderAppearance();document.getElementById('apImageOpts').style.display='block';
+    document.getElementById('apFile').click();return;
+  }
+  THEME.backdrop=kind;commitTheme();
+}
+function setBackdropDim(v){THEME.dim=Math.max(0.5,Math.min(0.95,v/100));commitTheme();}
+// The picture is shrunk in the browser and kept in this browser's storage only. It is never
+// uploaded anywhere and never shipped with the site, which is what makes offering it safe:
+// whatever someone puts behind their squad is theirs to choose.
+function onBackdropImage(file){
+  if(!file)return;
+  if(!/^image\//.test(file.type)){showToast('That file is not an image.');return;}
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+    const k=Math.min(1,1600/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    let data=c.toDataURL('image/jpeg',0.8);
+    if(data.length>2.4e6)data=c.toDataURL('image/jpeg',0.6);
+    try{localStorage.setItem(THEME_IMG_KEY,data);}
+    catch(e){showToast('That image is too large to keep. Try a smaller one.',4000);return;}
+    THEME.backdrop='image';commitTheme();
+    showToast('Background set. It stays in this browser only.',3200);
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not read that image.');};
+  img.src=url;
+}
+function resetTheme(){
+  try{localStorage.removeItem(THEME_IMG_KEY);}catch(e){}
+  const n=THEME_PRESETS.night;
+  THEME={preset:'night',custom:{bg:n.bg,text:n.text,accent:n.accent},backdrop:'none',dim:0.82};
+  commitTheme();showToast('Appearance reset to Emirates Night.',2400);
+}
+function renderAppearance(){
+  const box=document.getElementById('apThemes');if(!box)return;
+  const keys=[...Object.keys(THEME_PRESETS),...(THEME.preset==='custom'?['custom']:[])];
+  box.innerHTML=keys.map(k=>{
+    const p=k==='custom'?{name:'Your colours',note:'Custom',...THEME.custom}:THEME_PRESETS[k];
+    const on=THEME.preset===k;
+    // Preview swatches show each theme's own colours, so they are literal on purpose.
+    return `<label class="ap-theme${on?' on':''}">
+      <input type="radio" name="apTheme" value="${k}" ${on?'checked':''} ${k==='custom'?'':`onchange="setThemePreset('${k}')"`}>
+      <span class="ap-swatch" style="background:${p.bg};color:${p.text};">Aa<span class="ap-dot" style="background:${p.accent};"></span></span>
+      <span><span class="ap-name" style="display:block;">${p.name}</span><span class="ap-note">${p.note}</span></span>
+    </label>`;
+  }).join('');
+  const col=themeColours(THEME);
+  document.getElementById('apBg').value=col.bg;
+  document.getElementById('apText').value=col.text;
+  document.getElementById('apAccent').value=col.accent;
+  // Legibility is checked, not assumed: body text needs 4.5:1 (WCAG AA), the accent -- used
+  // for large figures like Left to spend -- needs 3:1.
+  const tc=contrastHex(col.text,col.bg), ac=contrastHex(col.accent,col.bg);
+  const tOk=tc>=4.5, aOk=ac>=3;
+  document.getElementById('apContrast').innerHTML=
+    `<div style="color:${tOk?'var(--good)':'var(--bad)'};">${tOk?'✓':'⚠'} Text ${tc.toFixed(1)}:1 ${tOk?'· easy to read':'· hard to read, needs 4.5:1'}</div>`+
+    `<div style="color:${aOk?'var(--good)':'var(--warn)'};">${aOk?'✓':'⚠'} Accent ${ac.toFixed(1)}:1 ${aOk?'· stands out':'· low contrast, needs 3:1'}</div>`+
+    (tOk?'':`<button onclick="fixTextContrast()" style="margin-top:6px;min-height:30px;background:var(--raise);border:1px solid var(--line-3);border-radius:6px;padding:0 10px;font-size:10px;font-weight:700;color:var(--text-hi);cursor:pointer;">Fix text colour</button>`);
+  let has=false;try{has=!!localStorage.getItem(THEME_IMG_KEY);}catch(e){}
+  [['apBdNone','none'],['apBdPitch','pitch'],['apBdImage','image']].forEach(([id,v])=>{
+    const l=document.getElementById(id);const on=THEME.backdrop===v;l.classList.toggle('on',on);l.querySelector('input').checked=on;
+  });
+  document.getElementById('apImageOpts').style.display=THEME.backdrop==='image'?'block':'none';
+  document.getElementById('apImageName').textContent=has?'Image saved':'No image yet';
+  document.getElementById('apDim').value=Math.round(THEME.dim*100);
+  document.getElementById('apBackdropNote').textContent=
+    THEME.backdrop==='image'?'Your image stays in this browser. It is never uploaded, and it is dimmed so the squad stays readable.'
+    :THEME.backdrop==='pitch'?'Faint pitch markings behind the squad lists.':'';
+}
+// The pitch is drawn upright on tall screens; redraw it when the screen turns.
+let _apResize;
+addEventListener('resize',()=>{clearTimeout(_apResize);_apResize=setTimeout(()=>{if(THEME.backdrop==='pitch')applyTheme(THEME);},200);});
+
 function openHowToPlay(){document.getElementById('howToPlayModal').classList.add('open');}
 // A first-time player landed straight in a four-column squad grid with no idea what any of
 // it was for, and the explanation sat behind a 24px "?" in the corner. Show it once.
