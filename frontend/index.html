@@ -50,6 +50,8 @@
     .ap-contrast{font-size:10px;line-height:1.5;margin-top:8px;padding:7px 9px;border-radius:7px;background:var(--card);}
     /* The dock under the squad columns */
     #deskDock{display:flex;flex-shrink:0;align-items:stretch;flex-wrap:wrap;gap:8px;padding:9px 12px;border-top:1px solid var(--line);background:var(--panel);}
+    .target-chip{background:var(--raise);border:1px solid var(--line);border-radius:9999px;padding:3px 9px;font-size:9.6px;font-weight:600;color:var(--text-3);cursor:pointer;white-space:nowrap;transition:all .15s;}
+    .target-chip:hover{border-color:var(--accent);color:var(--text-hi);}
     .dock-card{display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 11px;}
     .dock-btn{cursor:pointer;transition:all .15s;}
     .dock-btn:hover{border-color:var(--line-4);background:var(--card-hi);}
@@ -438,8 +440,16 @@ applyTheme(THEME);
       <span style="font-size:9.8px;font-weight:700;" id="slotsLabel">6 left</span>
     </div>
 
-    <!-- Spacer -->
-    <div style="flex:1;"></div>
+    <!-- Who was linked with Arsenal that summer -->
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:0 12px 10px;">
+      <div style="background:var(--card);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;flex:1;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px;flex-shrink:0;">
+          <span style="font-size:9.6px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);">Rumoured this summer</span>
+          <span style="font-size:9.4px;color:var(--text-5);">tap to search</span>
+        </div>
+        <div id="targetsBody" class="scroll-cue" style="overflow-y:auto;min-height:0;"></div>
+      </div>
+    </div>
 
     <!-- Bottom -->
     <div style="flex-shrink:0;padding:8px 12px 10px;border-top:1px solid var(--line);background:var(--panel);">
@@ -2408,6 +2418,15 @@ async function loadSeason(yr){
   document.getElementById('budgetAmt').textContent=fmt(m.budget); // provisional, updateSidebar owns it from here
   document.getElementById('arsenalNetTarget').textContent=m.netSpend!==undefined?fmt(m.netSpend):'—';
   const mSpend2=document.getElementById('mobileSpend');if(mSpend2){mSpend2.textContent=fmt(m.netSpend||0);mSpend2.style.color='var(--good)';}
+  const tg=m.targets||{}, tBody=document.getElementById('targetsBody');
+  if(tBody)tBody.innerHTML=GROUPS.filter(g=>(tg[g]||[]).length).map(g=>`
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:7px;">
+        <span class="badge ${GRP_CSS[g]}" style="margin-top:2px;flex-shrink:0;">${g}</span>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;min-width:0;">
+          ${(tg[g]||[]).map(t=>{const n=t.name||t;
+            return `<button class="target-chip" onclick="pickTarget('${g}','${esc(n)}')">${n}</button>`;}).join('')}
+        </div>
+      </div>`).join('');
   document.getElementById('actualNote').textContent=m.note||'';
   document.getElementById('actualResult').textContent='';
   const seasonLabel=`${yr}/${String(yr+1).slice(-2)}`;
@@ -2496,6 +2515,11 @@ function openModal(g){
   } else {chips.style.display='none';chips.innerHTML='';}
   document.getElementById('addModal').classList.add('open');
   document.getElementById('searchInput').focus();
+}
+// From the sidebar list: open the signing modal on that player's position, then search him.
+function pickTarget(g,name){
+  openModal(g);
+  if(document.getElementById('addModal').classList.contains('open'))searchTarget(name);
 }
 function searchTarget(n){const i=document.getElementById('searchInput');i.value=n;debounce(n);}
 function closeModal(e){if(e&&e.target!==document.getElementById('addModal'))return;document.getElementById('addModal').classList.remove('open');}
